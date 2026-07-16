@@ -35,6 +35,22 @@ app = typer.Typer(help="AI Compute Readiness Validator - Assessment CLI")
 console = Console()
 
 
+def normalize_text_artifact(path: str) -> None:
+    """Strip trailing whitespace to keep generated artifacts diff-clean."""
+    if not os.path.exists(path):
+        return
+
+    with open(path, "r", encoding="utf-8") as handle:
+        content = handle.read()
+
+    normalized = "\n".join(line.rstrip() for line in content.splitlines())
+    if content.endswith("\n"):
+        normalized += "\n"
+
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(normalized)
+
+
 def write_report_bundle(cluster: Cluster, output_dir: str, stems: list[str]) -> dict[str, dict[str, str]]:
     """Write JSON, HTML, and Markdown reports for one or more filename stems."""
     reporters = {
@@ -49,6 +65,8 @@ def write_report_bundle(cluster: Cluster, output_dir: str, stems: list[str]) -> 
         for report_kind, (suffix, reporter) in reporters.items():
             output_path = os.path.join(output_dir, f"{stem}-{suffix}")
             written[stem][report_kind] = reporter(cluster, output_path)
+            if report_kind in {"html", "markdown"}:
+                normalize_text_artifact(written[stem][report_kind])
 
     return written
 

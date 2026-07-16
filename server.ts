@@ -26,6 +26,25 @@ function getScenarioResultsPath(scenario?: string): string | null {
   ]);
 }
 
+function getReportArtifactPath(scenario: string, format: string): { filePath: string | null; contentType: string } {
+  const safeScenario = ["healthy", "degraded", "latest"].includes(scenario) ? scenario : "latest";
+  const formatMap: Record<string, { suffix: string; contentType: string }> = {
+    json: { suffix: "results.json", contentType: "application/json; charset=utf-8" },
+    html: { suffix: "report.html", contentType: "text/html; charset=utf-8" },
+    markdown: { suffix: "report.md", contentType: "text/markdown; charset=utf-8" },
+  };
+
+  const artifact = formatMap[format];
+  if (!artifact) {
+    return { filePath: null, contentType: "text/plain; charset=utf-8" };
+  }
+
+  return {
+    filePath: firstExistingPath([path.join(artifactsDir, `${safeScenario}-${artifact.suffix}`)]),
+    contentType: artifact.contentType,
+  };
+}
+
 function resolveValidatorExecutable(): { command: string; args: string[] } {
   const localCli = path.join(repoRoot, ".venv", "bin", "ai-validator");
   if (fs.existsSync(localCli)) {
@@ -61,6 +80,18 @@ async function startServer() {
     } catch (err: any) {
       return res.status(500).json({ error: `Failed to load results: ${err.message}` });
     }
+  });
+
+  app.get("/reports/:scenario/:format", (req, res) => {
+    const scenario = req.params.scenario;
+    const format = req.params.format;
+    const { filePath, contentType } = getReportArtifactPath(scenario, format);
+
+    if (!filePath) {
+      return res.status(404).json({ error: "Requested report artifact was not found." });
+    }
+
+    return res.type(contentType).sendFile(filePath);
   });
 
   // 1b. API: Get historical health scores for a specific node

@@ -11,11 +11,13 @@ class MarkdownReporter:
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
         
         md = []
-        md.append(f"# AI Compute Readiness Assessment Report")
+        md.append(f"# AI Factory Validation Report")
         md.append(f"**Cluster Identifier:** `{cluster.name}`<br>")
         md.append(f"**Assessment Mode:** {cluster.metadata.get('execution_mode', 'Validation')}<br>")
         md.append(f"**Timestamp:** {cluster.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}<br>")
         md.append(f"**Tool Version:** v{cluster.tool_version}")
+        md.append("")
+        md.append("Enterprise readiness and customer-acceptance validation for GPU-accelerated AI infrastructure.")
         md.append("")
         
         # Readiness Score Card
@@ -23,7 +25,7 @@ class MarkdownReporter:
         md.append(f"| Metric | Value |")
         md.append(f"| :--- | :--- |")
         md.append(f"| **Overall Readiness Score** | **{cluster.overall_score}%** |")
-        md.append(f"| **Class Status** | **{cluster.classification.upper()}** |")
+        md.append(f"| **Customer Acceptance Status** | **{cluster.classification.upper()}** |")
         md.append(f"| **Total Nodes Assessed** | {len(cluster.nodes)} |")
         md.append(f"| **Critical Failures** | {cluster.metadata.get('critical_failure_count', 0)} |")
         md.append("")
@@ -85,7 +87,7 @@ class MarkdownReporter:
 
         # Score calculation notes
         md.append(f"---")
-        md.append(f"**Score Transparency Statement:**  ")
+        md.append(f"**Score Transparency Statement:**")
         md.append(f"Category averages are aggregated from node checks. Fully unavailable categories are excluded, and weights are distributed proportionally. A single failing `CRITICAL` check restricts classification to 'Remediation Required' even with high overall numerical scores.")
 
         md_text = "\n".join(md)

@@ -30,7 +30,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "NAME=\"Ubuntu\"\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908072"
+                  "timestamp": "2026-07-16T11:48:27.705078"
                 }
               ],
               "recommendation": null,
@@ -53,7 +53,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908300"
+                  "timestamp": "2026-07-16T11:48:27.705329"
                 }
               ],
               "recommendation": null,
@@ -76,7 +76,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "HugePages_Total:     1024\nHugePages_Free:      1024\nHugepagesize:       2048 kB",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908304"
+                  "timestamp": "2026-07-16T11:48:27.705332"
                 }
               ],
               "recommendation": null,
@@ -100,7 +100,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908308"
+                  "timestamp": "2026-07-16T11:48:27.705335"
                 }
               ],
               "recommendation": null,
@@ -132,7 +132,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/nvidia-smi",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908314"
+                  "timestamp": "2026-07-16T11:48:27.705341"
                 }
               ],
               "recommendation": null,
@@ -155,7 +155,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Driver Version : 535.104\nCUDA Version : 12.2",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908318"
+                  "timestamp": "2026-07-16T11:48:27.705344"
                 }
               ],
               "recommendation": null,
@@ -178,7 +178,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "ECC Mode : Enabled\nUncorrectable : 0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908321"
+                  "timestamp": "2026-07-16T11:48:27.705349"
                 }
               ],
               "recommendation": null,
@@ -202,7 +202,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "GPU 0: NVLink Link 0: Active\nGPU 0: NVLink Link 1: Active",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908323"
+                  "timestamp": "2026-07-16T11:48:27.705352"
                 }
               ],
               "recommendation": null,
@@ -225,7 +225,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/dcgmi",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908326"
+                  "timestamp": "2026-07-16T11:48:27.705354"
                 }
               ],
               "recommendation": null,
@@ -249,7 +249,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Health status is healthy.",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908328"
+                  "timestamp": "2026-07-16T11:48:27.705356"
                 }
               ],
               "recommendation": null,
@@ -274,7 +274,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Diagnostic Level 1 passed.",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908330"
+                  "timestamp": "2026-07-16T11:48:27.705359"
                 }
               ],
               "recommendation": null,
@@ -306,7 +306,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/ibstat",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908333"
+                  "timestamp": "2026-07-16T11:48:27.705362"
                 }
               ],
               "recommendation": null,
@@ -328,7 +328,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Port 1: Active\nPort 2: Active",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908336"
+                  "timestamp": "2026-07-16T11:48:27.705364"
                 }
               ],
               "recommendation": null,
@@ -350,7 +350,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Link speed: 400 Gb/s\nLink width: 4x",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908338"
+                  "timestamp": "2026-07-16T11:48:27.705367"
                 }
               ],
               "recommendation": null,
@@ -373,7 +373,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "mlx5_0/1 up\nmlx5_1/1 up",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908340"
+                  "timestamp": "2026-07-16T11:48:27.705369"
                 }
               ],
               "recommendation": null,
@@ -396,7 +396,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "state UP",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908342"
+                  "timestamp": "2026-07-16T11:48:27.705371"
                 }
               ],
               "recommendation": null,
@@ -419,7 +419,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "default via 10.0.0.1 dev eth0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908345"
+                  "timestamp": "2026-07-16T11:48:27.705373"
                 }
               ],
               "recommendation": null,
@@ -443,7 +443,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "RX: errors 0 dropped 0\nTX: errors 0 dropped 0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908347"
+                  "timestamp": "2026-07-16T11:48:27.705376"
                 }
               ],
               "recommendation": null,
@@ -475,7 +475,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/sinfo",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908350"
+                  "timestamp": "2026-07-16T11:48:27.705379"
                 }
               ],
               "recommendation": null,
@@ -498,7 +498,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Slurmctld at slurm-master is UP",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908352"
+                  "timestamp": "2026-07-16T11:48:27.705381"
                 }
               ],
               "recommendation": null,
@@ -522,7 +522,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "node01  idle  1.00",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908354"
+                  "timestamp": "2026-07-16T11:48:27.705383"
                 }
               ],
               "recommendation": null,
@@ -554,7 +554,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/dev/sda1  ext4  100G  45G  45%  /\n",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908358"
+                  "timestamp": "2026-07-16T11:48:27.705386"
                 }
               ],
               "recommendation": null,
@@ -577,7 +577,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/dev/nvme0n1  960GB\n/dev/nvme1n1  960GB",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908361"
+                  "timestamp": "2026-07-16T11:48:27.705390"
                 }
               ],
               "recommendation": null,
@@ -600,7 +600,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "lfs 2.15.2",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908363"
+                  "timestamp": "2026-07-16T11:48:27.705392"
                 }
               ],
               "recommendation": null,
@@ -632,7 +632,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/kubectl",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908366"
+                  "timestamp": "2026-07-16T11:48:27.705395"
                 }
               ],
               "recommendation": null,
@@ -656,7 +656,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "k8s-ai-cluster",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908368"
+                  "timestamp": "2026-07-16T11:48:27.705398"
                 }
               ],
               "recommendation": null,
@@ -680,7 +680,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "node-1  Ready",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908370"
+                  "timestamp": "2026-07-16T11:48:27.705400"
                 }
               ],
               "recommendation": null,
@@ -706,7 +706,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "nvidia-device-plugin-daemonset  Ready 4/4",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908372"
+                  "timestamp": "2026-07-16T11:48:27.705402"
                 }
               ],
               "recommendation": null,
@@ -745,7 +745,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "NAME=\"Ubuntu\"\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908380"
+                  "timestamp": "2026-07-16T11:48:27.705412"
                 }
               ],
               "recommendation": null,
@@ -768,7 +768,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908383"
+                  "timestamp": "2026-07-16T11:48:27.705416"
                 }
               ],
               "recommendation": null,
@@ -791,7 +791,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "HugePages_Total:     1024\nHugePages_Free:      1024\nHugepagesize:       2048 kB",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908385"
+                  "timestamp": "2026-07-16T11:48:27.705419"
                 }
               ],
               "recommendation": null,
@@ -815,7 +815,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908388"
+                  "timestamp": "2026-07-16T11:48:27.705421"
                 }
               ],
               "recommendation": null,
@@ -847,7 +847,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/nvidia-smi",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908391"
+                  "timestamp": "2026-07-16T11:48:27.705424"
                 }
               ],
               "recommendation": null,
@@ -870,7 +870,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Driver Version : 535.104\nCUDA Version : 12.2",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908393"
+                  "timestamp": "2026-07-16T11:48:27.705428"
                 }
               ],
               "recommendation": null,
@@ -893,7 +893,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "ECC Mode : Enabled\nUncorrectable : 0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908395"
+                  "timestamp": "2026-07-16T11:48:27.705430"
                 }
               ],
               "recommendation": null,
@@ -917,7 +917,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "GPU 0: NVLink Link 0: Active\nGPU 0: NVLink Link 1: Active",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908398"
+                  "timestamp": "2026-07-16T11:48:27.705433"
                 }
               ],
               "recommendation": null,
@@ -940,7 +940,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/dcgmi",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908402"
+                  "timestamp": "2026-07-16T11:48:27.705435"
                 }
               ],
               "recommendation": null,
@@ -964,7 +964,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Health status is healthy.",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908404"
+                  "timestamp": "2026-07-16T11:48:27.705439"
                 }
               ],
               "recommendation": null,
@@ -989,7 +989,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Diagnostic Level 1 passed.",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908406"
+                  "timestamp": "2026-07-16T11:48:27.705441"
                 }
               ],
               "recommendation": null,
@@ -1021,7 +1021,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/ibstat",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908409"
+                  "timestamp": "2026-07-16T11:48:27.705448"
                 }
               ],
               "recommendation": null,
@@ -1043,7 +1043,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Port 1: Active\nPort 2: Active",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908412"
+                  "timestamp": "2026-07-16T11:48:27.705450"
                 }
               ],
               "recommendation": null,
@@ -1065,7 +1065,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Link speed: 400 Gb/s\nLink width: 4x",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908414"
+                  "timestamp": "2026-07-16T11:48:27.705452"
                 }
               ],
               "recommendation": null,
@@ -1088,7 +1088,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "mlx5_0/1 up\nmlx5_1/1 up",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908416"
+                  "timestamp": "2026-07-16T11:48:27.705454"
                 }
               ],
               "recommendation": null,
@@ -1111,7 +1111,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "state UP",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908418"
+                  "timestamp": "2026-07-16T11:48:27.705456"
                 }
               ],
               "recommendation": null,
@@ -1134,7 +1134,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "default via 10.0.0.1 dev eth0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908420"
+                  "timestamp": "2026-07-16T11:48:27.705459"
                 }
               ],
               "recommendation": null,
@@ -1158,7 +1158,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "RX: errors 0 dropped 0\nTX: errors 0 dropped 0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908422"
+                  "timestamp": "2026-07-16T11:48:27.705461"
                 }
               ],
               "recommendation": null,
@@ -1190,7 +1190,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/sinfo",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908425"
+                  "timestamp": "2026-07-16T11:48:27.705464"
                 }
               ],
               "recommendation": null,
@@ -1213,7 +1213,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Slurmctld at slurm-master is UP",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908427"
+                  "timestamp": "2026-07-16T11:48:27.705466"
                 }
               ],
               "recommendation": null,
@@ -1237,7 +1237,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "node01  idle  1.00",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908430"
+                  "timestamp": "2026-07-16T11:48:27.705468"
                 }
               ],
               "recommendation": null,
@@ -1269,7 +1269,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/dev/sda1  ext4  100G  45G  45%  /\n",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908433"
+                  "timestamp": "2026-07-16T11:48:27.705473"
                 }
               ],
               "recommendation": null,
@@ -1292,7 +1292,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/dev/nvme0n1  960GB\n/dev/nvme1n1  960GB",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908435"
+                  "timestamp": "2026-07-16T11:48:27.705475"
                 }
               ],
               "recommendation": null,
@@ -1315,7 +1315,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "lfs 2.15.2",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908437"
+                  "timestamp": "2026-07-16T11:48:27.705477"
                 }
               ],
               "recommendation": null,
@@ -1347,7 +1347,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/kubectl",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908441"
+                  "timestamp": "2026-07-16T11:48:27.705480"
                 }
               ],
               "recommendation": null,
@@ -1371,7 +1371,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "k8s-ai-cluster",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908444"
+                  "timestamp": "2026-07-16T11:48:27.705485"
                 }
               ],
               "recommendation": null,
@@ -1395,7 +1395,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "node-1  Ready",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908446"
+                  "timestamp": "2026-07-16T11:48:27.705487"
                 }
               ],
               "recommendation": null,
@@ -1421,7 +1421,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "nvidia-device-plugin-daemonset  Ready 4/4",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908449"
+                  "timestamp": "2026-07-16T11:48:27.705489"
                 }
               ],
               "recommendation": null,
@@ -1460,7 +1460,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "NAME=\"Ubuntu\"\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908454"
+                  "timestamp": "2026-07-16T11:48:27.705496"
                 }
               ],
               "recommendation": null,
@@ -1483,7 +1483,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908457"
+                  "timestamp": "2026-07-16T11:48:27.705498"
                 }
               ],
               "recommendation": null,
@@ -1506,7 +1506,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "HugePages_Total:     1024\nHugePages_Free:      1024\nHugepagesize:       2048 kB",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908460"
+                  "timestamp": "2026-07-16T11:48:27.705500"
                 }
               ],
               "recommendation": null,
@@ -1530,7 +1530,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908462"
+                  "timestamp": "2026-07-16T11:48:27.705502"
                 }
               ],
               "recommendation": null,
@@ -1562,7 +1562,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/nvidia-smi",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908465"
+                  "timestamp": "2026-07-16T11:48:27.705505"
                 }
               ],
               "recommendation": null,
@@ -1585,7 +1585,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Driver Version : 535.104\nCUDA Version : 12.2",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908467"
+                  "timestamp": "2026-07-16T11:48:27.705507"
                 }
               ],
               "recommendation": null,
@@ -1608,7 +1608,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "ECC Mode : Enabled\nUncorrectable : 0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908470"
+                  "timestamp": "2026-07-16T11:48:27.705509"
                 }
               ],
               "recommendation": null,
@@ -1632,7 +1632,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "GPU 0: NVLink Link 0: Active\nGPU 0: NVLink Link 1: Active",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908472"
+                  "timestamp": "2026-07-16T11:48:27.705511"
                 }
               ],
               "recommendation": null,
@@ -1655,7 +1655,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/dcgmi",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908474"
+                  "timestamp": "2026-07-16T11:48:27.705514"
                 }
               ],
               "recommendation": null,
@@ -1679,7 +1679,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Health status is healthy.",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908476"
+                  "timestamp": "2026-07-16T11:48:27.705516"
                 }
               ],
               "recommendation": null,
@@ -1704,7 +1704,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Diagnostic Level 1 passed.",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908478"
+                  "timestamp": "2026-07-16T11:48:27.705519"
                 }
               ],
               "recommendation": null,
@@ -1736,7 +1736,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/ibstat",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908489"
+                  "timestamp": "2026-07-16T11:48:27.705523"
                 }
               ],
               "recommendation": null,
@@ -1758,7 +1758,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Port 1: Active\nPort 2: Active",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908491"
+                  "timestamp": "2026-07-16T11:48:27.705526"
                 }
               ],
               "recommendation": null,
@@ -1780,7 +1780,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Link speed: 400 Gb/s\nLink width: 4x",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908494"
+                  "timestamp": "2026-07-16T11:48:27.705528"
                 }
               ],
               "recommendation": null,
@@ -1803,7 +1803,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "mlx5_0/1 up\nmlx5_1/1 up",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908496"
+                  "timestamp": "2026-07-16T11:48:27.705531"
                 }
               ],
               "recommendation": null,
@@ -1826,7 +1826,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "state UP",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908498"
+                  "timestamp": "2026-07-16T11:48:27.705533"
                 }
               ],
               "recommendation": null,
@@ -1849,7 +1849,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "default via 10.0.0.1 dev eth0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908500"
+                  "timestamp": "2026-07-16T11:48:27.705535"
                 }
               ],
               "recommendation": null,
@@ -1873,7 +1873,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "RX: errors 0 dropped 0\nTX: errors 0 dropped 0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908502"
+                  "timestamp": "2026-07-16T11:48:27.705537"
                 }
               ],
               "recommendation": null,
@@ -1905,7 +1905,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/sinfo",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908506"
+                  "timestamp": "2026-07-16T11:48:27.705540"
                 }
               ],
               "recommendation": null,
@@ -1928,7 +1928,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Slurmctld at slurm-master is UP",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908508"
+                  "timestamp": "2026-07-16T11:48:27.705542"
                 }
               ],
               "recommendation": null,
@@ -1952,7 +1952,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "node01  idle  1.00",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908510"
+                  "timestamp": "2026-07-16T11:48:27.705544"
                 }
               ],
               "recommendation": null,
@@ -1984,7 +1984,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/dev/sda1  ext4  100G  45G  45%  /\n",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908514"
+                  "timestamp": "2026-07-16T11:48:27.705549"
                 }
               ],
               "recommendation": null,
@@ -2007,7 +2007,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/dev/nvme0n1  960GB\n/dev/nvme1n1  960GB",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908517"
+                  "timestamp": "2026-07-16T11:48:27.705551"
                 }
               ],
               "recommendation": null,
@@ -2030,7 +2030,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "lfs 2.15.2",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908519"
+                  "timestamp": "2026-07-16T11:48:27.705553"
                 }
               ],
               "recommendation": null,
@@ -2062,7 +2062,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/kubectl",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908522"
+                  "timestamp": "2026-07-16T11:48:27.705556"
                 }
               ],
               "recommendation": null,
@@ -2086,7 +2086,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "k8s-ai-cluster",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908524"
+                  "timestamp": "2026-07-16T11:48:27.705558"
                 }
               ],
               "recommendation": null,
@@ -2110,7 +2110,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "node-1  Ready",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908526"
+                  "timestamp": "2026-07-16T11:48:27.705560"
                 }
               ],
               "recommendation": null,
@@ -2136,7 +2136,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "nvidia-device-plugin-daemonset  Ready 4/4",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908530"
+                  "timestamp": "2026-07-16T11:48:27.705562"
                 }
               ],
               "recommendation": null,
@@ -2175,7 +2175,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "NAME=\"Ubuntu\"\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908535"
+                  "timestamp": "2026-07-16T11:48:27.705571"
                 }
               ],
               "recommendation": null,
@@ -2198,7 +2198,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908537"
+                  "timestamp": "2026-07-16T11:48:27.705573"
                 }
               ],
               "recommendation": null,
@@ -2221,7 +2221,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "HugePages_Total:     1024\nHugePages_Free:      1024\nHugepagesize:       2048 kB",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908539"
+                  "timestamp": "2026-07-16T11:48:27.705575"
                 }
               ],
               "recommendation": null,
@@ -2245,7 +2245,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908541"
+                  "timestamp": "2026-07-16T11:48:27.705577"
                 }
               ],
               "recommendation": null,
@@ -2277,7 +2277,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/nvidia-smi",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908544"
+                  "timestamp": "2026-07-16T11:48:27.705580"
                 }
               ],
               "recommendation": null,
@@ -2300,7 +2300,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Driver Version : 535.104\nCUDA Version : 12.2",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908585"
+                  "timestamp": "2026-07-16T11:48:27.705623"
                 }
               ],
               "recommendation": null,
@@ -2323,7 +2323,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "ECC Mode : Enabled\nUncorrectable : 0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908588"
+                  "timestamp": "2026-07-16T11:48:27.705625"
                 }
               ],
               "recommendation": null,
@@ -2347,7 +2347,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "GPU 0: NVLink Link 0: Active\nGPU 0: NVLink Link 1: Active",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908590"
+                  "timestamp": "2026-07-16T11:48:27.705627"
                 }
               ],
               "recommendation": null,
@@ -2370,7 +2370,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/dcgmi",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908592"
+                  "timestamp": "2026-07-16T11:48:27.705630"
                 }
               ],
               "recommendation": null,
@@ -2394,7 +2394,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Health status is healthy.",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908594"
+                  "timestamp": "2026-07-16T11:48:27.705632"
                 }
               ],
               "recommendation": null,
@@ -2419,7 +2419,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Diagnostic Level 1 passed.",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908596"
+                  "timestamp": "2026-07-16T11:48:27.705634"
                 }
               ],
               "recommendation": null,
@@ -2451,7 +2451,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/ibstat",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908600"
+                  "timestamp": "2026-07-16T11:48:27.705639"
                 }
               ],
               "recommendation": null,
@@ -2473,7 +2473,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Port 1: Active\nPort 2: Active",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908602"
+                  "timestamp": "2026-07-16T11:48:27.705641"
                 }
               ],
               "recommendation": null,
@@ -2495,7 +2495,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Link speed: 400 Gb/s\nLink width: 4x",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908604"
+                  "timestamp": "2026-07-16T11:48:27.705643"
                 }
               ],
               "recommendation": null,
@@ -2518,7 +2518,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "mlx5_0/1 up\nmlx5_1/1 up",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908607"
+                  "timestamp": "2026-07-16T11:48:27.705646"
                 }
               ],
               "recommendation": null,
@@ -2541,7 +2541,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "state UP",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908611"
+                  "timestamp": "2026-07-16T11:48:27.705650"
                 }
               ],
               "recommendation": null,
@@ -2564,7 +2564,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "default via 10.0.0.1 dev eth0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908614"
+                  "timestamp": "2026-07-16T11:48:27.705653"
                 }
               ],
               "recommendation": null,
@@ -2588,7 +2588,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "RX: errors 0 dropped 0\nTX: errors 0 dropped 0",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908616"
+                  "timestamp": "2026-07-16T11:48:27.705655"
                 }
               ],
               "recommendation": null,
@@ -2620,7 +2620,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/sinfo",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908619"
+                  "timestamp": "2026-07-16T11:48:27.705658"
                 }
               ],
               "recommendation": null,
@@ -2643,7 +2643,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "Slurmctld at slurm-master is UP",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908621"
+                  "timestamp": "2026-07-16T11:48:27.705660"
                 }
               ],
               "recommendation": null,
@@ -2667,7 +2667,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "node01  idle  1.00",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908624"
+                  "timestamp": "2026-07-16T11:48:27.705662"
                 }
               ],
               "recommendation": null,
@@ -2699,7 +2699,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/dev/sda1  ext4  100G  45G  45%  /\n",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908627"
+                  "timestamp": "2026-07-16T11:48:27.705665"
                 }
               ],
               "recommendation": null,
@@ -2722,7 +2722,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/dev/nvme0n1  960GB\n/dev/nvme1n1  960GB",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908629"
+                  "timestamp": "2026-07-16T11:48:27.705667"
                 }
               ],
               "recommendation": null,
@@ -2745,7 +2745,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "lfs 2.15.2",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908631"
+                  "timestamp": "2026-07-16T11:48:27.705669"
                 }
               ],
               "recommendation": null,
@@ -2777,7 +2777,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "/usr/bin/kubectl",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908634"
+                  "timestamp": "2026-07-16T11:48:27.705672"
                 }
               ],
               "recommendation": null,
@@ -2801,7 +2801,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "k8s-ai-cluster",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908685"
+                  "timestamp": "2026-07-16T11:48:27.705674"
                 }
               ],
               "recommendation": null,
@@ -2825,7 +2825,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "node-1  Ready",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908687"
+                  "timestamp": "2026-07-16T11:48:27.705676"
                 }
               ],
               "recommendation": null,
@@ -2851,7 +2851,7 @@
                   "duration_seconds": 0.015,
                   "stdout": "nvidia-device-plugin-daemonset  Ready 4/4",
                   "stderr": "",
-                  "timestamp": "2026-07-16T11:12:58.908689"
+                  "timestamp": "2026-07-16T11:48:27.705679"
                 }
               ],
               "recommendation": null,
@@ -2887,6 +2887,6 @@
     },
     "critical_failure_count": 0
   },
-  "timestamp": "2026-07-16T11:12:58.908696",
+  "timestamp": "2026-07-16T11:48:27.705686",
   "tool_version": "0.1.0"
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Compute Readiness Report - nvis-interview-demo</title>
+    <title>AI Factory Validation Report - nvis-interview-demo</title>
     <style>
         :root {
             --primary-dark: #121212;
@@ -352,9 +352,10 @@
     <header>
         <div class="header-container">
             <div class="header-title">
-                <h1>AI Compute Readiness Assessment</h1>
+                <h1>AI Factory Validation Report</h1>
                 <p>Cluster Target: <strong>nvis-interview-demo</strong> | Mode: <strong>Demonstration - Degraded Scenario</strong></p>
-                <p style="margin-top: 6px; font-size: 12px; color: #9ca3af;">Generated: 2026-07-16 11:12:59 UTC | Tool Version: v0.1.0</p>
+                <p>Enterprise readiness and customer-acceptance validation for GPU-accelerated AI infrastructure.</p>
+                <p style="margin-top: 6px; font-size: 12px; color: #9ca3af;">Generated: 2026-07-16 11:48:29 UTC | Tool Version: v0.1.0</p>
             </div>
 
             <div class="score-hero">
@@ -715,11 +716,11 @@
 
 
                 <div class="card" id="findings-section">
-                    <h2>⚠️ Key Findings & Security Overrides</h2>
+                    <h2>⚠️ Key Findings & Acceptance Overrides</h2>
 
 
                         <div style="margin-bottom: 16px;">
-                            <h4 style="color: var(--color-fail); font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Critical Blocking Failures (Rediness Override Applied)</h4>
+                            <h4 style="color: var(--color-fail); font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Critical Blocking Failures (Readiness Override Applied)</h4>
 
                             <div class="finding-item">
                                 <div class="finding-title">
@@ -753,7 +754,7 @@
                             <div class="finding-item warning">
                                 <div class="finding-title">
                                     <span>[dgx03] InfiniBand Port Link Speed</span>
-                                    <span class="badge badge-warning">StatusEnum.WARNING</span>
+                                    <span class="badge badge-warning">WARN</span>
                                 </div>
                                 <p>Port 1 negotiated at NDR 200Gb/s speed (2x width instead of 4x width). Interconnect is physically degraded.</p>
                                 <div class="finding-rec">
@@ -764,7 +765,7 @@
                             <div class="finding-item warning">
                                 <div class="finding-title">
                                     <span>[dgx04] NVIDIA GPU Operator and Device Plugins</span>
-                                    <span class="badge badge-warning">StatusEnum.WARNING</span>
+                                    <span class="badge badge-warning">WARN</span>
                                 </div>
                                 <p>DaemonSet 'nvidia-device-plugin-daemonset' reports 3/4 healthy pods. Pod 'nvidia-device-plugin-dgx04' is CrashLoopBackOff.</p>
                                 <div class="finding-rec">

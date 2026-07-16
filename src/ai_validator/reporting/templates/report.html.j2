@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Compute Readiness Report - {{ cluster.name }}</title>
+    <title>AI Factory Validation Report - {{ cluster.name }}</title>
     <style>
         :root {
             --primary-dark: #121212;
@@ -352,8 +352,9 @@
     <header>
         <div class="header-container">
             <div class="header-title">
-                <h1>AI Compute Readiness Assessment</h1>
+                <h1>AI Factory Validation Report</h1>
                 <p>Cluster Target: <strong>{{ cluster.name }}</strong> | Mode: <strong>{{ cluster.metadata.execution_mode | default("Validation") }}</strong></p>
+                <p>Enterprise readiness and customer-acceptance validation for GPU-accelerated AI infrastructure.</p>
                 <p style="margin-top: 6px; font-size: 12px; color: #9ca3af;">Generated: {{ cluster.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }} | Tool Version: v{{ cluster.tool_version }}</p>
             </div>
             
@@ -407,11 +408,11 @@
 
                 {% if failed_critical or other_issues %}
                 <div class="card" id="findings-section">
-                    <h2>⚠️ Key Findings & Security Overrides</h2>
+                    <h2>⚠️ Key Findings & Acceptance Overrides</h2>
                     
                     {% if failed_critical %}
                         <div style="margin-bottom: 16px;">
-                            <h4 style="color: var(--color-fail); font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Critical Blocking Failures (Rediness Override Applied)</h4>
+                            <h4 style="color: var(--color-fail); font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Critical Blocking Failures (Readiness Override Applied)</h4>
                             {% for node_name, check in failed_critical %}
                             <div class="finding-item">
                                 <div class="finding-title">
@@ -434,7 +435,7 @@
                             <div class="finding-item warning">
                                 <div class="finding-title">
                                     <span>[{{ node_name }}] {{ check.title }}</span>
-                                    <span class="badge badge-warning">{{ check.status }}</span>
+                                    <span class="badge badge-warning">WARN</span>
                                 </div>
                                 <p>{{ check.summary }}</p>
                                 <div class="finding-rec">
