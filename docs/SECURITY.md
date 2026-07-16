@@ -1,44 +1,63 @@
-# Security Profile & Execution Constraints 🔒
+# Security
 
-This document highlights the security-conscious design principles and hard boundaries implemented in the **AI Compute Readiness Validator**.
+## Security posture
 
----
+This project is designed as a read-only diagnostic/reporting tool. The intended safety model is:
+- no privileged escalation
+- no system mutation
+- no shell interpolation of user input
+- graceful handling of missing commands and restricted environments
+- redaction of common secrets from captured command output
 
-## 🚫 Principle of Non-Privileged Execution (Zero Sudo)
+## Command execution model
 
-Traditional system diagnostics tools often rely on administrative access (`sudo` or `root` permissions) to query system configurations. This tool is built specifically to operate **entirely in user space** as a non-privileged user:
+`src/ai_validator/runner.py` centralizes command execution.
 
-*   **No Mutating System Calls**: The diagnostic engine only issues queries (`get`, `list`, `ping`). It does not invoke any state-altering operations (no `set`, `update`, `restart`).
-*   **No Sudo Execution**: The runner is explicitly designed to execute commands as the invoking user. If a command requires root (e.g., querying private storage blocks or hardware registers), the collector catches the permission failure, logs it as `UNAVAILABLE` or `UNKNOWN` with a clean suggestion, and proceeds without crashing.
+Key protections:
+- commands are executed as argument arrays with `shell=False`
+- execution is bounded by a timeout
+- common mutating keywords are blocked before execution
+- missing commands return structured evidence (`exit_code=127`) rather than crashing the CLI
+- permission failures return structured evidence (`exit_code=13`) rather than crashing the CLI
+- stdout/stderr are sanitized before persistence in report artifacts
 
----
+The current regression suite includes a direct test that mutating commands are blocked.
 
-## 🛡️ Secure Shell & Command Runner (`src/ai_validator/runner.py`)
+## Collector behavior in constrained environments
 
-To prevent command-injection vulnerabilities (a common risk in automated scripting tools), the `CommandRunner` enforces strict execution rules:
+Collectors are expected to run safely on machines that do not have:
+- NVIDIA drivers
+- DCGM
+- InfiniBand tooling
+- Slurm
+- Kubernetes tooling
+- NVMe utilities
 
-### 1. No Shell Wrapper (`shell=False`)
-All commands are executed using Python's `subprocess.Popen` with argument lists rather than raw string execution:
-```python
-# ❌ UNSAFE: Vulnerable to command injection
-subprocess.Popen("nvidia-smi -q -i " + user_input, shell=True)
+Instead of failing hard, collectors produce `skipped`, `unavailable`, or `unknown` checks with clear recommendations. This was validated in the live local smoke run on macOS during this recovery session.
 
-# ✅ SAFE: Arguments are passed as list elements, bypassing shell evaluation
-subprocess.Popen(["nvidia-smi", "-q", "-i", sanitized_input], shell=False)
-```
+## Data handling
 
-### 2. Standardized Timeouts
-All commands are guarded by a default timeout parameter ($2.0$ seconds). This prevents the CLI from hanging indefinitely if a local daemon or network port is unresponsive.
+Persisted outputs are local files only:
+- JSON reports
+- Markdown reports
+- standalone HTML reports
 
-### 3. Argument Validation & Sanitization
-No raw user input is ever formatted directly into command arguments. Identifiers like node names or network interfaces are validated using strict alphanumeric regular expressions.
+The project currently does not add:
+- remote telemetry
+- cloud upload
+- external auth flows
+- database persistence
 
----
+## Threat model boundaries
 
-## 🧼 Output Censorship & Masking
+This is not a hardened remote execution platform. Current intentional boundaries:
+- local-only command execution
+- no SSH orchestration yet
+- no arbitrary user-supplied shell commands exposed through the web UI
+- demo scenarios are deterministic fixtures, not remote-controlled payloads
 
-Terminal outputs captured as `CommandEvidence` may occasionally contain sensitive environment parameters (e.g., API tokens in Kubernetes configs, local IP mappings, user accounts, or proprietary cluster identifiers).
+## Operational caveats
 
-Before storing stdout or writing report outputs, the runner passes raw text through an expansion block that:
-*   Strips out standard key-value patterns matching tokens, auth certificates, or environment passwords.
-*   Truncates excessively long outputs to a maximum buffer of $2000$ characters, avoiding memory bloat or log pollution.
+- HTML reports are self-contained and portable, but they may include sanitized command evidence. Treat them as internal diagnostic artifacts.
+- The portal's benchmark section is still demo-oriented; the authoritative ingestion workflow is the CLI.
+- If future work introduces remote fan-out, file uploads, or multi-user access, the threat model and validation surface must be revisited.

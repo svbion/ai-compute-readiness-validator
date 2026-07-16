@@ -1,30 +1,55 @@
-# Engineering Roadmap 🗺️
+# Roadmap
 
-This document outlines the next logical iteration phases for expanding the **AI Compute Readiness Validator** into a full-scale cluster management product.
+This roadmap keeps the project aligned with its current interview-MVP scope while making future expansion explicit.
 
----
+## Phase 0: Interview MVP stabilization
 
-## 📅 Phase 1: Cluster-Wide Agentless Remote Scans (SSH)
+Status: largely complete.
 
-Currently, live execution runs locally (`validate` queries localhost). The next phase introduces agentless multi-node orchestration:
-*   **Asynchronous SSH Execution**: Utilize Python's `paramiko` or native SSH multiplexers to execute non-interactive commands in parallel across a list of target host IPs.
-*   **Encrypted Key Management**: Secure password-less SSH key authentication integrating local hardware keys or HashiCorp Vault.
-*   **Inventory Auto-Discovery**: Query Slurm (`sinfo`) or Kubernetes (`kubectl get nodes`) dynamically from a master bastion node, auto-populating the target inventory IPs.
+Delivered:
+- Python packaging and CLI entry point
+- deterministic healthy/degraded demo scenarios
+- JSON, Markdown, and standalone HTML report generation
+- live read-only collectors with graceful missing-command handling
+- React/Express portal that can render generated report data
+- documentation set for architecture, security, demo usage, current state, and next actions
 
----
+Outstanding polish:
+- optional frontend benchmark ingestion workflow beyond the current placeholder behavior
+- optional JS-side automated tests if the frontend becomes a maintained product surface
 
-## 📈 Phase 2: Active Benchmark Triggers
+## Phase 1: Better artifact and demo ergonomics
 
-Ingesting historical log files is useful, but the ultimate validator initiates live stress tests under load:
-*   **NCCL AllReduce Execution**: Remotely trigger an MPI-backed NCCL AllReduce test using GPUDirect RDMA to verify inter-node interconnect fabric performance under peak pressure.
-*   **Active I/O Storage Test (fio)**: Trigger direct block storage evaluations on NVMe mounts and Lustre file systems to chart read/write degradation curves.
-*   **GPUDirect Storage (GDS)**: Specifically validate the bypassing of host CPU memory space during storage-to-GPU memory transfers.
+Potential next steps:
+- explicit export/download controls for generated HTML/Markdown from the UI
+- richer scenario catalog beyond healthy/degraded
+- curated sample-data snapshots regenerated from scenario outputs on release checkpoints
+- screenshot-backed interview script assets
 
----
+## Phase 2: Multi-host live collection
 
-## 📊 Phase 3: Prometheus & Grafana Integrations
+Only pursue this if the project scope expands beyond interview MVP.
 
-Integrate continuous validation checks into standard enterprise monitoring dashboards:
-*   **Prometheus Metric Exporter**: Expose overall score and category statuses as standard Prometheus gauge metrics at `/metrics`.
-*   **Grafana Dashboard Templates**: Pre-packaged visualization configurations showing readiness scores over time, node health grids, and active remediation action alerts.
-*   **Alertmanager Integrations**: Route critical hardware failures (e.g., SRAM double-bit ECC errors) instantly to Slack, PagerDuty, or Webhook endpoints.
+Possible additions:
+- inventory-driven remote fan-out over SSH
+- parallel multi-node collection and aggregation
+- bastion-host execution patterns
+- richer cluster identity and node-role modeling
+
+## Phase 3: Benchmark workflow maturation
+
+Possible additions:
+- real upload or file-pick flow for benchmark ingestion in the UI
+- benchmark thresholds wired into cluster recommendations
+- side-by-side comparison of multiple benchmark runs
+
+## Non-goals for current scope
+
+The current project intentionally avoids:
+- databases
+- authentication systems
+- cloud services
+- telemetry pipelines
+- LLM integration
+- microservices
+- mutating remediation automation
