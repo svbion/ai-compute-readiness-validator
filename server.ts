@@ -61,7 +61,7 @@ function resolveValidatorExecutable(): { command: string; args: string[] } {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number.parseInt(process.env.PORT ?? "3000", 10);
 
   app.use(express.json());
 
