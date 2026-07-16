@@ -12,10 +12,11 @@ class MarkdownReporter:
         
         md = []
         md.append(f"# AI Compute Readiness Assessment Report")
-        md.append(f"**Cluster Identifier:** `{cluster.name}`  ")
-        md.append(f"**Assessment Mode:** {cluster.metadata.get('execution_mode', 'Validation')}  ")
-        md.append(f"**Timestamp:** {cluster.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}  ")
-        md.append(f"**Tool Version:** v{cluster.tool_version}  \n")
+        md.append(f"**Cluster Identifier:** `{cluster.name}`<br>")
+        md.append(f"**Assessment Mode:** {cluster.metadata.get('execution_mode', 'Validation')}<br>")
+        md.append(f"**Timestamp:** {cluster.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}<br>")
+        md.append(f"**Tool Version:** v{cluster.tool_version}")
+        md.append("")
         
         # Readiness Score Card
         md.append(f"## 📊 Evaluation Summary")

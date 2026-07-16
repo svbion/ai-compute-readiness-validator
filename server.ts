@@ -4,6 +4,42 @@ import fs from "fs";
 import { execFile } from "child_process";
 import { createServer as createViteServer } from "vite";
 
+const repoRoot = process.cwd();
+const artifactsDir = path.join(repoRoot, "artifacts");
+const sampleDataDir = path.join(repoRoot, "sample-data");
+
+function firstExistingPath(candidates: string[]): string | null {
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
+}
+
+function getScenarioResultsPath(scenario?: string): string | null {
+  if (scenario === "healthy" || scenario === "degraded") {
+    return firstExistingPath([
+      path.join(artifactsDir, `${scenario}-results.json`),
+      path.join(sampleDataDir, `${scenario}-cluster.json`),
+    ]);
+  }
+
+  return firstExistingPath([
+    path.join(artifactsDir, "latest-results.json"),
+    path.join(sampleDataDir, "healthy-cluster.json"),
+  ]);
+}
+
+function resolveValidatorExecutable(): { command: string; args: string[] } {
+  const localCli = path.join(repoRoot, ".venv", "bin", "ai-validator");
+  if (fs.existsSync(localCli)) {
+    return { command: localCli, args: [] };
+  }
+
+  const localPython = path.join(repoRoot, ".venv", "bin", "python");
+  if (fs.existsSync(localPython)) {
+    return { command: localPython, args: ["-m", "ai_validator.cli"] };
+  }
+
+  return { command: "ai-validator", args: [] };
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -13,22 +49,10 @@ async function startServer() {
   // 1. API: Get latest report results
   app.get("/api/results", (req, res) => {
     const scenario = req.query.scenario as string;
-    let filePath = path.join(process.cwd(), "artifacts", "latest-results.json");
+    const filePath = getScenarioResultsPath(scenario);
 
-    if (scenario === "healthy") {
-      filePath = path.join(process.cwd(), "sample-data", "healthy-cluster.json");
-    } else if (scenario === "degraded") {
-      filePath = path.join(process.cwd(), "sample-data", "degraded-cluster.json");
-    }
-
-    if (!fs.existsSync(filePath)) {
-      // Fallback: If no run was executed yet, send the healthy demo as default
-      const defaultDemo = path.join(process.cwd(), "sample-data", "healthy-cluster.json");
-      if (fs.existsSync(defaultDemo)) {
-        filePath = defaultDemo;
-      } else {
-        return res.status(404).json({ error: "Validation results not found. Please trigger a scan." });
-      }
+    if (!filePath) {
+      return res.status(404).json({ error: "Validation results not found. Please trigger a scan." });
     }
 
     try {
@@ -119,17 +143,17 @@ async function startServer() {
     // Run the Python executable in the container securely
     // In live mode, we would call ['ai-validator', 'validate'] or similar
     // Since we want to let users test healthy/degraded live in the UI, we run demo scenario.
-    const pythonExecutable = "/.venv/bin/python";
-    const args = ["-m", "ai_validator.cli", "demo", "--scenario", scenario];
+    const validator = resolveValidatorExecutable();
+    const args = [...validator.args, "demo", "--scenario", scenario, "--output-dir", artifactsDir];
     
-    execFile(pythonExecutable, args, (error, stdout, stderr) => {
+    execFile(validator.command, args, (error, stdout, stderr) => {
       if (error) {
         console.error(`CLI Execution error: ${error.message}`);
         return res.status(500).json({ error: `Failed to execute validation CLI: ${error.message}`, details: stderr });
       }
 
       // Read back the latest results file
-      const latestPath = path.join(process.cwd(), "artifacts", "latest-results.json");
+      const latestPath = getScenarioResultsPath(scenario) ?? path.join(artifactsDir, "latest-results.json");
       if (!fs.existsSync(latestPath)) {
         return res.status(500).json({ error: "CLI completed, but results JSON was not written." });
       }

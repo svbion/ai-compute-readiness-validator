@@ -34,6 +34,25 @@ from ai_validator.benchmarks.osu import OsuParser
 app = typer.Typer(help="AI Compute Readiness Validator - Assessment CLI")
 console = Console()
 
+
+def write_report_bundle(cluster: Cluster, output_dir: str, stems: list[str]) -> dict[str, dict[str, str]]:
+    """Write JSON, HTML, and Markdown reports for one or more filename stems."""
+    reporters = {
+        "json": ("results.json", JsonReporter.generate_report),
+        "html": ("report.html", HtmlReporter.generate_report),
+        "markdown": ("report.md", MarkdownReporter.generate_report),
+    }
+    written: dict[str, dict[str, str]] = {}
+
+    for stem in stems:
+        written[stem] = {}
+        for report_kind, (suffix, reporter) in reporters.items():
+            output_path = os.path.join(output_dir, f"{stem}-{suffix}")
+            written[stem][report_kind] = reporter(cluster, output_path)
+
+    return written
+
+
 def print_terminal_summary(cluster: Cluster):
     """Prints a beautiful Rich-formatted summary of the cluster validation to stdout."""
     console.print("\n")
@@ -175,23 +194,16 @@ def validate(
     
     # Calculate score
     scored_cluster = ScoringEngine.evaluate_cluster(cluster)
-    
-    # Write reports
-    json_path = os.path.join(output_dir, "latest-results.json")
-    html_path = os.path.join(output_dir, "latest-report.html")
-    md_path = os.path.join(output_dir, "latest-report.md")
-    
-    JsonReporter.generate_report(scored_cluster, json_path)
-    HtmlReporter.generate_report(scored_cluster, html_path)
-    MarkdownReporter.generate_report(scored_cluster, md_path)
+    written_reports = write_report_bundle(scored_cluster, output_dir, ["latest"])
+    latest_paths = written_reports["latest"]
     
     # Output to stdout
     print_terminal_summary(scored_cluster)
     
     console.print(f"[bold green]Assessment reports successfully generated:[/bold green]")
-    console.print(f" - JSON: [cyan]{json_path}[/cyan]")
-    console.print(f" - HTML: [cyan]{html_path}[/cyan]")
-    console.print(f" - Markdown: [cyan]{md_path}[/cyan]\n")
+    console.print(f" - JSON: [cyan]{latest_paths['json']}[/cyan]")
+    console.print(f" - HTML: [cyan]{latest_paths['html']}[/cyan]")
+    console.print(f" - Markdown: [cyan]{latest_paths['markdown']}[/cyan]\n")
 
 
 @app.command()
@@ -211,22 +223,20 @@ def demo(
         console.print(f"[bold red]Error: {str(e)}[/bold red]", err=True)
         sys.exit(1)
         
-    # Write reports
-    json_path = os.path.join(output_dir, "latest-results.json")
-    html_path = os.path.join(output_dir, "latest-report.html")
-    md_path = os.path.join(output_dir, "latest-report.md")
-    
-    JsonReporter.generate_report(scored_cluster, json_path)
-    HtmlReporter.generate_report(scored_cluster, html_path)
-    MarkdownReporter.generate_report(scored_cluster, md_path)
+    written_reports = write_report_bundle(scored_cluster, output_dir, ["latest", scenario])
+    latest_paths = written_reports["latest"]
+    scenario_paths = written_reports[scenario]
     
     # Output to stdout
     print_terminal_summary(scored_cluster)
     
     console.print(f"[bold green]Assessment reports successfully generated for [cyan]{scenario}[/cyan]:[/bold green]")
-    console.print(f" - JSON: [cyan]{json_path}[/cyan]")
-    console.print(f" - HTML: [cyan]{html_path}[/cyan]")
-    console.print(f" - Markdown: [cyan]{md_path}[/cyan]\n")
+    console.print(f" - Latest JSON: [cyan]{latest_paths['json']}[/cyan]")
+    console.print(f" - Latest HTML: [cyan]{latest_paths['html']}[/cyan]")
+    console.print(f" - Latest Markdown: [cyan]{latest_paths['markdown']}[/cyan]")
+    console.print(f" - Scenario JSON: [cyan]{scenario_paths['json']}[/cyan]")
+    console.print(f" - Scenario HTML: [cyan]{scenario_paths['html']}[/cyan]")
+    console.print(f" - Scenario Markdown: [cyan]{scenario_paths['markdown']}[/cyan]\n")
 
 
 @app.command()

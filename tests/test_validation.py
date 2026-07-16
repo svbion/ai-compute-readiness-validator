@@ -1,12 +1,18 @@
 import os
 import tempfile
 import pytest
+from typer.testing import CliRunner
 from ai_validator.models import Cluster, Node, StatusEnum, SeverityEnum
 from ai_validator.scoring import ScoringEngine
+from ai_validator.cli import app
 from ai_validator.demo.generator import DemoGenerator
 from ai_validator.reporting.json_report import JsonReporter
 from ai_validator.reporting.html import HtmlReporter
 from ai_validator.reporting.markdown import MarkdownReporter
+from ai_validator.runner import CommandRunner
+
+
+runner = CliRunner()
 
 def test_scoring_engine_healthy():
     """Verify that a healthy demo scenario evaluates to 100% and 'Ready'."""
@@ -71,3 +77,26 @@ def test_report_generation():
         # Test Markdown
         MarkdownReporter.generate_report(cluster, md_file)
         assert os.path.exists(md_file)
+
+
+def test_demo_command_writes_latest_and_scenario_reports():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = runner.invoke(app, ["demo", "--scenario", "degraded", "--output-dir", tmpdir])
+
+        assert result.exit_code == 0
+        for file_name in [
+            "latest-results.json",
+            "latest-report.html",
+            "latest-report.md",
+            "degraded-results.json",
+            "degraded-report.html",
+            "degraded-report.md",
+        ]:
+            assert os.path.exists(os.path.join(tmpdir, file_name))
+
+
+def test_command_runner_blocks_mutating_commands():
+    evidence = CommandRunner.run_command(["sudo", "rm", "-rf", "/tmp/demo"])
+
+    assert evidence.exit_code == 126
+    assert "blocked" in evidence.stderr.lower()

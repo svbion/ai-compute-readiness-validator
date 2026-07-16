@@ -1,7 +1,8 @@
 {
-  "name": "react-example",
+  "name": "ai-compute-readiness-validator",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Read-only AI compute readiness validation CLI and interview demo portal.",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
