@@ -1,0 +1,27 @@
+{
+  "fio version": "fio-3.28",
+  "timestamp": 1783515000,
+  "jobs": [
+    {
+      "jobname": "scratch-test",
+      "groupid": 0,
+      "error": 0,
+      "read": {
+        "io_bytes": 1073741824,
+        "io_kbytes": 1048576,
+        "bw_bytes": 2243891200,
+        "bw": 2191300,
+        "iops": 535200.5,
+        "runtime": 478
+      },
+      "write": {
+        "io_bytes": 1073741824,
+        "io_kbytes": 1048576,
+        "bw_bytes": 1824891200,
+        "bw": 1782120,
+        "iops": 435120.2,
+        "runtime": 589
+      }
+    }
+  ]
+}

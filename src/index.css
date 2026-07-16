@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+:root {
+  --nv-bg: #030610;
+  --nv-panel: rgba(8, 12, 26, 0.75);
+  --nv-panel-solid: #090d1a;
+  --nv-panel-medium: #0d1326;
+  --nv-border: rgba(30, 41, 59, 0.7);
+  --nv-text: #e2e8f0;
+  --nv-text-bright: #f8fafc;
+  --nv-text-sub: #cbd5e1;
+  --nv-text-dark: #64748b;
+  --nv-muted: #94a3b8;
+  --nv-muted-medium: #64748b;
+  --nv-green-dim-radial: rgba(118, 185, 0, 0.08);
+  --nv-grid-color: rgba(255, 255, 255, 0.003);
+  --nv-glow-intensity: rgba(118, 185, 0, 0.3);
+  --nv-terminal-bg: #02050c;
+  --nv-panel-shadow: rgba(0, 0, 0, 0.5);
+  --nv-panel-shadow-hover: rgba(118, 185, 0, 0.12);
+}
+
+.light {
+  --nv-bg: #f8fafc;
+  --nv-panel: rgba(255, 255, 255, 0.85);
+  --nv-panel-solid: #ffffff;
+  --nv-panel-medium: #f1f5f9;
+  --nv-border: rgba(226, 232, 240, 0.9);
+  --nv-text: #334155;
+  --nv-text-bright: #0f172a;
+  --nv-text-sub: #1e293b;
+  --nv-text-dark: #64748b;
+  --nv-muted: #475569;
+  --nv-muted-medium: #475569;
+  --nv-green-dim-radial: rgba(118, 185, 0, 0.04);
+  --nv-grid-color: rgba(0, 0, 0, 0.015);
+  --nv-glow-intensity: rgba(118, 185, 0, 0.15);
+  --nv-terminal-bg: #f8fafc;
+  --nv-panel-shadow: rgba(0, 0, 0, 0.03);
+  --nv-panel-shadow-hover: rgba(118, 185, 0, 0.08);
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Dynamically rebind slate palette to match the active light/dark state variables */
+  --color-slate-950: var(--nv-terminal-bg);
+  --color-slate-900: var(--nv-panel-solid);
+  --color-slate-850: var(--nv-panel-medium);
+  --color-slate-800: var(--nv-border);
+  --color-slate-700: var(--nv-text-dark);
+  --color-slate-500: var(--nv-muted-medium);
+  --color-slate-400: var(--nv-muted);
+  --color-slate-300: var(--nv-text-sub);
+  --color-slate-200: var(--nv-text);
+  --color-slate-100: var(--nv-text-bright);
+
+  /* Map emerald palette to NVIDIA signature green #76B900 */
+  --color-emerald-500: #76B900;
+  --color-emerald-400: #8ae300;
+  --color-emerald-600: #629c00;
+}
+
+body {
+  background-color: var(--nv-bg);
+  color: var(--nv-text);
+  background-image: 
+    radial-gradient(circle at 50% 0%, var(--nv-green-dim-radial) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(118, 185, 0, 0.02) 0%, transparent 40%),
+    linear-gradient(var(--nv-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nv-grid-color) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
+}
+
+/* Custom Cyber/Sci-Fi Utility Classes */
+.cyber-panel {
+  background: var(--nv-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--nv-border);
+  box-shadow: 0 4px 30px var(--nv-panel-shadow), inset 0 1px 1px rgba(255, 255, 255, 0.03);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cyber-panel-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cyber-panel-hover:hover {
+  border-color: rgba(118, 185, 0, 0.4);
+  box-shadow: 0 10px 30px var(--nv-panel-shadow-hover), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.cyber-panel-hover-amber:hover {
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.cyber-panel-hover-red:hover {
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.neon-glow-emerald {
+  box-shadow: 0 0 15px rgba(118, 185, 0, 0.4);
+}
+
+.neon-glow-amber {
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+}
+
+.neon-glow-red {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(118, 185, 0, 0.6);
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+.pulse-cyber {
+  animation: pulse-slow 3s infinite ease-in-out;
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.scanline-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanline-effect::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(118, 185, 0, 0) 0%, rgba(118, 185, 0, 0.05) 10%, rgba(118, 185, 0, 0.1) 20%, rgba(118, 185, 0, 0.05) 30%, rgba(118, 185, 0, 0) 40%);
+  background-size: 100% 300%;
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 0.99;
+    filter: drop-shadow(0 0 2px rgba(118, 185, 0, 0.4));
+  }
+  20%, 24%, 55% {
+    opacity: 0.6;
+    filter: none;
+  }
+}
+
+.neon-text-emerald {
+  animation: neon-flicker 5s infinite alternate;
+}

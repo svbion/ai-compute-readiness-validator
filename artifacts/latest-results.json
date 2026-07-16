@@ -1,0 +1,2897 @@
+{
+  "name": "nvis-interview-demo",
+  "nodes": [
+    {
+      "name": "dgx01",
+      "ip_address": "10.110.0.11",
+      "status": "pass",
+      "categories": {
+        "linux": {
+          "id": "linux",
+          "name": "Linux Platform",
+          "weight": 15.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "linux.os_version",
+              "category": "linux",
+              "title": "Operating System Compatibility",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Ubuntu 22.04.3 LTS enterprise kernel detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/etc/os-release"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "NAME=\"Ubuntu\"\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440258"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "linux.swap_disabled",
+              "category": "linux",
+              "title": "System Swapping Allocation",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Operating system memory swapping is disabled (recommended).",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/proc/swaps"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440404"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "linux.hugepages",
+              "category": "linux",
+              "title": "Huge Pages Allocation",
+              "status": "pass",
+              "severity": "low",
+              "summary": "1024 Huge Pages pre-allocated successfully.",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/proc/meminfo"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "HugePages_Total:     1024\nHugePages_Free:      1024\nHugepagesize:       2048 kB",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440414"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "linux.kernel_errors",
+              "category": "linux",
+              "title": "Kernel Logs Integrity",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "0 OOM killer incidents or hardware fault lines found in kernel buffer.",
+              "evidence": [
+                {
+                  "command": [
+                    "dmesg",
+                    "-T",
+                    "--level=err,crit"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440434"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            }
+          ]
+        },
+        "gpu": {
+          "id": "gpu",
+          "name": "NVIDIA GPU & DCGM",
+          "weight": 30.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "gpu.tools_present",
+              "category": "gpu",
+              "title": "NVIDIA System Management Interface",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "NVIDIA System Management Interface (nvidia-smi) is available.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "nvidia-smi"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/nvidia-smi",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440447"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "gpu.driver_cuda",
+              "category": "gpu",
+              "title": "NVIDIA Driver and CUDA Compatibility",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "NVIDIA driver v535.104 with CUDA v12.2 detected and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "-q"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Driver Version : 535.104\nCUDA Version : 12.2",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440454"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "gpu.ecc_errors",
+              "category": "gpu",
+              "title": "NVIDIA GPU Hardware ECC Integrity",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "All 8 GPUs report healthy registers with 0 uncorrectable ECC errors.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "-q"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "ECC Mode : Enabled\nUncorrectable : 0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440468"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "gpu.nvlink",
+              "category": "gpu",
+              "title": "NVLink Inter-GPU Connection Status",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All inter-GPU NVLink connections are active and running at full bandwidth.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "nvlink",
+                    "--status"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "GPU 0: NVLink Link 0: Active\nGPU 0: NVLink Link 1: Active",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440483"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "gpu.dcgm_present",
+              "category": "gpu",
+              "title": "NVIDIA DCGM Diagnostics Support",
+              "status": "pass",
+              "severity": "low",
+              "summary": "NVIDIA DCGM engine is running.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "dcgmi"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/dcgmi",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440499"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "gpu.dcgm_health",
+              "category": "gpu",
+              "title": "NVIDIA DCGM Active Health Engine",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "All monitored DCGM subsystems are healthy.",
+              "evidence": [
+                {
+                  "command": [
+                    "dcgmi",
+                    "health",
+                    "-c"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Health status is healthy.",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440506"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "gpu.dcgm_diag",
+              "category": "gpu",
+              "title": "NVIDIA DCGM On-Demand Diagnostics",
+              "status": "pass",
+              "severity": "high",
+              "summary": "Fast read-only Level 1 diagnostics passed.",
+              "evidence": [
+                {
+                  "command": [
+                    "dcgmi",
+                    "diag",
+                    "-r",
+                    "1"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Diagnostic Level 1 passed.",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440519"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            }
+          ]
+        },
+        "network": {
+          "id": "network",
+          "name": "InfiniBand & Networking",
+          "weight": 20.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "network.ib_present",
+              "category": "network",
+              "title": "InfiniBand Utilities Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "InfiniBand port status tool (ibstat) is available.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/ibstat",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440530"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "network.ib_port_state",
+              "category": "network",
+              "title": "InfiniBand Port Link State",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All 8 detected InfiniBand links are ACTIVE.",
+              "evidence": [
+                {
+                  "command": [
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Port 1: Active\nPort 2: Active",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440536"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "network.ib_link_speed",
+              "category": "network",
+              "title": "InfiniBand Port Link Speed",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Mellanox NDR 400Gb/s link widths are negotiated and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Link speed: 400 Gb/s\nLink width: 4x",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440542"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "network.rdma_interfaces",
+              "category": "network",
+              "title": "RDMA Core Interfaces",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "8 RDMA kernel links detected and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "rdma",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "mlx5_0/1 up\nmlx5_1/1 up",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440554"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "network.interfaces",
+              "category": "network",
+              "title": "Network Link Interface State",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "All interfaces are UP and configured.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "state UP",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440568"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "network.routing",
+              "category": "network",
+              "title": "Network IP Routing Table",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Standard default gateway routing is present.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "route"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "default via 10.0.0.1 dev eth0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440575"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "network.link_health",
+              "category": "network",
+              "title": "Interface Link Dropped Packets",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "0 dropped packets or hardware-level errors detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "-s",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "RX: errors 0 dropped 0\nTX: errors 0 dropped 0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440581"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            }
+          ]
+        },
+        "slurm": {
+          "id": "slurm",
+          "name": "Slurm Scheduler",
+          "weight": 15.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "slurm.present",
+              "category": "slurm",
+              "title": "Slurm Scheduler Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Slurm sinfo and scontrol utilities are registered in path.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "sinfo"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/sinfo",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440604"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "slurm.controller",
+              "category": "slurm",
+              "title": "Slurm Controller Connectivity",
+              "status": "pass",
+              "severity": "high",
+              "summary": "Primary slurmctld is active and responding.",
+              "evidence": [
+                {
+                  "command": [
+                    "scontrol",
+                    "ping"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Slurmctld at slurm-master is UP",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440611"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "slurm.node_state",
+              "category": "slurm",
+              "title": "Slurm Compute Node Scheduling State",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "Node state is active (IDLE/ALLOCATED).",
+              "evidence": [
+                {
+                  "command": [
+                    "sinfo",
+                    "-N",
+                    "-l"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "node01  idle  1.00",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440617"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            }
+          ]
+        },
+        "storage": {
+          "id": "storage",
+          "name": "Storage Systems",
+          "weight": 10.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "storage.filesystems",
+              "category": "storage",
+              "title": "Local Filesystem Capacities",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Local root and scratch partitions are below 45% capacity.",
+              "evidence": [
+                {
+                  "command": [
+                    "df",
+                    "-hT"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/dev/sda1  ext4  100G  45G  45%  /\n",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440626"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "storage.nvme",
+              "category": "storage",
+              "title": "High-Performance NVMe Detection",
+              "status": "pass",
+              "severity": "low",
+              "summary": "4 high-speed NVMe scratch storage modules detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvme",
+                    "list"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/dev/nvme0n1  960GB\n/dev/nvme1n1  960GB",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440638"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "storage.parallel_fs",
+              "category": "storage",
+              "title": "Parallel Enterprise Shared Storage",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Lustre client version 2.15 is mounted on /mnt/lustre.",
+              "evidence": [
+                {
+                  "command": [
+                    "lfs",
+                    "--version"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "lfs 2.15.2",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440652"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            }
+          ]
+        },
+        "kubernetes": {
+          "id": "kubernetes",
+          "name": "Kubernetes & Orchestration",
+          "weight": 10.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "kubernetes.present",
+              "category": "kubernetes",
+              "title": "Kubernetes CLI Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Kubernetes control binary (kubectl) is active.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "kubectl"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/kubectl",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440661"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "kubernetes.cluster_reach",
+              "category": "kubernetes",
+              "title": "Kubernetes API Server Connection",
+              "status": "pass",
+              "severity": "high",
+              "summary": "API connection verified using context: k8s-ai-cluster.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "config",
+                    "current-context"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "k8s-ai-cluster",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440667"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "kubernetes.node_readiness",
+              "category": "kubernetes",
+              "title": "Kubernetes Node Status Readiness",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "Kubernetes Node registered as Ready.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "get",
+                    "nodes"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "node-1  Ready",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440692"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            },
+            {
+              "id": "kubernetes.gpu_operator",
+              "category": "kubernetes",
+              "title": "NVIDIA GPU Operator and Device Plugins",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All GPU Operator daemonsets (driver, device-plugin) are healthy.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "get",
+                    "daemonsets",
+                    "-n",
+                    "gpu-operator-resources"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "nvidia-device-plugin-daemonset  Ready 4/4",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440699"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx01"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "dgx02",
+      "ip_address": "10.110.0.12",
+      "status": "pass",
+      "categories": {
+        "linux": {
+          "id": "linux",
+          "name": "Linux Platform",
+          "weight": 15.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "linux.os_version",
+              "category": "linux",
+              "title": "Operating System Compatibility",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Ubuntu 22.04.3 LTS enterprise kernel detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/etc/os-release"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "NAME=\"Ubuntu\"\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440729"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "linux.swap_disabled",
+              "category": "linux",
+              "title": "System Swapping Allocation",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Operating system memory swapping is disabled (recommended).",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/proc/swaps"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440736"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "linux.hugepages",
+              "category": "linux",
+              "title": "Huge Pages Allocation",
+              "status": "pass",
+              "severity": "low",
+              "summary": "1024 Huge Pages pre-allocated successfully.",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/proc/meminfo"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "HugePages_Total:     1024\nHugePages_Free:      1024\nHugepagesize:       2048 kB",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440755"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "linux.kernel_errors",
+              "category": "linux",
+              "title": "Kernel Logs Integrity",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "0 OOM killer incidents or hardware fault lines found in kernel buffer.",
+              "evidence": [
+                {
+                  "command": [
+                    "dmesg",
+                    "-T",
+                    "--level=err,crit"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440763"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            }
+          ]
+        },
+        "gpu": {
+          "id": "gpu",
+          "name": "NVIDIA GPU & DCGM",
+          "weight": 30.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "gpu.tools_present",
+              "category": "gpu",
+              "title": "NVIDIA System Management Interface",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "NVIDIA System Management Interface (nvidia-smi) is available.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "nvidia-smi"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/nvidia-smi",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440772"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "gpu.driver_cuda",
+              "category": "gpu",
+              "title": "NVIDIA Driver and CUDA Compatibility",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "NVIDIA driver v535.104 with CUDA v12.2 detected and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "-q"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Driver Version : 535.104\nCUDA Version : 12.2",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440778"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "gpu.ecc_errors",
+              "category": "gpu",
+              "title": "NVIDIA GPU Hardware ECC Integrity",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "All 8 GPUs report healthy registers with 0 uncorrectable ECC errors.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "-q"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "ECC Mode : Enabled\nUncorrectable : 0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440795"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "gpu.nvlink",
+              "category": "gpu",
+              "title": "NVLink Inter-GPU Connection Status",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All inter-GPU NVLink connections are active and running at full bandwidth.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "nvlink",
+                    "--status"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "GPU 0: NVLink Link 0: Active\nGPU 0: NVLink Link 1: Active",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440802"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "gpu.dcgm_present",
+              "category": "gpu",
+              "title": "NVIDIA DCGM Diagnostics Support",
+              "status": "pass",
+              "severity": "low",
+              "summary": "NVIDIA DCGM engine is running.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "dcgmi"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/dcgmi",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440808"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "gpu.dcgm_health",
+              "category": "gpu",
+              "title": "NVIDIA DCGM Active Health Engine",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "All monitored DCGM subsystems are healthy.",
+              "evidence": [
+                {
+                  "command": [
+                    "dcgmi",
+                    "health",
+                    "-c"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Health status is healthy.",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440814"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "gpu.dcgm_diag",
+              "category": "gpu",
+              "title": "NVIDIA DCGM On-Demand Diagnostics",
+              "status": "pass",
+              "severity": "high",
+              "summary": "Fast read-only Level 1 diagnostics passed.",
+              "evidence": [
+                {
+                  "command": [
+                    "dcgmi",
+                    "diag",
+                    "-r",
+                    "1"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Diagnostic Level 1 passed.",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440826"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            }
+          ]
+        },
+        "network": {
+          "id": "network",
+          "name": "InfiniBand & Networking",
+          "weight": 20.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "network.ib_present",
+              "category": "network",
+              "title": "InfiniBand Utilities Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "InfiniBand port status tool (ibstat) is available.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/ibstat",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440842"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "network.ib_port_state",
+              "category": "network",
+              "title": "InfiniBand Port Link State",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All 8 detected InfiniBand links are ACTIVE.",
+              "evidence": [
+                {
+                  "command": [
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Port 1: Active\nPort 2: Active",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440849"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "network.ib_link_speed",
+              "category": "network",
+              "title": "InfiniBand Port Link Speed",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Mellanox NDR 400Gb/s link widths are negotiated and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Link speed: 400 Gb/s\nLink width: 4x",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440860"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "network.rdma_interfaces",
+              "category": "network",
+              "title": "RDMA Core Interfaces",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "8 RDMA kernel links detected and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "rdma",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "mlx5_0/1 up\nmlx5_1/1 up",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440868"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "network.interfaces",
+              "category": "network",
+              "title": "Network Link Interface State",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "All interfaces are UP and configured.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "state UP",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440880"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "network.routing",
+              "category": "network",
+              "title": "Network IP Routing Table",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Standard default gateway routing is present.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "route"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "default via 10.0.0.1 dev eth0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440887"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "network.link_health",
+              "category": "network",
+              "title": "Interface Link Dropped Packets",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "0 dropped packets or hardware-level errors detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "-s",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "RX: errors 0 dropped 0\nTX: errors 0 dropped 0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440898"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            }
+          ]
+        },
+        "slurm": {
+          "id": "slurm",
+          "name": "Slurm Scheduler",
+          "weight": 15.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "slurm.present",
+              "category": "slurm",
+              "title": "Slurm Scheduler Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Slurm sinfo and scontrol utilities are registered in path.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "sinfo"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/sinfo",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440910"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "slurm.controller",
+              "category": "slurm",
+              "title": "Slurm Controller Connectivity",
+              "status": "pass",
+              "severity": "high",
+              "summary": "Primary slurmctld is active and responding.",
+              "evidence": [
+                {
+                  "command": [
+                    "scontrol",
+                    "ping"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Slurmctld at slurm-master is UP",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440928"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "slurm.node_state",
+              "category": "slurm",
+              "title": "Slurm Compute Node Scheduling State",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "Node state is active (IDLE/ALLOCATED).",
+              "evidence": [
+                {
+                  "command": [
+                    "sinfo",
+                    "-N",
+                    "-l"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "node01  idle  1.00",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440935"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            }
+          ]
+        },
+        "storage": {
+          "id": "storage",
+          "name": "Storage Systems",
+          "weight": 10.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "storage.filesystems",
+              "category": "storage",
+              "title": "Local Filesystem Capacities",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Local root and scratch partitions are below 45% capacity.",
+              "evidence": [
+                {
+                  "command": [
+                    "df",
+                    "-hT"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/dev/sda1  ext4  100G  45G  45%  /\n",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440956"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "storage.nvme",
+              "category": "storage",
+              "title": "High-Performance NVMe Detection",
+              "status": "pass",
+              "severity": "low",
+              "summary": "4 high-speed NVMe scratch storage modules detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvme",
+                    "list"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/dev/nvme0n1  960GB\n/dev/nvme1n1  960GB",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440963"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "storage.parallel_fs",
+              "category": "storage",
+              "title": "Parallel Enterprise Shared Storage",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Lustre client version 2.15 is mounted on /mnt/lustre.",
+              "evidence": [
+                {
+                  "command": [
+                    "lfs",
+                    "--version"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "lfs 2.15.2",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440968"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            }
+          ]
+        },
+        "kubernetes": {
+          "id": "kubernetes",
+          "name": "Kubernetes & Orchestration",
+          "weight": 10.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "kubernetes.present",
+              "category": "kubernetes",
+              "title": "Kubernetes CLI Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Kubernetes control binary (kubectl) is active.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "kubectl"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/kubectl",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440984"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "kubernetes.cluster_reach",
+              "category": "kubernetes",
+              "title": "Kubernetes API Server Connection",
+              "status": "pass",
+              "severity": "high",
+              "summary": "API connection verified using context: k8s-ai-cluster.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "config",
+                    "current-context"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "k8s-ai-cluster",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.440997"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "kubernetes.node_readiness",
+              "category": "kubernetes",
+              "title": "Kubernetes Node Status Readiness",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "Kubernetes Node registered as Ready.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "get",
+                    "nodes"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "node-1  Ready",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441004"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            },
+            {
+              "id": "kubernetes.gpu_operator",
+              "category": "kubernetes",
+              "title": "NVIDIA GPU Operator and Device Plugins",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All GPU Operator daemonsets (driver, device-plugin) are healthy.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "get",
+                    "daemonsets",
+                    "-n",
+                    "gpu-operator-resources"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "nvidia-device-plugin-daemonset  Ready 4/4",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441019"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx02"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "dgx03",
+      "ip_address": "10.110.0.13",
+      "status": "warning",
+      "categories": {
+        "linux": {
+          "id": "linux",
+          "name": "Linux Platform",
+          "weight": 15.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "linux.os_version",
+              "category": "linux",
+              "title": "Operating System Compatibility",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Ubuntu 22.04.3 LTS enterprise kernel detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/etc/os-release"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "NAME=\"Ubuntu\"\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441033"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "linux.swap_disabled",
+              "category": "linux",
+              "title": "System Swapping Allocation",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Operating system memory swapping is disabled (recommended).",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/proc/swaps"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441047"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "linux.hugepages",
+              "category": "linux",
+              "title": "Huge Pages Allocation",
+              "status": "pass",
+              "severity": "low",
+              "summary": "1024 Huge Pages pre-allocated successfully.",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/proc/meminfo"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "HugePages_Total:     1024\nHugePages_Free:      1024\nHugepagesize:       2048 kB",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441053"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "linux.kernel_errors",
+              "category": "linux",
+              "title": "Kernel Logs Integrity",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "0 OOM killer incidents or hardware fault lines found in kernel buffer.",
+              "evidence": [
+                {
+                  "command": [
+                    "dmesg",
+                    "-T",
+                    "--level=err,crit"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441060"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            }
+          ]
+        },
+        "gpu": {
+          "id": "gpu",
+          "name": "NVIDIA GPU & DCGM",
+          "weight": 30.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "gpu.tools_present",
+              "category": "gpu",
+              "title": "NVIDIA System Management Interface",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "NVIDIA System Management Interface (nvidia-smi) is available.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "nvidia-smi"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/nvidia-smi",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441075"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "gpu.driver_cuda",
+              "category": "gpu",
+              "title": "NVIDIA Driver and CUDA Compatibility",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "NVIDIA driver v535.104 with CUDA v12.2 detected and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "-q"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Driver Version : 535.104\nCUDA Version : 12.2",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441088"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "gpu.ecc_errors",
+              "category": "gpu",
+              "title": "NVIDIA GPU Hardware ECC Integrity",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "All 8 GPUs report healthy registers with 0 uncorrectable ECC errors.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "-q"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "ECC Mode : Enabled\nUncorrectable : 0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441100"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "gpu.nvlink",
+              "category": "gpu",
+              "title": "NVLink Inter-GPU Connection Status",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All inter-GPU NVLink connections are active and running at full bandwidth.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "nvlink",
+                    "--status"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "GPU 0: NVLink Link 0: Active\nGPU 0: NVLink Link 1: Active",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441107"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "gpu.dcgm_present",
+              "category": "gpu",
+              "title": "NVIDIA DCGM Diagnostics Support",
+              "status": "pass",
+              "severity": "low",
+              "summary": "NVIDIA DCGM engine is running.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "dcgmi"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/dcgmi",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441114"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "gpu.dcgm_health",
+              "category": "gpu",
+              "title": "NVIDIA DCGM Active Health Engine",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "All monitored DCGM subsystems are healthy.",
+              "evidence": [
+                {
+                  "command": [
+                    "dcgmi",
+                    "health",
+                    "-c"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Health status is healthy.",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441126"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "gpu.dcgm_diag",
+              "category": "gpu",
+              "title": "NVIDIA DCGM On-Demand Diagnostics",
+              "status": "pass",
+              "severity": "high",
+              "summary": "Fast read-only Level 1 diagnostics passed.",
+              "evidence": [
+                {
+                  "command": [
+                    "dcgmi",
+                    "diag",
+                    "-r",
+                    "1"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Diagnostic Level 1 passed.",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441133"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            }
+          ]
+        },
+        "network": {
+          "id": "network",
+          "name": "InfiniBand & Networking",
+          "weight": 20.0,
+          "max_score": 100.0,
+          "score": 92.86,
+          "checks": [
+            {
+              "id": "network.ib_present",
+              "category": "network",
+              "title": "InfiniBand Utilities Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "InfiniBand port status tool (ibstat) is available.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/ibstat",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441142"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "network.ib_port_state",
+              "category": "network",
+              "title": "InfiniBand Port Link State",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All 8 detected InfiniBand links are ACTIVE.",
+              "evidence": [
+                {
+                  "command": [
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Port 1: Active\nPort 2: Active",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441148"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "network.ib_link_speed",
+              "category": "network",
+              "title": "InfiniBand Port Link Speed",
+              "status": "warning",
+              "severity": "medium",
+              "summary": "Port 1 negotiated at NDR 200Gb/s speed (2x width instead of 4x width). Interconnect is physically degraded.",
+              "evidence": [
+                {
+                  "command": [
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Port 1:\n\tState: Active\n\tPhysical state: LinkUp\n\tRate: 200\n\tWidth: 2x (Expected 4x)",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441395"
+                }
+              ],
+              "recommendation": "The InfiniBand port is operating below the expected link rate. Verify cable health, switch port configuration, firmware compatibility, negotiated link width, and port speed.",
+              "node": "dgx03"
+            },
+            {
+              "id": "network.rdma_interfaces",
+              "category": "network",
+              "title": "RDMA Core Interfaces",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "8 RDMA kernel links detected and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "rdma",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "mlx5_0/1 up\nmlx5_1/1 up",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441199"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "network.interfaces",
+              "category": "network",
+              "title": "Network Link Interface State",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "All interfaces are UP and configured.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "state UP",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441217"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "network.routing",
+              "category": "network",
+              "title": "Network IP Routing Table",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Standard default gateway routing is present.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "route"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "default via 10.0.0.1 dev eth0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441229"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "network.link_health",
+              "category": "network",
+              "title": "Interface Link Dropped Packets",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "0 dropped packets or hardware-level errors detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "-s",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "RX: errors 0 dropped 0\nTX: errors 0 dropped 0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441237"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            }
+          ]
+        },
+        "slurm": {
+          "id": "slurm",
+          "name": "Slurm Scheduler",
+          "weight": 15.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "slurm.present",
+              "category": "slurm",
+              "title": "Slurm Scheduler Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Slurm sinfo and scontrol utilities are registered in path.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "sinfo"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/sinfo",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441247"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "slurm.controller",
+              "category": "slurm",
+              "title": "Slurm Controller Connectivity",
+              "status": "pass",
+              "severity": "high",
+              "summary": "Primary slurmctld is active and responding.",
+              "evidence": [
+                {
+                  "command": [
+                    "scontrol",
+                    "ping"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Slurmctld at slurm-master is UP",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441253"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "slurm.node_state",
+              "category": "slurm",
+              "title": "Slurm Compute Node Scheduling State",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "Node state is active (IDLE/ALLOCATED).",
+              "evidence": [
+                {
+                  "command": [
+                    "sinfo",
+                    "-N",
+                    "-l"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "node01  idle  1.00",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441265"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            }
+          ]
+        },
+        "storage": {
+          "id": "storage",
+          "name": "Storage Systems",
+          "weight": 10.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "storage.filesystems",
+              "category": "storage",
+              "title": "Local Filesystem Capacities",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Local root and scratch partitions are below 45% capacity.",
+              "evidence": [
+                {
+                  "command": [
+                    "df",
+                    "-hT"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/dev/sda1  ext4  100G  45G  45%  /\n",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441275"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "storage.nvme",
+              "category": "storage",
+              "title": "High-Performance NVMe Detection",
+              "status": "pass",
+              "severity": "low",
+              "summary": "4 high-speed NVMe scratch storage modules detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvme",
+                    "list"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/dev/nvme0n1  960GB\n/dev/nvme1n1  960GB",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441288"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "storage.parallel_fs",
+              "category": "storage",
+              "title": "Parallel Enterprise Shared Storage",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Lustre client version 2.15 is mounted on /mnt/lustre.",
+              "evidence": [
+                {
+                  "command": [
+                    "lfs",
+                    "--version"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "lfs 2.15.2",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441306"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            }
+          ]
+        },
+        "kubernetes": {
+          "id": "kubernetes",
+          "name": "Kubernetes & Orchestration",
+          "weight": 10.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "kubernetes.present",
+              "category": "kubernetes",
+              "title": "Kubernetes CLI Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Kubernetes control binary (kubectl) is active.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "kubectl"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/kubectl",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441329"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "kubernetes.cluster_reach",
+              "category": "kubernetes",
+              "title": "Kubernetes API Server Connection",
+              "status": "pass",
+              "severity": "high",
+              "summary": "API connection verified using context: k8s-ai-cluster.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "config",
+                    "current-context"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "k8s-ai-cluster",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441336"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "kubernetes.node_readiness",
+              "category": "kubernetes",
+              "title": "Kubernetes Node Status Readiness",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "Kubernetes Node registered as Ready.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "get",
+                    "nodes"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "node-1  Ready",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441342"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            },
+            {
+              "id": "kubernetes.gpu_operator",
+              "category": "kubernetes",
+              "title": "NVIDIA GPU Operator and Device Plugins",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All GPU Operator daemonsets (driver, device-plugin) are healthy.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "get",
+                    "daemonsets",
+                    "-n",
+                    "gpu-operator-resources"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "nvidia-device-plugin-daemonset  Ready 4/4",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441348"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx03"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "dgx04",
+      "ip_address": "10.110.0.14",
+      "status": "fail",
+      "categories": {
+        "linux": {
+          "id": "linux",
+          "name": "Linux Platform",
+          "weight": 15.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "linux.os_version",
+              "category": "linux",
+              "title": "Operating System Compatibility",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Ubuntu 22.04.3 LTS enterprise kernel detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/etc/os-release"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "NAME=\"Ubuntu\"\nVERSION=\"22.04.3 LTS (Jammy Jellyfish)\"",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441412"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "linux.swap_disabled",
+              "category": "linux",
+              "title": "System Swapping Allocation",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Operating system memory swapping is disabled (recommended).",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/proc/swaps"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441419"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "linux.hugepages",
+              "category": "linux",
+              "title": "Huge Pages Allocation",
+              "status": "pass",
+              "severity": "low",
+              "summary": "1024 Huge Pages pre-allocated successfully.",
+              "evidence": [
+                {
+                  "command": [
+                    "cat",
+                    "/proc/meminfo"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "HugePages_Total:     1024\nHugePages_Free:      1024\nHugepagesize:       2048 kB",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441439"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "linux.kernel_errors",
+              "category": "linux",
+              "title": "Kernel Logs Integrity",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "0 OOM killer incidents or hardware fault lines found in kernel buffer.",
+              "evidence": [
+                {
+                  "command": [
+                    "dmesg",
+                    "-T",
+                    "--level=err,crit"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441446"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            }
+          ]
+        },
+        "gpu": {
+          "id": "gpu",
+          "name": "NVIDIA GPU & DCGM",
+          "weight": 30.0,
+          "max_score": 100.0,
+          "score": 85.71,
+          "checks": [
+            {
+              "id": "gpu.tools_present",
+              "category": "gpu",
+              "title": "NVIDIA System Management Interface",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "NVIDIA System Management Interface (nvidia-smi) is available.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "nvidia-smi"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/nvidia-smi",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441463"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "gpu.driver_cuda",
+              "category": "gpu",
+              "title": "NVIDIA Driver and CUDA Compatibility",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "NVIDIA driver v535.104 with CUDA v12.2 detected and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "-q"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Driver Version : 535.104\nCUDA Version : 12.2",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441470"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "gpu.ecc_errors",
+              "category": "gpu",
+              "title": "NVIDIA GPU Hardware ECC Integrity",
+              "status": "fail",
+              "severity": "critical",
+              "summary": "GPU 5 reported 12 uncorrectable ECC double-bit physical memory errors.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "-q"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "GPU 00000000:0F:00.0\n\tECC Errors\n\t\tVolatile\n\t\t\tSRAM Uncorrectable: 0\n\t\t\tDouble Bit Uncorrectable: 12",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441807"
+                }
+              ],
+              "recommendation": "Drain the node from production scheduling, preserve NVIDIA and kernel diagnostic evidence, run DCGM diagnostics, confirm whether the ECC condition is repeatable, and escalate for hardware support if the error persists.",
+              "node": "dgx04"
+            },
+            {
+              "id": "gpu.nvlink",
+              "category": "gpu",
+              "title": "NVLink Inter-GPU Connection Status",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All inter-GPU NVLink connections are active and running at full bandwidth.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvidia-smi",
+                    "nvlink",
+                    "--status"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "GPU 0: NVLink Link 0: Active\nGPU 0: NVLink Link 1: Active",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441481"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "gpu.dcgm_present",
+              "category": "gpu",
+              "title": "NVIDIA DCGM Diagnostics Support",
+              "status": "pass",
+              "severity": "low",
+              "summary": "NVIDIA DCGM engine is running.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "dcgmi"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/dcgmi",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441572"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "gpu.dcgm_health",
+              "category": "gpu",
+              "title": "NVIDIA DCGM Active Health Engine",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "All monitored DCGM subsystems are healthy.",
+              "evidence": [
+                {
+                  "command": [
+                    "dcgmi",
+                    "health",
+                    "-c"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Health status is healthy.",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441579"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "gpu.dcgm_diag",
+              "category": "gpu",
+              "title": "NVIDIA DCGM On-Demand Diagnostics",
+              "status": "pass",
+              "severity": "high",
+              "summary": "Fast read-only Level 1 diagnostics passed.",
+              "evidence": [
+                {
+                  "command": [
+                    "dcgmi",
+                    "diag",
+                    "-r",
+                    "1"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Diagnostic Level 1 passed.",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441592"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            }
+          ]
+        },
+        "network": {
+          "id": "network",
+          "name": "InfiniBand & Networking",
+          "weight": 20.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "network.ib_present",
+              "category": "network",
+              "title": "InfiniBand Utilities Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "InfiniBand port status tool (ibstat) is available.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/ibstat",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441618"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "network.ib_port_state",
+              "category": "network",
+              "title": "InfiniBand Port Link State",
+              "status": "pass",
+              "severity": "high",
+              "summary": "All 8 detected InfiniBand links are ACTIVE.",
+              "evidence": [
+                {
+                  "command": [
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Port 1: Active\nPort 2: Active",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441632"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "network.ib_link_speed",
+              "category": "network",
+              "title": "InfiniBand Port Link Speed",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Mellanox NDR 400Gb/s link widths are negotiated and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "ibstat"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Link speed: 400 Gb/s\nLink width: 4x",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441639"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "network.rdma_interfaces",
+              "category": "network",
+              "title": "RDMA Core Interfaces",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "8 RDMA kernel links detected and active.",
+              "evidence": [
+                {
+                  "command": [
+                    "rdma",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "mlx5_0/1 up\nmlx5_1/1 up",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441644"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "network.interfaces",
+              "category": "network",
+              "title": "Network Link Interface State",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "All interfaces are UP and configured.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "state UP",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441650"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "network.routing",
+              "category": "network",
+              "title": "Network IP Routing Table",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Standard default gateway routing is present.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "route"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "default via 10.0.0.1 dev eth0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441663"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "network.link_health",
+              "category": "network",
+              "title": "Interface Link Dropped Packets",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "0 dropped packets or hardware-level errors detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "ip",
+                    "-s",
+                    "link"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "RX: errors 0 dropped 0\nTX: errors 0 dropped 0",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441670"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            }
+          ]
+        },
+        "slurm": {
+          "id": "slurm",
+          "name": "Slurm Scheduler",
+          "weight": 15.0,
+          "max_score": 100.0,
+          "score": 66.67,
+          "checks": [
+            {
+              "id": "slurm.present",
+              "category": "slurm",
+              "title": "Slurm Scheduler Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Slurm sinfo and scontrol utilities are registered in path.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "sinfo"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/sinfo",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441678"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "slurm.controller",
+              "category": "slurm",
+              "title": "Slurm Controller Connectivity",
+              "status": "pass",
+              "severity": "high",
+              "summary": "Primary slurmctld is active and responding.",
+              "evidence": [
+                {
+                  "command": [
+                    "scontrol",
+                    "ping"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "Slurmctld at slurm-master is UP",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441697"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "slurm.node_state",
+              "category": "slurm",
+              "title": "Slurm Compute Node Scheduling State",
+              "status": "fail",
+              "severity": "critical",
+              "summary": "Node state: DRAINED (Reason: GPU 5 uncorrectable ECC error reported by health check daemon)",
+              "evidence": [
+                {
+                  "command": [
+                    "sinfo",
+                    "-N",
+                    "-l"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "NODELIST   NODES   PARTITION   STATE    REASON\ndgx04       1       gpu*        drain    GPU 5 uncorrectable ECC error",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441816"
+                }
+              ],
+              "recommendation": "Inspect slurmd log files for registration errors. Resume the node into scheduling: 'scontrol update nodename=dgx04 state=resume reason=restored'.",
+              "node": "dgx04"
+            }
+          ]
+        },
+        "storage": {
+          "id": "storage",
+          "name": "Storage Systems",
+          "weight": 10.0,
+          "max_score": 100.0,
+          "score": 100.0,
+          "checks": [
+            {
+              "id": "storage.filesystems",
+              "category": "storage",
+              "title": "Local Filesystem Capacities",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Local root and scratch partitions are below 45% capacity.",
+              "evidence": [
+                {
+                  "command": [
+                    "df",
+                    "-hT"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/dev/sda1  ext4  100G  45G  45%  /\n",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441720"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "storage.nvme",
+              "category": "storage",
+              "title": "High-Performance NVMe Detection",
+              "status": "pass",
+              "severity": "low",
+              "summary": "4 high-speed NVMe scratch storage modules detected.",
+              "evidence": [
+                {
+                  "command": [
+                    "nvme",
+                    "list"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/dev/nvme0n1  960GB\n/dev/nvme1n1  960GB",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441726"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "storage.parallel_fs",
+              "category": "storage",
+              "title": "Parallel Enterprise Shared Storage",
+              "status": "pass",
+              "severity": "medium",
+              "summary": "Lustre client version 2.15 is mounted on /mnt/lustre.",
+              "evidence": [
+                {
+                  "command": [
+                    "lfs",
+                    "--version"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "lfs 2.15.2",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441739"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            }
+          ]
+        },
+        "kubernetes": {
+          "id": "kubernetes",
+          "name": "Kubernetes & Orchestration",
+          "weight": 10.0,
+          "max_score": 100.0,
+          "score": 87.5,
+          "checks": [
+            {
+              "id": "kubernetes.present",
+              "category": "kubernetes",
+              "title": "Kubernetes CLI Availability",
+              "status": "pass",
+              "severity": "low",
+              "summary": "Kubernetes control binary (kubectl) is active.",
+              "evidence": [
+                {
+                  "command": [
+                    "which",
+                    "kubectl"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "/usr/bin/kubectl",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441754"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "kubernetes.cluster_reach",
+              "category": "kubernetes",
+              "title": "Kubernetes API Server Connection",
+              "status": "pass",
+              "severity": "high",
+              "summary": "API connection verified using context: k8s-ai-cluster.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "config",
+                    "current-context"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "k8s-ai-cluster",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441762"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "kubernetes.node_readiness",
+              "category": "kubernetes",
+              "title": "Kubernetes Node Status Readiness",
+              "status": "pass",
+              "severity": "critical",
+              "summary": "Kubernetes Node registered as Ready.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "get",
+                    "nodes"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "node-1  Ready",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441768"
+                }
+              ],
+              "recommendation": null,
+              "node": "dgx04"
+            },
+            {
+              "id": "kubernetes.gpu_operator",
+              "category": "kubernetes",
+              "title": "NVIDIA GPU Operator and Device Plugins",
+              "status": "warning",
+              "severity": "high",
+              "summary": "DaemonSet 'nvidia-device-plugin-daemonset' reports 3/4 healthy pods. Pod 'nvidia-device-plugin-dgx04' is CrashLoopBackOff.",
+              "evidence": [
+                {
+                  "command": [
+                    "kubectl",
+                    "get",
+                    "daemonsets",
+                    "-n",
+                    "gpu-operator-resources"
+                  ],
+                  "exit_code": 0,
+                  "duration_seconds": 0.015,
+                  "stdout": "NAME                             DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE\nnvidia-device-plugin-daemonset   4         4         3       4            3",
+                  "stderr": "",
+                  "timestamp": "2026-07-15T14:17:31.441822"
+                }
+              ],
+              "recommendation": "Inspect GPU Operator resource pod logs: 'kubectl logs -n gpu-operator-resources -l app=nvidia-device-plugin-daemonset'.",
+              "node": "dgx04"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "overall_score": 97.01,
+  "classification": "Remediation required",
+  "recommendations": [
+    "[dgx03] The InfiniBand port is operating below the expected link rate. Verify cable health, switch port configuration, firmware compatibility, negotiated link width, and port speed.",
+    "[dgx04] Drain the node from production scheduling, preserve NVIDIA and kernel diagnostic evidence, run DCGM diagnostics, confirm whether the ECC condition is repeatable, and escalate for hardware support if the error persists.",
+    "[dgx04] Inspect slurmd log files for registration errors. Resume the node into scheduling: 'scontrol update nodename=dgx04 state=resume reason=restored'.",
+    "[dgx04] Inspect GPU Operator resource pod logs: 'kubectl logs -n gpu-operator-resources -l app=nvidia-device-plugin-daemonset'."
+  ],
+  "benchmark_results": [],
+  "metadata": {
+    "execution_mode": "Demonstration - Degraded Scenario",
+    "active_weights": {
+      "gpu": 30.0,
+      "network": 20.0,
+      "linux": 15.0,
+      "slurm": 15.0,
+      "storage": 10.0,
+      "kubernetes": 10.0
+    },
+    "total_active_weight": 100.0,
+    "category_averages": {
+      "gpu": 96.4275,
+      "network": 98.215,
+      "linux": 100.0,
+      "slurm": 91.6675,
+      "storage": 100.0,
+      "kubernetes": 96.875
+    },
+    "critical_failure_count": 2
+  },
+  "timestamp": "2026-07-15T14:17:31.441834",
+  "tool_version": "0.1.0"
+}
