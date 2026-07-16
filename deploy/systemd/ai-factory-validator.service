@@ -1,0 +1,26 @@
+[Unit]
+Description=AI Factory Validation Portal
+Documentation=https://github.com/svbion/ai-compute-readiness-validator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ai-validator
+Group=ai-validator
+WorkingDirectory=/opt/ai-factory-validator
+EnvironmentFile=-/opt/ai-factory-validator/.env.production
+Environment=NODE_ENV=production
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/node /opt/ai-factory-validator/dist/server.cjs
+Restart=on-failure
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/opt/ai-factory-validator/artifacts
+ReadWritePaths=/opt/ai-factory-validator/.venv
+ReadWritePaths=/opt/ai-factory-validator/dist
+
+[Install]
+WantedBy=multi-user.target

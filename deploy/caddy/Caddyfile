@@ -1,0 +1,23 @@
+# Caddy reverse proxy for AI Factory Validation Portal.
+# DNS requirement: create an A/AAAA record for the hostname below pointing to
+# the Hetzner server before starting Caddy so Let's Encrypt can issue HTTPS.
+#
+# Example:
+#   export AI_FACTORY_DOMAIN=validator.example.com
+#   sudo caddy validate --config /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+
+{$AI_FACTORY_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:3000
+}
