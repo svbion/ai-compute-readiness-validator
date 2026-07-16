@@ -4,44 +4,65 @@ This roadmap keeps the project aligned with its current interview-MVP scope whil
 
 ## Phase 0: Interview MVP stabilization
 
-Status: largely complete.
+Status: complete enough for a senior infrastructure interview demo.
 
 Delivered:
 - Python packaging and CLI entry point
 - deterministic healthy/degraded demo scenarios
 - JSON, Markdown, and standalone HTML report generation
 - live read-only collectors with graceful missing-command handling
-- React/Express portal that can render generated report data
-- documentation set for architecture, security, demo usage, current state, and next actions
+- acceptance-oriented React/Express portal
+- separation of aggregate readiness score from customer acceptance gate
+- topology, GPU, fabric, scheduler, and handoff presentation
+- safe report-link routing from the portal
+- documentation for architecture, security, roadmap, and demo usage
 
-Outstanding polish:
-- optional frontend benchmark ingestion workflow beyond the current placeholder behavior
-- optional JS-side automated tests if the frontend becomes a maintained product surface
-
-## Phase 1: Better artifact and demo ergonomics
+## Phase 1: Customer acceptance workflow maturation
 
 Potential next steps:
-- explicit export/download controls for generated HTML/Markdown from the UI
-- richer scenario catalog beyond healthy/degraded
-- curated sample-data snapshots regenerated from scenario outputs on release checkpoints
-- screenshot-backed interview script assets
+- explicit evidence bundles for signoff review
+- waiver tracking for non-blocking findings
+- baseline comparison between acceptance runs
+- configuration-drift summaries against a reference profile
+- customer acceptance workflow automation
 
-## Phase 2: Multi-host live collection
+## Phase 2: Multi-node live collection
 
 Only pursue this if the project scope expands beyond interview MVP.
 
 Possible additions:
+- Ansible multi-node collection
 - inventory-driven remote fan-out over SSH
-- parallel multi-node collection and aggregation
 - bastion-host execution patterns
 - richer cluster identity and node-role modeling
+- aggregated multi-node evidence packaging
 
-## Phase 3: Benchmark workflow maturation
+## Phase 3: GPU and fabric operational deepening
 
 Possible additions:
-- real upload or file-pick flow for benchmark ingestion in the UI
-- benchmark thresholds wired into cluster recommendations
-- side-by-side comparison of multiple benchmark runs
+- DCGM orchestration for richer diagnostics
+- NCCL execution orchestration
+- HPL execution orchestration
+- HPL-AI execution orchestration
+- HPCG execution orchestration
+- richer InfiniBand topology and counter collection
+- customer-visible remediation runbooks tied to findings
+
+## Phase 4: Evidence and benchmark integration
+
+Possible additions:
+- MLPerf result integration
+- side-by-side comparison of benchmark runs
+- benchmark thresholds tied into readiness recommendations
+- signed or archived evidence bundles for customer handoff
+
+## Phase 5: Enterprise platform integrations
+
+Possible additions:
+- Base Command Manager integration
+- richer scheduler/orchestrator inventory synchronization
+- configuration profile import/export
+- acceptance-ready deployment profile templates
 
 ## Non-goals for current scope
 

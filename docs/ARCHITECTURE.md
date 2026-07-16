@@ -2,16 +2,17 @@
 
 ## Goal
 
-Provide a polished interview-ready MVP that can:
-- run read-only live host checks without sudo
-- score the observed evidence with transparent weighting
+Provide an interview-ready enterprise validation MVP that can:
+- run read-only host checks without sudo
+- score observed evidence with transparent weighting
 - generate portable reports in JSON, Markdown, and standalone HTML
-- drive a lightweight portal that visualizes the same report data
+- render the same report model in an acceptance-oriented portal
+- distinguish aggregate health from customer handoff approval
 
 ## High-level flow
 
 ```text
-Local host or demo scenario
+Local host or deterministic demo scenario
         │
         ▼
 Collectors / demo generators
@@ -34,7 +35,7 @@ Primary files:
 - `src/ai_validator/cli.py` — Typer CLI commands: `validate`, `demo`, `report`, `version`, `benchmark`
 - `src/ai_validator/runner.py` — centralized read-only command execution and output sanitization
 - `src/ai_validator/models.py` — Pydantic models for checks, nodes, clusters, benchmark results, and evidence
-- `src/ai_validator/scoring.py` — category scoring, weight redistribution, node status rollup, recommendation extraction
+- `src/ai_validator/scoring.py` — category scoring, weight redistribution, node status rollup, recommendation extraction, classification gates
 - `src/ai_validator/collectors/*.py` — live collectors grouped by subsystem
 - `src/ai_validator/demo/generator.py` — deterministic healthy/degraded demo scenarios
 - `src/ai_validator/reporting/*.py` — JSON/Markdown/HTML generators
@@ -45,7 +46,7 @@ Primary files:
 1. `ai-validator validate` instantiates all collectors.
 2. Each collector returns `ValidationCheck` entries with command evidence.
 3. Checks are grouped into categories on a single `Node`.
-4. `ScoringEngine.evaluate_cluster` computes category scores and overall classification.
+4. `ScoringEngine.evaluate_cluster` computes category averages, overall score, and final classification.
 5. Reports are written as `latest-results.json`, `latest-report.md`, and `latest-report.html`.
 
 ### Demo path
@@ -54,7 +55,7 @@ Primary files:
 2. The same scoring and reporting path is reused.
 3. The CLI writes both rolling `latest-*` artifacts and scenario-specific `healthy-*` / `degraded-*` artifacts.
 
-## Scoring model
+## Scoring and acceptance model
 
 Default weights from `src/ai_validator/config.py`:
 - GPU: 30
@@ -66,32 +67,54 @@ Default weights from `src/ai_validator/config.py`:
 
 Behavior:
 - category scores are based on scorable checks only (`pass`, `warning`, `fail`)
-- warnings receive partial credit
+- warnings receive partial credit in the Python scoring engine
 - unavailable/skipped/unknown checks do not count toward a category denominator
 - categories with no scorable checks are removed from the active-weight pool
 - critical failed checks can cap classification at `Remediation required`
+
+Portal interpretation:
+- Overall Readiness Score represents aggregate infrastructure health
+- Customer Acceptance Status is derived from the structured findings and existing classification
+- a release-blocking critical finding remains dominant even when the numerical score is high
 
 ## Frontend / portal
 
 Primary files:
 - `server.ts` — Express API plus Vite dev middleware / static production hosting
-- `src/App.tsx` — large single-page dashboard rendering cluster summaries, nodes, checks, evidence, and demo interactions
+- `src/App.tsx` — single-page portal rendering validation and acceptance views
+- `src/portal/assessment.ts` — derivation helpers for acceptance, GPU, fabric, scheduler, benchmark, and report-link presentation
 
 ### API behavior
 
 - `GET /api/results?scenario=healthy|degraded`
   - prefers generated `artifacts/<scenario>-results.json`
   - falls back to checked-in `sample-data/<scenario>-cluster.json`
-- `GET /api/node-history/:nodeName`
-  - returns deterministic synthetic trend data for presentation
 - `POST /api/run-scenario`
   - resolves the validator executable from the repo `.venv` when available
   - runs `ai-validator demo --scenario ... --output-dir artifacts`
   - returns the generated scenario JSON
+- `GET /reports/:scenario/:format`
+  - safe report route for scenario HTML, Markdown, and JSON evidence
+
+### Information hierarchy
+
+The portal is intentionally organized for customer-acceptance conversations:
+1. product positioning and scenario controls
+2. Overall Readiness Score vs Customer Acceptance Status
+3. Customer Acceptance Gate
+4. category score rollup
+5. Cluster Topology
+6. GPU Health
+7. InfiniBand / RDMA Fabric Health
+8. Scheduler and Orchestration
+9. Customer Handoff Summary
+10. Report Access and Interview Walkthrough
+11. Benchmark Readiness
 
 ## Design constraints
 
-- zero-mutation command execution only
+- read-only command execution only
 - no database or external service dependency required for local demo success
 - report files remain first-class artifacts; the UI reads the same JSON model produced by the CLI
-- demo data must remain deterministic so interview runs are reproducible
+- demo data remains deterministic so interview runs are reproducible
+- target-profile language must not imply vendor endorsement or certification
