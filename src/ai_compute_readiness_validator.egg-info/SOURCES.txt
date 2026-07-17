@@ -10,6 +10,7 @@ src/ai_validator/__init__.py
 src/ai_validator/cli.py
 src/ai_validator/config.py
 src/ai_validator/models.py
+src/ai_validator/profiles.py
 src/ai_validator/runner.py
 src/ai_validator/scoring.py
 src/ai_validator/benchmarks/fio.py
