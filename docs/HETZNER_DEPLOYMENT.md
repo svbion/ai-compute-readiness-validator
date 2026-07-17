@@ -152,6 +152,9 @@ curl -fsS http://127.0.0.1:3000/login
 curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
   http://127.0.0.1:3000/api/results?scenario=healthy
 curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
+  http://127.0.0.1:3000/api/evidence-sources
+curl -sS -o /tmp/run-scenario-readonly.json -w '%{http_code}\n' \
+  -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"scenario":"degraded"}' \
   http://127.0.0.1:3000/api/run-scenario
@@ -162,6 +165,8 @@ curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
 curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
   http://127.0.0.1:3000/reports/degraded/json
 ```
+
+The `run-scenario` check should return HTTP `405`; the public reviewer portal is read-only. Generate scenario artifacts and import live evidence only through administrator-side CLI workflows.
 
 ## 6. Configure DNS
 

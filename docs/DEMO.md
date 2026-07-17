@@ -80,11 +80,14 @@ Useful endpoint checks while the portal is running:
 ```bash
 curl http://127.0.0.1:3000/api/results?scenario=healthy
 curl http://127.0.0.1:3000/api/results?scenario=degraded
-curl -X POST \
+curl http://127.0.0.1:3000/api/evidence-sources
+curl -i -X POST \
   -H "Content-Type: application/json" \
   -d '{"scenario":"degraded"}' \
   http://127.0.0.1:3000/api/run-scenario
 ```
+
+`POST /api/run-scenario` should return `405`. The reviewer portal is read-only; generate demo artifacts with `ai-validator demo` and import live evidence with the administrator-side CLI tools.
 
 Safe report routes:
 

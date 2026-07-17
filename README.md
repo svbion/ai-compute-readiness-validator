@@ -102,7 +102,8 @@ Open `http://localhost:3000`.
 
 Portal API behavior:
 - `GET /api/results?scenario=healthy|degraded` loads generated scenario artifacts from `artifacts/` when present and otherwise falls back to checked-in `sample-data/`
-- `POST /api/run-scenario` runs the local CLI from `.venv` when available and refreshes the scenario view from generated reports
+- `GET /api/evidence-sources` lists simulated sources and only exposes live/imported choices when valid live artifacts exist
+- `POST /api/run-scenario` intentionally returns `405`; the reviewer portal is read-only and scenario/live evidence generation remains an administrator-side CLI workflow
 - `GET /reports/:scenario/:format` serves safe report links for HTML, Markdown, and JSON evidence
 
 ## Live portal instructions
@@ -130,7 +131,7 @@ Recommended hosted pattern:
 - build with `npm run build`
 - run `node dist/server.cjs`
 - keep generated artifacts under `artifacts/`
-- ensure `.venv` exists on the host if `POST /api/run-scenario` should invoke the local CLI
+- generate demo/live/imported artifacts through administrator-side CLI tools before review; the public reviewer surface does not run validators or accept uploads
 
 If you only need a static fallback demo, pre-generate artifacts locally and serve the built portal. In that mode the portal can still load `sample-data/` or generated `artifacts/` without needing live collection.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Full deployment verification for a running portal. Exercises public health,
-# login, authentication gates, APIs, scenario execution, report routes, and
+# login, authentication gates, read-only APIs, report routes, and
 # generated JSON/Markdown/HTML files.
 
 set -Eeuo pipefail
@@ -118,9 +118,8 @@ for scenario in healthy degraded; do
   python3 -m json.tool "${TMP_DIR}/${scenario}.json" >/dev/null
   assert_contains "${TMP_DIR}/${scenario}.json" '"classification"|"overall_score"'
 
-  log "Running scenario ${scenario} through API"
-  request POST /api/run-scenario 200 "${TMP_DIR}/run-${scenario}.json" "{\"scenario\":\"${scenario}\"}"
-  python3 -m json.tool "${TMP_DIR}/run-${scenario}.json" >/dev/null
+  log "Checking reviewer surface remains read-only for scenario execution"
+  request POST /api/run-scenario 405 "${TMP_DIR}/run-${scenario}.json" "{\"scenario\":\"${scenario}\"}"
 
   log "Checking report routes for ${scenario}"
   request GET "/reports/${scenario}/html" 200 "${TMP_DIR}/${scenario}.html"

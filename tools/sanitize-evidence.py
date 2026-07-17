@@ -79,6 +79,8 @@ def main() -> int:
     for path in source.rglob("*"):
         rel = path.relative_to(source)
         out = target / rel
+        if path.is_symlink():
+            raise SystemExit(f"Refusing to follow symlink in evidence bundle: {rel}")
         if path.is_dir():
             out.mkdir(parents=True, exist_ok=True)
             continue

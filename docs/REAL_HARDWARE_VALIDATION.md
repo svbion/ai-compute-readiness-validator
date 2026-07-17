@@ -240,6 +240,22 @@ For every loaded source, the portal prominently displays:
 
 If a lab only permits manual capture, create or import artifacts only from approved command output and clearly document the missing source context fields as limitations.
 
+The reviewer portal remains read-only:
+
+- no public upload form
+- no browser-side import action
+- no arbitrary file ingestion endpoint
+- no reviewer-triggered evidence collection or scenario execution
+
+Live evidence import is an administrator-side CLI action only:
+
+```bash
+tools/sanitize-evidence.py <raw-bundle> --output <bundle-sanitized> --redact-ips --redact-domains --redact-serials --redact-macs
+tools/import-live-evidence.py <bundle-sanitized> --output-dir artifacts/imported-live --name <validation-name>
+```
+
+After import, restart or refresh the deployment as needed and verify `/api/evidence-sources` exposes the imported source. Do not add public uploads to the reviewer portal.
+
 ## Required provenance fields
 
 Every real run must include:

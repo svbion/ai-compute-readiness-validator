@@ -22,12 +22,13 @@ test("login page loads with accessible private reviewer entry", async ({ page })
   await expect(page.getByText("This project is an independent portfolio project")).toBeVisible();
 });
 
-test("authentication-required redirect, invalid credentials, account lockout, login, and logout", async ({ page }) => {
+test("authentication-required redirect, invalid credentials, account lockout, login, and logout", async ({ page }, testInfo) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login\?reason=expired-session$/);
   await expect(page.getByText("Your session expired")).toBeVisible();
 
-  await page.getByLabel("Email").fill("unknown-reviewer@example.invalid");
+  const invalidEmail = `unknown-reviewer-${testInfo.project.name}-${testInfo.workerIndex}@example.invalid`;
+  await page.getByLabel("Email").fill(invalidEmail);
   await page.locator("#reviewer-password").fill("wrong password");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("alert")).toContainText("Invalid email or password");
@@ -50,6 +51,7 @@ test("healthy and degraded scenarios render expected classifications without sta
   await expect(page.getByLabel("Evidence source")).toHaveValue("simulated-healthy");
   await expect(page.getByText("100.00%").first()).toBeVisible();
   await expect(page.getByText("Approved for handoff").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Run validation scenario/ })).toHaveCount(0);
   const sourceContext = page.locator("section").filter({ hasText: "Source context" }).first();
   await expect(sourceContext).toBeVisible();
   await expect(sourceContext).toContainText("Simulated Healthy");
@@ -69,6 +71,7 @@ test("healthy and degraded scenarios render expected classifications without sta
   await expect(page.getByText("3/4 healthy pods")).toBeVisible();
 
   await page.getByRole("button", { name: "Healthy", exact: true }).click();
+  await expect(page.locator("section").filter({ hasText: "Source context" }).first()).toContainText("Simulated Healthy");
   await expect(page.getByText("100.00%").first()).toBeVisible();
   await expect(page.getByText("97.01%")).toHaveCount(0);
 });
@@ -92,6 +95,9 @@ test("report links and authenticated API routes work", async ({ page }) => {
   expect(apiResponse.status()).toBe(200);
   const payload = await apiResponse.json();
   expect(payload.overall_score).toBe(97.01);
+
+  const runResponse = await page.request.post("/api/run-scenario", { data: { scenario: "healthy" } });
+  expect(runResponse.status()).toBe(405);
 });
 
 test("controlled backend API error renders a visible error state", async ({ page }) => {

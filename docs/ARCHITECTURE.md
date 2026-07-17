@@ -89,10 +89,12 @@ Primary files:
 - `GET /api/results?scenario=healthy|degraded`
   - prefers generated `artifacts/<scenario>-results.json`
   - falls back to checked-in `sample-data/<scenario>-cluster.json`
+- `GET /api/evidence-sources`
+  - lists simulated sources by default
+  - adds latest/imported live sources only when valid live artifacts exist
 - `POST /api/run-scenario`
-  - resolves the validator executable from the repo `.venv` when available
-  - runs `ai-validator demo --scenario ... --output-dir artifacts`
-  - returns the generated scenario JSON
+  - returns `405` by design
+  - keeps the reviewer portal read-only; validation and import remain administrator-side CLI actions
 - `GET /reports/:scenario/:format`
   - safe report route for scenario HTML, Markdown, and JSON evidence
 
@@ -113,7 +115,7 @@ The portal is intentionally organized for customer-acceptance conversations:
 
 ## Design constraints
 
-- read-only command execution only
+- reviewer portal is read-only: no uploads, no browser-side imports, and no reviewer-triggered validators
 - no database or external service dependency required for local demo success
 - report files remain first-class artifacts; the UI reads the same JSON model produced by the CLI
 - demo data remains deterministic so interview runs are reproducible

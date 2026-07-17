@@ -21,7 +21,8 @@ Pre-flight commands confirmed:
 - Express server in `server.ts` serving:
   - `GET /api/results?scenario=healthy|degraded`
   - `GET /api/node-history/:nodeName`
-  - `POST /api/run-scenario`
+  - `GET /api/evidence-sources`
+  - `POST /api/run-scenario` as a read-only guard that returns `405`
   - `GET /reports/:scenario/:format`
   - Vite middleware in development and static `dist/` assets in production.
 - Python Typer CLI in `src/ai_validator/cli.py` with commands:

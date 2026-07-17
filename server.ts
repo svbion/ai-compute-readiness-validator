@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { execFile } from "child_process";
 import { createServer as createViteServer } from "vite";
 import {
   buildAuthConfig,
@@ -129,20 +128,6 @@ function getReportArtifactPath(scenario: string, format: string): { filePath: st
     filePath: firstExistingPath([path.join(artifactsDir, `${safeScenario}-${artifact.suffix}`)]),
     contentType: artifact.contentType,
   };
-}
-
-function resolveValidatorExecutable(): { command: string; args: string[] } {
-  const localCli = path.join(repoRoot, ".venv", "bin", "ai-validator");
-  if (fs.existsSync(localCli)) {
-    return { command: localCli, args: [] };
-  }
-
-  const localPython = path.join(repoRoot, ".venv", "bin", "python");
-  if (fs.existsSync(localPython)) {
-    return { command: localPython, args: ["-m", "ai_validator.cli"] };
-  }
-
-  return { command: "ai-validator", args: [] };
 }
 
 async function startServer() {
@@ -409,34 +394,10 @@ async function startServer() {
     });
   });
 
-  // 2. API: Trigger a diagnostic scan or demo run
+  // 2. API: Explicitly reject reviewer-side execution; imports/runs are admin CLI workflows.
   app.post("/api/run-scenario", (req, res) => {
-    const scenario = req.body.scenario || "degraded";
-
-    // Run the Python executable in the container securely
-    // In live mode, we would call ['ai-validator', 'validate'] or similar
-    // Since we want to let users test healthy/degraded live in the UI, we run demo scenario.
-    const validator = resolveValidatorExecutable();
-    const args = [...validator.args, "demo", "--scenario", scenario, "--output-dir", artifactsDir];
-    
-    execFile(validator.command, args, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`CLI Execution error: ${error.message}`);
-        return res.status(500).json({ error: `Failed to execute validation CLI: ${error.message}`, details: stderr });
-      }
-
-      // Read back the latest results file
-      const latestPath = getScenarioResultsPath(scenario) ?? path.join(artifactsDir, "latest-results.json");
-      if (!fs.existsSync(latestPath)) {
-        return res.status(500).json({ error: "CLI completed, but results JSON was not written." });
-      }
-
-      try {
-        const fileData = fs.readFileSync(latestPath, "utf-8");
-        return res.json(JSON.parse(fileData));
-      } catch (err: any) {
-        return res.status(500).json({ error: `Failed to parse results: ${err.message}` });
-      }
+    return res.status(405).json({
+      error: "Reviewer portal is read-only. Generate or import evidence with administrator-side CLI tools.",
     });
   });
 

@@ -28,6 +28,27 @@ def load_json(path: Path) -> dict:
         raise SystemExit(f"Malformed JSON input {path}: {exc}") from exc
 
 
+def validate_import_name(name: str) -> str:
+    if name in {"", ".", ".."} or any(part in {"", ".", ".."} for part in Path(name).parts):
+        raise SystemExit("Import name must be a simple directory name without path traversal.")
+    if Path(name).name != name:
+        raise SystemExit("Import name must be a simple directory name without path separators.")
+    return name
+
+
+def has_successful_nvidia_smi_evidence(cluster: dict) -> bool:
+    for node in cluster.get("nodes", []):
+        for category in (node.get("categories") or {}).values():
+            for check in category.get("checks", []):
+                for evidence in check.get("evidence", []):
+                    command = evidence.get("command", [])
+                    if isinstance(command, str):
+                        command = command.split()
+                    if command and command[0] == "nvidia-smi" and evidence.get("exit_code") == 0:
+                        return True
+    return False
+
+
 def verify_checksums(bundle: Path) -> None:
     checksum_file = bundle / "checksums.sha256"
     if not checksum_file.exists():
@@ -71,8 +92,10 @@ def main() -> int:
         raise SystemExit("Imported live evidence must declare simulated=false.")
     if metadata.get("validation_source") not in {"Live Linux Host", "Live GPU Hardware", "Live Cluster Infrastructure", "Imported Live Evidence"}:
         raise SystemExit("Unsupported validation_source for live import.")
+    if not has_successful_nvidia_smi_evidence(cluster):
+        raise SystemExit("Imported live NVIDIA evidence requires successful nvidia-smi command proof.")
 
-    import_name = args.name or source.name
+    import_name = validate_import_name(args.name or source.name)
     dest = Path(args.output_dir).resolve() / import_name
     if dest.exists():
         shutil.rmtree(dest)
