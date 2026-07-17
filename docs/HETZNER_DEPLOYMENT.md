@@ -38,12 +38,13 @@ Default paths used by the deployment scripts:
 /etc/caddy/Caddyfile
 ```
 
-Override defaults with environment variables when running scripts:
+Override defaults with the canonical `AI_FACTORY_*` environment variables when running scripts. Legacy aliases such as `APP_DIR`, `REPO_BRANCH`, `DOMAIN`, `ENABLE_CADDY`, `DRY_RUN`, `SERVICE_NAME`, and `APP_USER` remain supported, but `AI_FACTORY_*` is the public operator interface:
 
 ```bash
-sudo APP_DIR=/srv/ai-factory-validator \
-  APP_USER=ai-validator \
-  REPO_BRANCH=hermes-mvp \
+sudo -E env \
+  AI_FACTORY_APP_DIR=/srv/ai-factory-validator \
+  AI_FACTORY_APP_USER=ai-validator \
+  AI_FACTORY_BRANCH=hermes-mvp \
   deploy/install.sh
 ```
 
@@ -89,7 +90,50 @@ git clone --branch hermes-mvp https://github.com/svbion/ai-compute-readiness-val
 cd /opt/ai-factory-validator
 ```
 
-## 4. Run install.sh
+## 4. Run preflight and install.sh
+
+Run a read-only preflight first. Preflight reports warnings separately from blocking errors and never mutates the host:
+
+```bash
+cd /opt/ai-factory-validator
+sudo -E env \
+  AI_FACTORY_DRY_RUN=true \
+  AI_FACTORY_APP_DIR=/opt/ai-factory-validator \
+  AI_FACTORY_BRANCH=hermes-mvp \
+  AI_FACTORY_DOMAIN=gpuvalidator.com \
+  AI_FACTORY_ENABLE_CADDY=true \
+  AI_FACTORY_AUTH_REQUIRED=true \
+  ./deploy/preflight.sh
+```
+
+Run a true zero-mutation dry run. Dry run validates inputs, prints effective configuration, prints every planned operation, masks secrets, and does not run `apt`, create users, touch Git, write files, build, restart services, or configure Caddy:
+
+```bash
+sudo -E env \
+  AI_FACTORY_DRY_RUN=true \
+  AI_FACTORY_APP_DIR=/opt/ai-factory-validator \
+  AI_FACTORY_BRANCH=hermes-mvp \
+  AI_FACTORY_DOMAIN=gpuvalidator.com \
+  AI_FACTORY_ENABLE_CADDY=true \
+  AI_FACTORY_AUTH_REQUIRED=true \
+  ./deploy/install.sh
+```
+
+When preflight and dry run look correct, run the real install:
+
+```bash
+sudo -E env \
+  AI_FACTORY_APP_DIR=/opt/ai-factory-validator \
+  AI_FACTORY_BRANCH=hermes-mvp \
+  AI_FACTORY_DOMAIN=gpuvalidator.com \
+  AI_FACTORY_ENABLE_CADDY=true \
+  AI_FACTORY_AUTH_REQUIRED=true \
+  ./deploy/install.sh
+```
+
+The installer is safe to rerun. It preserves existing `.env.production`, never replaces existing authentication secrets, rejects dirty Git working trees before update, runs repository Git operations as the application user, waits for systemd and HTTP readiness with retries, and activates Caddy only after backend health passes.
+
+### Minimal install without Caddy
 
 From a checked-out repository:
 
@@ -106,7 +150,7 @@ chmod +x /tmp/install-ai-factory-validator.sh
 sudo /tmp/install-ai-factory-validator.sh
 ```
 
-The script performs:
+The real install script performs, in order:
 
 - `apt-get update`
 - installs `git`, `curl`, `python3`, `python3-venv`, `python3-pip`, `build-essential`, and Node.js 22
@@ -117,13 +161,9 @@ The script performs:
 - runs `pip install -e ".[dev]"`
 - generates healthy and degraded artifacts
 - installs and starts the systemd service
-- runs the deployment healthcheck
-
-For a no-change preview on a prepared checkout, run:
-
-```bash
-sudo DRY_RUN=1 deploy/install.sh
-```
+- waits for systemd and HTTP readiness with retry logic
+- installs/configures Caddy only when `AI_FACTORY_ENABLE_CADDY=true`
+- prints a secret-safe deployment summary
 
 The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Replace the placeholder reviewer email and password hash out-of-band before sharing the portal.
 
@@ -189,7 +229,9 @@ dig +short gpuvalidator.com
 
 ## 7. Enable HTTPS with Caddy
 
-Install Caddy on Ubuntu 24.04:
+The installer configures Caddy only when `AI_FACTORY_ENABLE_CADDY=true`. If disabled, no Caddy packages or files are changed. When enabled, the installer validates `AI_FACTORY_DOMAIN`, warns if DNS is not resolving, installs Caddy from the official Ubuntu repository when missing, renders a Caddyfile for the configured domain and app port, backs up an existing `/etc/caddy/Caddyfile`, validates the new config, and enables/reloads Caddy after backend health has passed.
+
+Manual Caddy setup remains possible if you intentionally installed the backend first without Caddy. Install Caddy on Ubuntu 24.04:
 
 ```bash
 apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl
@@ -201,16 +243,28 @@ apt-get update
 apt-get install -y caddy
 ```
 
-Install this repository's Caddyfile:
+Render or install this repository's Caddyfile after setting the same domain and port you use for the application:
 
 ```bash
-cp /opt/ai-factory-validator/deploy/caddy/Caddyfile /etc/caddy/Caddyfile
+AI_FACTORY_DOMAIN=gpuvalidator.com PORT=3000 bash -c '
+  source /opt/ai-factory-validator/deploy/lib/common.sh
+  load_deploy_config
+  render_caddy_config /tmp/gpu-validator.Caddyfile "$DOMAIN" "$PORT"
+'
+cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.bak.$(date +%Y%m%d%H%M%S) 2>/dev/null || true
+cp /tmp/gpu-validator.Caddyfile /etc/caddy/Caddyfile
 caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
 systemctl status caddy --no-pager
 ```
 
-The repository Caddyfile is configured for `gpuvalidator.com` and `www.gpuvalidator.com`; the `www` hostname redirects permanently to `https://gpuvalidator.com`. Caddy automatically requests and renews HTTPS certificates when ports `80` and `443` are reachable and DNS is correct.
+The default example domain is `gpuvalidator.com`, and `www.gpuvalidator.com` redirects permanently to `https://gpuvalidator.com`. Caddy automatically requests and renews HTTPS certificates when ports `80` and `443` are reachable and DNS is correct. Do not expose port `3000` publicly; Caddy should proxy to `127.0.0.1:3000`.
+
+If Git reports dubious ownership after an install, do not disable Git protections globally. The deploy scripts run repository Git commands as `AI_FACTORY_APP_USER`. To repair a manual root shell, either run update through `sudo -E ./deploy/update.sh` or add only the exact repository path for that root shell:
+
+```bash
+git config --global --add safe.directory /opt/ai-factory-validator
+```
 
 ## 8. Hetzner firewall recommendations
 
@@ -241,11 +295,11 @@ After Caddy is working, do not expose `3000` publicly.
 
 ```bash
 cd /opt/ai-factory-validator
-sudo deploy/update.sh
-sudo DRY_RUN=1 deploy/update.sh
+sudo -E env AI_FACTORY_DRY_RUN=true AI_FACTORY_APP_DIR=/opt/ai-factory-validator AI_FACTORY_BRANCH=hermes-mvp deploy/update.sh
+sudo -E env AI_FACTORY_APP_DIR=/opt/ai-factory-validator AI_FACTORY_BRANCH=hermes-mvp deploy/update.sh
 ```
 
-The update script fast-forwards the configured branch, installs dependencies, builds, regenerates artifacts, runs pytest, runs TypeScript lint, runs portal tests, restarts systemd, and runs `verify.sh`.
+The update script rejects dirty working trees unless `AI_FACTORY_ALLOW_DIRTY_UPDATE=true` is set deliberately, fast-forwards the configured branch as `AI_FACTORY_APP_USER`, preserves `.env.production`, installs dependencies, builds, regenerates artifacts, runs pytest, runs TypeScript lint, runs portal and deployment tests, restarts systemd, waits for readiness, optionally updates Caddy, and runs `verify.sh`.
 
 ## 10. Roll back
 
@@ -260,10 +314,10 @@ git log --oneline --decorate -n 20
 Roll back to a tag or commit:
 
 ```bash
-sudo /opt/ai-factory-validator/deploy/rollback.sh v0.1.0-interview
+sudo -E /opt/ai-factory-validator/deploy/rollback.sh v0.1.0-interview
 # or
-sudo /opt/ai-factory-validator/deploy/rollback.sh <commit-sha>
-sudo DRY_RUN=1 /opt/ai-factory-validator/deploy/rollback.sh <commit-sha>
+sudo -E /opt/ai-factory-validator/deploy/rollback.sh <commit-sha>
+sudo -E env AI_FACTORY_DRY_RUN=true /opt/ai-factory-validator/deploy/rollback.sh <commit-sha>
 ```
 
 Rollback checks out the target commit detached, reconciles dependencies, rebuilds, regenerates artifacts, restarts the service, and runs verification.
@@ -272,9 +326,7 @@ To return to the deployment branch later:
 
 ```bash
 cd /opt/ai-factory-validator
-sudo git checkout hermes-mvp
-sudo git pull --ff-only origin hermes-mvp
-sudo deploy/update.sh
+sudo -E env AI_FACTORY_BRANCH=hermes-mvp deploy/update.sh
 ```
 
 ## 11. Troubleshooting
@@ -282,6 +334,8 @@ sudo deploy/update.sh
 Service will not start:
 
 ```bash
+cd /opt/ai-factory-validator
+sudo -E ./deploy/status.sh
 systemctl status ai-factory-validator --no-pager
 journalctl -u ai-factory-validator -n 200 --no-pager
 ```
@@ -297,7 +351,8 @@ Missing Node.js or wrong version:
 ```bash
 node --version
 npm --version
-sudo deploy/install.sh
+sudo -E ./deploy/preflight.sh
+sudo -E ./deploy/install.sh
 ```
 
 Python CLI unavailable from portal:

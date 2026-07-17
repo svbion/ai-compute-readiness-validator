@@ -1,10 +1,6 @@
-# Caddy reverse proxy for GPU Validator.
-# DNS requirement: create A/AAAA records for gpuvalidator.com and www.gpuvalidator.com
-# pointing to the Hetzner server before starting Caddy so Let's Encrypt can issue HTTPS.
-#
-# Expected behavior:
-#   https://gpuvalidator.com reverse proxies to 127.0.0.1:3000
-#   https://www.gpuvalidator.com redirects permanently to https://gpuvalidator.com
+# Example rendered Caddy reverse proxy for GPU Validator.
+# The installer renders /etc/caddy/Caddyfile dynamically from AI_FACTORY_DOMAIN
+# and PORT. This checked-in file documents the gpuvalidator.com default.
 
 www.gpuvalidator.com {
 	redir https://gpuvalidator.com{uri} permanent

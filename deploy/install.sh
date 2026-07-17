@@ -1,135 +1,103 @@
 #!/usr/bin/env bash
 # Install or refresh GPU Validator on Ubuntu 24.04.
-# Safe to rerun: packages are ensured, the repository is cloned or updated,
-# dependencies are reconciled, artifacts are regenerated, and systemd is updated.
-
 set -Eeuo pipefail
 
-APP_NAME="${APP_NAME:-ai-factory-validator}"
-APP_USER="${APP_USER:-ai-validator}"
-APP_DIR="${APP_DIR:-/opt/ai-factory-validator}"
-REPO_URL="${REPO_URL:-https://github.com/svbion/ai-compute-readiness-validator.git}"
-REPO_BRANCH="${REPO_BRANCH:-hermes-mvp}"
-SERVICE_NAME="${SERVICE_NAME:-ai-factory-validator.service}"
-NODE_MAJOR="${NODE_MAJOR:-22}"
-DRY_RUN="${DRY_RUN:-0}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=deploy/lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 
-log() { printf '\n[%s] %s\n' "${APP_NAME}" "$*"; }
-fail() { printf '\n[%s] ERROR: %s\n' "${APP_NAME}" "$*" >&2; exit 1; }
-require_root() { [[ "${EUID}" -eq 0 ]] || fail "install.sh must be run as root (use sudo)."; }
-run_as_app() { sudo -H -u "${APP_USER}" bash -lc "cd '${APP_DIR}' && $*"; }
+load_deploy_config
 
-install_nodejs_22() {
-  if command -v node >/dev/null 2>&1 && [[ "$(node -p 'process.versions.node.split(`.`)[0]')" == "${NODE_MAJOR}" ]]; then
-    log "Node.js ${NODE_MAJOR} already installed: $(node --version)"
-    return
-  fi
-
-  log "Installing Node.js ${NODE_MAJOR} from NodeSource"
-  install -d -m 0755 /etc/apt/keyrings
-  curl -fsSL "https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key" \
-    | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" \
-    > /etc/apt/sources.list.d/nodesource.list
-  apt-get update
-  apt-get install -y nodejs
+print_plan() {
+  deploy_log "DRY RUN: zero-mutation install preview. No files, packages, users, services, Git checkout, Caddy config, or firewall state will be changed."
+  print_effective_config
+  cat <<EOF
+[deploy] DRY RUN planned operations:
+[deploy]   validate configuration and root requirements for real install
+[deploy]   install OS prerequisites with apt-get update/install
+[deploy]   install Node.js ${NODE_MAJOR} if missing
+[deploy]   create service user ${APP_USER} if missing
+[deploy]   clone or safely fast-forward ${REPO_URL}#${REPO_BRANCH} at ${APP_DIR}
+[deploy]   preserve existing .env.production or create it from example with generated local secrets
+[deploy]   validate production authentication config without printing secrets
+[deploy]   run npm ci and npm run build as ${APP_USER}
+[deploy]   create/update Python venv and install package as ${APP_USER}
+[deploy]   generate healthy/degraded artifacts as ${APP_USER}
+[deploy]   install systemd service ${SERVICE_NAME}, daemon-reload, enable, restart
+[deploy]   wait for systemd active and HTTP /healthz + /login readiness with retries
+[deploy]   configure Caddy only after backend health passes if AI_FACTORY_ENABLE_CADDY=true
+[deploy]   print secret-safe deployment summary
+EOF
 }
 
-require_root
+install_prerequisites() {
+  deploy_log "Updating apt metadata and installing OS prerequisites"
+  run_cmd apt-get update
+  run_cmd apt-get install -y ca-certificates curl git gnupg python3 python3-pip python3-venv build-essential sudo
+  install_nodejs
+}
 
-if [[ "${DRY_RUN}" == "1" ]]; then
-  log "Dry run requested; validating inputs and printing the planned fresh-server flow."
-  cat <<EOF
-apt-get update
-apt-get install -y ca-certificates curl git gnupg python3 python3-pip python3-venv build-essential
-install Node.js ${NODE_MAJOR}
-create service user ${APP_USER}
-clone/update ${REPO_URL}#${REPO_BRANCH} at ${APP_DIR}
-create ${APP_DIR}/.env.production with generated local-only secrets if missing
-npm ci
-npm run build
-python3 -m venv .venv && pip install -e '.[dev]'
-ai-validator demo --scenario healthy/degraded --output-dir artifacts
-install and restart ${SERVICE_NAME}
-run deploy/healthcheck.sh
-EOF
-  exit 0
-fi
+ensure_app_user() {
+  if id -u "${APP_USER}" >/dev/null 2>&1; then
+    deploy_log "Service user ${APP_USER} already exists"
+  else
+    deploy_log "Creating system user ${APP_USER}"
+    run_cmd useradd --system --home-dir "${APP_DIR}" --shell /usr/sbin/nologin "${APP_USER}"
+  fi
+}
 
-log "Updating apt metadata"
-apt-get update
+checkout_or_update_repo() {
+  if [[ -d "${APP_DIR}/.git" ]]; then
+    deploy_log "Updating existing repository in ${APP_DIR} as ${APP_USER}"
+    run_cmd chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
+    safe_git_update
+  else
+    deploy_log "Cloning ${REPO_URL}#${REPO_BRANCH} to ${APP_DIR}"
+    run_cmd install -d -m 0755 "$(dirname "${APP_DIR}")"
+    [[ ! -e "${APP_DIR}" ]] || deploy_fail "${APP_DIR} exists but is not a git checkout. Move it aside before installing."
+    run_cmd git clone --branch "${REPO_BRANCH}" "${REPO_URL}" "${APP_DIR}"
+    run_cmd chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
+  fi
+}
 
-log "Installing OS prerequisites"
-apt-get install -y \
-  ca-certificates \
-  curl \
-  git \
-  gnupg \
-  python3 \
-  python3-pip \
-  python3-venv \
-  build-essential
+install_dependencies_and_build() {
+  deploy_log "Installing Node dependencies"
+  run_as_app_in_repo npm ci
+  deploy_log "Building frontend and server bundle"
+  run_as_app_in_repo npm run build
+  deploy_log "Creating/updating Python virtual environment"
+  run_as_app_shell_in_repo "python3 -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip && pip install -e '.[dev]'"
+  deploy_log "Generating healthy and degraded scenario artifacts"
+  run_as_app_shell_in_repo ". .venv/bin/activate && ai-validator demo --scenario healthy --output-dir artifacts && ai-validator demo --scenario degraded --output-dir artifacts"
+}
 
-install_nodejs_22
+install_systemd_service() {
+  deploy_log "Installing and restarting systemd service ${SERVICE_NAME}"
+  run_cmd install -D -m 0644 "${APP_DIR}/deploy/systemd/ai-factory-validator.service" "/etc/systemd/system/${SERVICE_NAME}"
+  run_cmd systemctl daemon-reload
+  run_cmd systemctl enable "${SERVICE_NAME}"
+  run_cmd systemctl restart "${SERVICE_NAME}"
+}
 
-if ! id -u "${APP_USER}" >/dev/null 2>&1; then
-  log "Creating system user ${APP_USER}"
-  useradd --system --home-dir "${APP_DIR}" --shell /usr/sbin/nologin "${APP_USER}"
-fi
+main() {
+  if [[ "${DRY_RUN}" == true ]]; then
+    print_plan
+    # Validate domain and numeric inputs already happened in load_deploy_config.
+    exit 0
+  fi
 
-if [[ -d "${APP_DIR}/.git" ]]; then
-  log "Updating existing repository in ${APP_DIR}"
-  git -C "${APP_DIR}" fetch --prune origin
-  git -C "${APP_DIR}" checkout "${REPO_BRANCH}"
-  git -C "${APP_DIR}" pull --ff-only origin "${REPO_BRANCH}"
-else
-  log "Cloning ${REPO_URL}#${REPO_BRANCH} to ${APP_DIR}"
-  install -d -m 0755 "$(dirname "${APP_DIR}")"
-  rm -rf "${APP_DIR}"
-  git clone --branch "${REPO_BRANCH}" "${REPO_URL}" "${APP_DIR}"
-fi
+  require_root "install.sh"
+  print_effective_config
+  install_prerequisites
+  ensure_app_user
+  checkout_or_update_repo
+  create_env_if_missing
+  validate_auth_config
+  install_dependencies_and_build
+  install_systemd_service
+  wait_for_service_ready
+  install_or_update_caddy
+  final_summary
+}
 
-chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
-
-if [[ ! -f "${APP_DIR}/.env.production" ]]; then
-  log "Creating ${APP_DIR}/.env.production from example"
-  cp "${APP_DIR}/.env.production.example" "${APP_DIR}/.env.production"
-  python3 - <<'PY' "${APP_DIR}/.env.production"
-import pathlib
-import secrets
-import sys
-
-path = pathlib.Path(sys.argv[1])
-text = path.read_text()
-text = text.replace("replace-with-at-least-32-random-characters", secrets.token_urlsafe(48))
-text = text.replace("AI_FACTORY_AUTH_TEST_BYPASS_TOKEN=", f"AI_FACTORY_AUTH_TEST_BYPASS_TOKEN={secrets.token_urlsafe(32)}")
-path.write_text(text)
-PY
-  chown "${APP_USER}:${APP_USER}" "${APP_DIR}/.env.production"
-  chmod 0640 "${APP_DIR}/.env.production"
-  log "Generated local session secret and deployment verification token in .env.production; no secrets were printed."
-fi
-
-log "Installing Node dependencies"
-run_as_app "npm ci"
-
-log "Building frontend and bundled server"
-run_as_app "npm run build"
-
-log "Creating/updating Python virtual environment"
-run_as_app "python3 -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip && pip install -e '.[dev]'"
-
-log "Generating healthy and degraded scenario artifacts"
-run_as_app ". .venv/bin/activate && ai-validator demo --scenario healthy --output-dir artifacts && ai-validator demo --scenario degraded --output-dir artifacts"
-
-log "Installing systemd service"
-install -D -m 0644 "${APP_DIR}/deploy/systemd/ai-factory-validator.service" "/etc/systemd/system/${SERVICE_NAME}"
-systemctl daemon-reload
-systemctl enable "${SERVICE_NAME}"
-systemctl restart "${SERVICE_NAME}"
-
-log "Verifying service and HTTP health"
-systemctl --no-pager --full status "${SERVICE_NAME}" || fail "systemd service did not start cleanly."
-"${APP_DIR}/deploy/healthcheck.sh"
-
-log "Install complete. Portal is listening on localhost:$(grep -E '^PORT=' "${APP_DIR}/.env.production" | cut -d= -f2 || printf '3000')"
+main "$@"

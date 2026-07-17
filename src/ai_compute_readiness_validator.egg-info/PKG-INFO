@@ -149,6 +149,21 @@ Then walk through:
 
 This project is intentionally simple to host because the portal only depends on static frontend assets plus the existing Express server.
 
+Production single-server deployment is managed by the repo-owned `deploy/` scripts. The canonical zero-mutation dry run is:
+
+```bash
+sudo -E env \
+  AI_FACTORY_DRY_RUN=true \
+  AI_FACTORY_APP_DIR=/opt/ai-factory-validator \
+  AI_FACTORY_BRANCH=hermes-mvp \
+  AI_FACTORY_DOMAIN=gpuvalidator.com \
+  AI_FACTORY_ENABLE_CADDY=true \
+  AI_FACTORY_AUTH_REQUIRED=true \
+  ./deploy/install.sh
+```
+
+Dry run performs zero mutations: it does not run apt, create users, touch Git, create `.env.production`, install dependencies, build, restart services, or configure Caddy. Real install uses the same command without `AI_FACTORY_DRY_RUN=true`. The installer supports reruns, preserves existing `.env.production` secrets, waits for backend health before Caddy activation, installs Caddy only when explicitly enabled, and runs Git operations as the application user to avoid dubious-ownership failures. Use `deploy/preflight.sh` for read-only host checks and `deploy/status.sh` for secret-safe operational status.
+
 Recommended hosted pattern:
 - build with `npm run build`
 - run `node dist/server.cjs`

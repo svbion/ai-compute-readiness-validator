@@ -1,0 +1,24 @@
+# GPU Validator Caddyfile template.
+# Render with deploy/lib/common.sh render_caddy_config or deploy/install.sh.
+# Variables shown for documentation only:
+#   {{DOMAIN}} canonical hostname, e.g. gpuvalidator.com
+#   {{PORT}} backend localhost port, usually 3000
+
+{{WWW_DOMAIN}} {
+	redir https://{{DOMAIN}}{uri} permanent
+}
+
+{{DOMAIN}} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:{{PORT}}
+}

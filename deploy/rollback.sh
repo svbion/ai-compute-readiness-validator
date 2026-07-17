@@ -1,52 +1,51 @@
 #!/usr/bin/env bash
 # Roll back the installed checkout to a supplied git tag or commit and restart.
-# Usage: sudo deploy/rollback.sh <tag-or-commit>
-
 set -Eeuo pipefail
 
-APP_NAME="${APP_NAME:-ai-factory-validator}"
-APP_USER="${APP_USER:-ai-validator}"
-APP_DIR="${APP_DIR:-/opt/ai-factory-validator}"
-SERVICE_NAME="${SERVICE_NAME:-ai-factory-validator.service}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=deploy/lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
+
+load_deploy_config
 TARGET="${1:-}"
-DRY_RUN="${DRY_RUN:-0}"
 
-log() { printf '\n[%s] %s\n' "${APP_NAME}" "$*"; }
-fail() { printf '\n[%s] ERROR: %s\n' "${APP_NAME}" "$*" >&2; exit 1; }
-run_as_app() { sudo -H -u "${APP_USER}" bash -lc "cd '${APP_DIR}' && $*"; }
+main() {
+  [[ -n "${TARGET}" ]] || deploy_fail "Usage: sudo -E deploy/rollback.sh <tag-or-commit>"
+  if [[ "${DRY_RUN}" == true ]]; then
+    deploy_log "DRY RUN: zero-mutation rollback preview."
+    print_effective_config
+    deploy_log "DRY RUN: would fetch tags/refs, verify ${TARGET}, checkout detached target as ${APP_USER}, rebuild, restart, wait for readiness, and verify."
+    exit 0
+  fi
 
-[[ "${EUID}" -eq 0 ]] || fail "rollback.sh must be run as root (use sudo)."
-[[ -n "${TARGET}" ]] || fail "Usage: sudo deploy/rollback.sh <tag-or-commit>"
-[[ -d "${APP_DIR}/.git" ]] || fail "${APP_DIR} is not a git checkout."
+  require_root "rollback.sh"
+  [[ -d "${APP_DIR}/.git" ]] || deploy_fail "${APP_DIR} is not a git checkout."
+  run_cmd chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
+  ensure_clean_git_tree
 
-if [[ "${DRY_RUN}" == "1" ]]; then
-  git -C "${APP_DIR}" rev-parse --verify --quiet "${TARGET}^{commit}" >/dev/null \
-    || fail "Target '${TARGET}' is not a known local tag or commit; run without DRY_RUN to fetch remote refs first."
-  log "Dry run requested; would roll back ${APP_DIR} to ${TARGET}, rebuild, restart ${SERVICE_NAME}, and run deploy/verify.sh."
-  exit 0
-fi
+  deploy_log "Fetching tags and refs as ${APP_USER}"
+  git_in_repo fetch --all --tags --prune
+  git_output_in_repo rev-parse --verify --quiet "${TARGET}^{commit}" >/dev/null \
+    || deploy_fail "Target '${TARGET}' is not a known tag or commit."
 
-log "Fetching tags and refs"
-git -C "${APP_DIR}" fetch --all --tags --prune
+  CURRENT="$(git -C "${APP_DIR}" rev-parse --short HEAD)"
+  RESOLVED="$(git -C "${APP_DIR}" rev-parse --short "${TARGET}^{commit}")"
+  deploy_log "Rolling back from ${CURRENT} to ${TARGET} (${RESOLVED})"
+  git_in_repo checkout --detach "${TARGET}"
 
-git -C "${APP_DIR}" rev-parse --verify --quiet "${TARGET}^{commit}" >/dev/null \
-  || fail "Target '${TARGET}' is not a known tag or commit."
+  create_env_if_missing
+  validate_auth_config
+  deploy_log "Reconciling dependencies and rebuilding"
+  run_as_app_in_repo npm ci
+  run_as_app_in_repo npm run build
+  run_as_app_shell_in_repo "python3 -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip && pip install -e '.[dev]'"
+  run_as_app_shell_in_repo ". .venv/bin/activate && ai-validator demo --scenario healthy --output-dir artifacts && ai-validator demo --scenario degraded --output-dir artifacts"
 
-CURRENT="$(git -C "${APP_DIR}" rev-parse --short HEAD)"
-RESOLVED="$(git -C "${APP_DIR}" rev-parse --short "${TARGET}^{commit}")"
-log "Rolling back from ${CURRENT} to ${TARGET} (${RESOLVED})"
+  deploy_log "Restarting ${SERVICE_NAME}"
+  run_cmd systemctl restart "${SERVICE_NAME}"
+  wait_for_service_ready
+  "${APP_DIR}/deploy/verify.sh"
+  deploy_log "Rollback complete. Previous commit was ${CURRENT}; active commit is ${RESOLVED}."
+}
 
-git -C "${APP_DIR}" checkout --detach "${TARGET}"
-chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
-
-log "Reconciling dependencies and rebuilding"
-run_as_app "npm ci"
-run_as_app "npm run build"
-run_as_app "python3 -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip && pip install -e '.[dev]'"
-run_as_app ". .venv/bin/activate && ai-validator demo --scenario healthy --output-dir artifacts && ai-validator demo --scenario degraded --output-dir artifacts"
-
-log "Restarting ${SERVICE_NAME}"
-systemctl restart "${SERVICE_NAME}"
-"${APP_DIR}/deploy/verify.sh"
-
-log "Rollback complete. Previous commit was ${CURRENT}; active commit is ${RESOLVED}."
+main "$@"
