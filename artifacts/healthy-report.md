@@ -1,10 +1,12 @@
-# AI Factory Validation Report
+# GPU Validator
+AI Compute Infrastructure Readiness and Customer Acceptance Report
 **Cluster Identifier:** `nvis-interview-demo`<br>
 **Assessment Mode:** Demonstration - Healthy Scenario<br>
-**Timestamp:** 2026-07-16 11:48:27 UTC<br>
+**Timestamp:** 2026-07-17 19:02:32 UTC<br>
 **Tool Version:** v0.1.0
 
-Enterprise readiness and customer-acceptance validation for GPU-accelerated AI infrastructure.
+Validate GPU infrastructure before customer handoff.
+Read-only validation for Linux, NVIDIA GPU compute, InfiniBand, Slurm, Kubernetes, storage, and customer acceptance.
 
 ## 📊 Evaluation Summary
 | Metric | Value |

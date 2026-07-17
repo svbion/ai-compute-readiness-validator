@@ -3,7 +3,7 @@ from typing import Dict, List, Any
 
 # Application Metadata
 VERSION = "0.1.0"
-APP_NAME = "AI Compute Readiness Validator"
+APP_NAME = "GPU Validator"
 
 # Default Weights for Categories
 DEFAULT_WEIGHTS: Dict[str, float] = {

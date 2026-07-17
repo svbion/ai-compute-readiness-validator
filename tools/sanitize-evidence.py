@@ -58,7 +58,7 @@ def redact(text: str, args: argparse.Namespace, events: list[dict[str, str]], re
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Sanitize AI Factory live evidence bundles.")
+    parser = argparse.ArgumentParser(description="Sanitize GPU Validator live evidence bundles.")
     parser.add_argument("input", help="Input evidence directory")
     parser.add_argument("--output", required=True, help="Output sanitized directory")
     parser.add_argument("--redact-ips", action="store_true")

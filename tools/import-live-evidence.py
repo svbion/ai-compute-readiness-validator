@@ -64,7 +64,7 @@ def verify_checksums(bundle: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Import sanitized AI Factory live evidence.")
+    parser = argparse.ArgumentParser(description="Import sanitized GPU Validator live evidence.")
     parser.add_argument("input", help="Sanitized evidence directory")
     parser.add_argument("--output-dir", default="artifacts/imported-live", help="Controlled import output directory")
     parser.add_argument("--name", default=None, help="Import name; defaults to bundle directory name")

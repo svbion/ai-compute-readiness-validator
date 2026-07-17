@@ -1,6 +1,6 @@
 {
-  "name": "AI Compute Readiness Validator",
-  "description": "Automated Linux, NVIDIA GPU, InfiniBand, Slurm, Kubernetes, storage, and benchmark validation for AI compute infrastructure.",
+  "name": "GPU Validator",
+  "description": "AI compute infrastructure validation and customer acceptance for Linux, NVIDIA GPU compute, InfiniBand, Slurm, Kubernetes, and storage.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

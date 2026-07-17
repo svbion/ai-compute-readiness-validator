@@ -33,7 +33,7 @@ from ai_validator.benchmarks.fio import FioParser
 from ai_validator.benchmarks.iperf import IperfParser
 from ai_validator.benchmarks.osu import OsuParser
 
-app = typer.Typer(help="AI Compute Readiness Validator - Assessment CLI")
+app = typer.Typer(help="GPU Validator - Assessment CLI")
 console = Console()
 
 
@@ -330,7 +330,7 @@ def report(
 @app.command()
 def version():
     """
-    Prints the AI Compute Readiness Validator version.
+    Prints the GPU Validator version.
     """
     from ai_validator.config import APP_NAME, VERSION
     console.print(f"[bold cyan]{APP_NAME}[/bold cyan] version [green]v{VERSION}[/green]")

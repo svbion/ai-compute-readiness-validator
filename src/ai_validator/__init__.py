@@ -1,5 +1,5 @@
 """
-AI Compute Readiness Validator.
+GPU Validator.
 An automated Linux, NVIDIA GPU, InfiniBand, Slurm, Kubernetes, storage, and benchmark validation tool.
 """
 

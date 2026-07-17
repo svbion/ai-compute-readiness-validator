@@ -11,13 +11,15 @@ class MarkdownReporter:
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
         
         md = []
-        md.append(f"# AI Factory Validation Report")
+        md.append(f"# GPU Validator")
+        md.append("AI Compute Infrastructure Readiness and Customer Acceptance Report")
         md.append(f"**Cluster Identifier:** `{cluster.name}`<br>")
         md.append(f"**Assessment Mode:** {cluster.metadata.get('execution_mode', 'Validation')}<br>")
         md.append(f"**Timestamp:** {cluster.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}<br>")
         md.append(f"**Tool Version:** v{cluster.tool_version}")
         md.append("")
-        md.append("Enterprise readiness and customer-acceptance validation for GPU-accelerated AI infrastructure.")
+        md.append("Validate GPU infrastructure before customer handoff.")
+        md.append("Read-only validation for Linux, NVIDIA GPU compute, InfiniBand, Slurm, Kubernetes, storage, and customer acceptance.")
         md.append("")
         
         # Readiness Score Card

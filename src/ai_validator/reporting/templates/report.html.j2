@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Factory Validation Report - {{ cluster.name }}</title>
+    <title>GPU Validator - {{ cluster.name }}</title>
     <style>
         :root {
             --primary-dark: #121212;
@@ -352,9 +352,12 @@
     <header>
         <div class="header-container">
             <div class="header-title">
-                <h1>AI Factory Validation Report</h1>
+                <h1>GPU Validator</h1>
+                <p>AI Compute Infrastructure Readiness and Customer Acceptance Report</p>
                 <p>Cluster Target: <strong>{{ cluster.name }}</strong> | Mode: <strong>{{ cluster.metadata.execution_mode | default("Validation") }}</strong></p>
-                <p>Enterprise readiness and customer-acceptance validation for GPU-accelerated AI infrastructure.</p>
+                <p>Validate GPU infrastructure before customer handoff.</p>
+                <p>Read-only validation for Linux, NVIDIA GPU compute, InfiniBand, Slurm, Kubernetes, storage, and customer acceptance.</p>
+                <p style="margin-top: 6px; font-size: 12px; color: #9ca3af;">Independent portfolio project; not affiliated with, sponsored by, or endorsed by NVIDIA.</p>
                 <p style="margin-top: 6px; font-size: 12px; color: #9ca3af;">Generated: {{ cluster.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }} | Tool Version: v{{ cluster.tool_version }}</p>
             </div>
             

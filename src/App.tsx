@@ -185,11 +185,12 @@ function LoginPage() {
           </div>
 
           <div className="space-y-5">
+            <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-slate-500">AI Factory Readiness Portal</div>
             <h1 className="max-w-4xl text-4xl font-display font-bold tracking-tight text-slate-50 md:text-6xl">
-              AI Factory Validation Portal
+              GPU Validator
             </h1>
             <p className="max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
-              Private access to AI compute infrastructure readiness, validation evidence, and customer-acceptance workflows.
+              Private access to GPU infrastructure readiness, validation evidence, and customer-acceptance workflows.
             </p>
           </div>
 
@@ -408,8 +409,11 @@ export default function App() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-slate-50">
-                      AI Factory Validation Portal
+                      GPU Validator
                     </h1>
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/25 text-emerald-300">
+                      AI Factory Readiness Portal
+                    </span>
                     {simulated && (
                       <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-slate-900 border border-slate-700 text-slate-300">
                         Simulated scenario
@@ -417,7 +421,7 @@ export default function App() {
                     )}
                   </div>
                   <p className="mt-2 text-sm md:text-base text-slate-300 leading-relaxed">
-                    Enterprise readiness and customer-acceptance validation for GPU-accelerated AI infrastructure.
+                    AI Compute Infrastructure Validation and Customer Acceptance.
                   </p>
                 </div>
               </div>
@@ -1155,7 +1159,7 @@ export default function App() {
 
       <footer className="mt-16 border-t border-slate-900 bg-slate-950">
         <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col lg:flex-row justify-between gap-3 text-xs text-slate-500">
-          <div>AI Factory Validation Portal • Interview MVP • Customer-acceptance evidence for GPU-accelerated infrastructure</div>
+          <div>GPU Validator • AI Factory Readiness Portal • Customer-acceptance evidence for GPU-accelerated infrastructure</div>
           <div>This project is an independent portfolio project and is not affiliated with, sponsored by, or endorsed by NVIDIA.</div>
         </div>
       </footer>
