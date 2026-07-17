@@ -93,6 +93,7 @@ export interface SourceContext {
   sanitizationStatus: string;
   sourceConfidence: string;
   limitations: string[];
+  importedEvidenceBanner?: string;
 }
 
 export interface AcceptanceGate {
@@ -191,6 +192,8 @@ export function buildSourceContext(cluster: Cluster | null | undefined, source: 
     };
   }
 
+  const imported = source?.kind === "imported-live" || metadata.imported === true || metadata.validation_source === "Imported Live Evidence";
+
   return {
     evidenceSource: metadata.validation_source ?? sourceLabel,
     selectedValidationProfile: metadata.selected_profile ?? "Profile not declared",
@@ -200,6 +203,9 @@ export function buildSourceContext(cluster: Cluster | null | undefined, source: 
     sanitizationStatus: metadata.sanitization_status ?? (metadata.imported ? "Imported evidence; sanitization manifest required" : "Sanitization status not declared"),
     sourceConfidence: metadata.source_confidence ?? "Unknown - review attached evidence and limitations",
     limitations: metadata.limitations?.length ? metadata.limitations : ["No limitations were supplied with this live evidence payload."],
+    importedEvidenceBanner: imported
+      ? "Imported evidence: review sanitization status, provenance, and limitations before treating this payload as real hardware evidence."
+      : undefined,
   };
 }
 

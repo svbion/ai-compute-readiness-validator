@@ -148,4 +148,8 @@ test("source context labels simulated and live evidence provenance", () => {
   assert.equal(liveContext.sanitizationStatus, "Sanitized with redaction manifest");
   assert.equal(liveContext.sourceConfidence, "Medium - provider identity with sanitized command output");
   assert.deepEqual(liveContext.limitations, ["No SSH host-level access; workload shell only."]);
+  assert.equal(
+    liveContext.importedEvidenceBanner,
+    "Imported evidence: review sanitization status, provenance, and limitations before treating this payload as real hardware evidence.",
+  );
 });

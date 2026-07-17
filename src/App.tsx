@@ -608,6 +608,11 @@ export default function App() {
 
         {cluster && (
           <section className="cyber-panel rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
+            {sourceContext.importedEvidenceBanner && (
+              <div role="status" className="mb-5 rounded-2xl border border-amber-500/35 bg-amber-500/10 p-4 text-sm font-semibold leading-relaxed text-amber-100">
+                {sourceContext.importedEvidenceBanner}
+              </div>
+            )}
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-emerald-300">Source context</div>
