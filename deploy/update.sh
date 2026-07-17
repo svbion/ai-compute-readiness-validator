@@ -10,6 +10,7 @@ APP_USER="${APP_USER:-ai-validator}"
 APP_DIR="${APP_DIR:-/opt/ai-factory-validator}"
 REPO_BRANCH="${REPO_BRANCH:-hermes-mvp}"
 SERVICE_NAME="${SERVICE_NAME:-ai-factory-validator.service}"
+DRY_RUN="${DRY_RUN:-0}"
 
 log() { printf '\n[%s] %s\n' "${APP_NAME}" "$*"; }
 fail() { printf '\n[%s] ERROR: %s\n' "${APP_NAME}" "$*" >&2; exit 1; }
@@ -17,6 +18,11 @@ run_as_app() { sudo -H -u "${APP_USER}" bash -lc "cd '${APP_DIR}' && $*"; }
 
 [[ "${EUID}" -eq 0 ]] || fail "update.sh must be run as root (use sudo)."
 [[ -d "${APP_DIR}/.git" ]] || fail "${APP_DIR} is not a git checkout. Run deploy/install.sh first."
+
+if [[ "${DRY_RUN}" == "1" ]]; then
+  log "Dry run requested; planned update flow: fetch/pull ${REPO_BRANCH}, npm ci, build, Python install, artifact generation, pytest, lint, portal tests, restart ${SERVICE_NAME}, deploy/verify.sh."
+  exit 0
+fi
 
 log "Fetching and fast-forwarding ${REPO_BRANCH}"
 git -C "${APP_DIR}" fetch --prune origin

@@ -9,6 +9,7 @@ APP_USER="${APP_USER:-ai-validator}"
 APP_DIR="${APP_DIR:-/opt/ai-factory-validator}"
 SERVICE_NAME="${SERVICE_NAME:-ai-factory-validator.service}"
 TARGET="${1:-}"
+DRY_RUN="${DRY_RUN:-0}"
 
 log() { printf '\n[%s] %s\n' "${APP_NAME}" "$*"; }
 fail() { printf '\n[%s] ERROR: %s\n' "${APP_NAME}" "$*" >&2; exit 1; }
@@ -17,6 +18,13 @@ run_as_app() { sudo -H -u "${APP_USER}" bash -lc "cd '${APP_DIR}' && $*"; }
 [[ "${EUID}" -eq 0 ]] || fail "rollback.sh must be run as root (use sudo)."
 [[ -n "${TARGET}" ]] || fail "Usage: sudo deploy/rollback.sh <tag-or-commit>"
 [[ -d "${APP_DIR}/.git" ]] || fail "${APP_DIR} is not a git checkout."
+
+if [[ "${DRY_RUN}" == "1" ]]; then
+  git -C "${APP_DIR}" rev-parse --verify --quiet "${TARGET}^{commit}" >/dev/null \
+    || fail "Target '${TARGET}' is not a known local tag or commit; run without DRY_RUN to fetch remote refs first."
+  log "Dry run requested; would roll back ${APP_DIR} to ${TARGET}, rebuild, restart ${SERVICE_NAME}, and run deploy/verify.sh."
+  exit 0
+fi
 
 log "Fetching tags and refs"
 git -C "${APP_DIR}" fetch --all --tags --prune

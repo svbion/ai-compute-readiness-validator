@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Lightweight service healthcheck. Returns non-zero when the portal or the
-# primary API is unavailable. Intended for operators and deployment scripts.
+# Lightweight service healthcheck. Returns non-zero when the portal health or
+# public login entry is unavailable. Intended for operators and deployment scripts.
 
 set -Eeuo pipefail
 
@@ -18,6 +18,9 @@ if [[ -f "${APP_DIR}/.env.production" ]]; then
   BASE_URL="${BASE_URL_OVERRIDE:-http://127.0.0.1:${PORT:-3000}}"
 fi
 
+TMP_OUT="$(mktemp)"
+trap 'rm -f "${TMP_OUT}"' EXIT
+
 check() {
   local method="$1"
   local path="$2"
@@ -26,22 +29,22 @@ check() {
   local status
 
   if [[ "${method}" == "POST" ]]; then
-    status="$(curl -sS -m "${TIMEOUT}" -o /tmp/ai-factory-healthcheck.out -w '%{http_code}' \
+    status="$(curl -sS -m "${TIMEOUT}" -o "${TMP_OUT}" -w '%{http_code}' \
       -H 'Content-Type: application/json' -X POST --data "${data}" "${BASE_URL}${path}")"
   else
-    status="$(curl -sS -m "${TIMEOUT}" -o /tmp/ai-factory-healthcheck.out -w '%{http_code}' \
+    status="$(curl -sS -m "${TIMEOUT}" -o "${TMP_OUT}" -w '%{http_code}' \
       "${BASE_URL}${path}")"
   fi
 
   if [[ "${status}" != "${expected}" ]]; then
     printf 'Healthcheck failed: %s %s returned HTTP %s, expected %s\n' "${method}" "${path}" "${status}" "${expected}" >&2
     printf 'Response body:\n' >&2
-    sed -n '1,80p' /tmp/ai-factory-healthcheck.out >&2 || true
+    sed -n '1,80p' "${TMP_OUT}" >&2 || true
     return 1
   fi
 }
 
-check GET / 200
-check GET /api/results?scenario=healthy 200
+check GET /healthz 200
+check GET /login 200
 
 printf 'Healthcheck passed for %s\n' "${BASE_URL}"

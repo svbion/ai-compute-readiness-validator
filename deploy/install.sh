@@ -12,6 +12,7 @@ REPO_URL="${REPO_URL:-https://github.com/svbion/ai-compute-readiness-validator.g
 REPO_BRANCH="${REPO_BRANCH:-hermes-mvp}"
 SERVICE_NAME="${SERVICE_NAME:-ai-factory-validator.service}"
 NODE_MAJOR="${NODE_MAJOR:-22}"
+DRY_RUN="${DRY_RUN:-0}"
 
 log() { printf '\n[%s] %s\n' "${APP_NAME}" "$*"; }
 fail() { printf '\n[%s] ERROR: %s\n' "${APP_NAME}" "$*" >&2; exit 1; }
@@ -35,6 +36,25 @@ install_nodejs_22() {
 }
 
 require_root
+
+if [[ "${DRY_RUN}" == "1" ]]; then
+  log "Dry run requested; validating inputs and printing the planned fresh-server flow."
+  cat <<EOF
+apt-get update
+apt-get install -y ca-certificates curl git gnupg python3 python3-pip python3-venv build-essential
+install Node.js ${NODE_MAJOR}
+create service user ${APP_USER}
+clone/update ${REPO_URL}#${REPO_BRANCH} at ${APP_DIR}
+create ${APP_DIR}/.env.production with generated local-only secrets if missing
+npm ci
+npm run build
+python3 -m venv .venv && pip install -e '.[dev]'
+ai-validator demo --scenario healthy/degraded --output-dir artifacts
+install and restart ${SERVICE_NAME}
+run deploy/healthcheck.sh
+EOF
+  exit 0
+fi
 
 log "Updating apt metadata"
 apt-get update
@@ -74,8 +94,20 @@ chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
 if [[ ! -f "${APP_DIR}/.env.production" ]]; then
   log "Creating ${APP_DIR}/.env.production from example"
   cp "${APP_DIR}/.env.production.example" "${APP_DIR}/.env.production"
+  python3 - <<'PY' "${APP_DIR}/.env.production"
+import pathlib
+import secrets
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+text = text.replace("replace-with-at-least-32-random-characters", secrets.token_urlsafe(48))
+text = text.replace("AI_FACTORY_AUTH_TEST_BYPASS_TOKEN=", f"AI_FACTORY_AUTH_TEST_BYPASS_TOKEN={secrets.token_urlsafe(32)}")
+path.write_text(text)
+PY
   chown "${APP_USER}:${APP_USER}" "${APP_DIR}/.env.production"
   chmod 0640 "${APP_DIR}/.env.production"
+  log "Generated local session secret and deployment verification token in .env.production; no secrets were printed."
 fi
 
 log "Installing Node dependencies"

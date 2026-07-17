@@ -20,7 +20,7 @@ Repository findings from `package.json`, `server.ts`, `pyproject.toml`, and `REA
 - Python package install: `python3 -m venv .venv` then `pip install -e ".[dev]"`.
 - CLI entry point: `.venv/bin/ai-validator` or `python -m ai_validator.cli`.
 - Generated artifacts: `artifacts/latest-*`, `artifacts/healthy-*`, and `artifacts/degraded-*`.
-- Production environment variables: `PORT`, `NODE_ENV`, and `PYTHONUNBUFFERED`; no secrets are required.
+- Production environment variables: `PORT`, `NODE_ENV`, `PYTHONUNBUFFERED`, and authentication settings. Production defaults to authentication-required; session secrets, reviewer credential hashes, and deployment verification tokens are generated or supplied on the server and must never be committed.
 - Persistent writable paths under systemd: `artifacts/` for generated reports. The service also reads `.venv/` and `dist/` generated during install/update.
 
 ## Target layout
@@ -117,6 +117,23 @@ The script performs:
 - installs and starts the systemd service
 - runs the deployment healthcheck
 
+For a no-change preview on a prepared checkout, run:
+
+```bash
+sudo DRY_RUN=1 deploy/install.sh
+```
+
+The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Replace the placeholder reviewer email and password hash out-of-band before sharing the portal.
+
+Generate a reviewer password hash on the server without storing the plaintext password in the repository:
+
+```bash
+cd /opt/ai-factory-validator
+node --import tsx -e "import { createPasswordHash } from './src/server/auth.ts'; console.log(createPasswordHash(process.argv[1]))" 'temporary-password-to-rotate'
+```
+
+Then edit `/opt/ai-factory-validator/.env.production` and set the real reviewer email, the generated `scrypt$...` hash, a server-generated session secret, and a local-only `AI_FACTORY_AUTH_TEST_BYPASS_TOKEN` for deployment verification. Do not commit these values and do not send them over chat.
+
 ## 5. Verify the service
 
 ```bash
@@ -124,19 +141,26 @@ systemctl status ai-factory-validator --no-pager
 journalctl -u ai-factory-validator -n 100 --no-pager
 /opt/ai-factory-validator/deploy/healthcheck.sh
 /opt/ai-factory-validator/deploy/verify.sh
+npm run verify:production
 ```
 
 Manual curl checks:
 
 ```bash
-curl -fsS http://127.0.0.1:3000/
-curl -fsS http://127.0.0.1:3000/api/results?scenario=healthy
-curl -fsS -H 'Content-Type: application/json' \
+curl -fsS http://127.0.0.1:3000/healthz
+curl -fsS http://127.0.0.1:3000/login
+curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
+  http://127.0.0.1:3000/api/results?scenario=healthy
+curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
+  -H 'Content-Type: application/json' \
   -d '{"scenario":"degraded"}' \
   http://127.0.0.1:3000/api/run-scenario
-curl -fsS http://127.0.0.1:3000/reports/degraded/html
-curl -fsS http://127.0.0.1:3000/reports/degraded/markdown
-curl -fsS http://127.0.0.1:3000/reports/degraded/json
+curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
+  http://127.0.0.1:3000/reports/degraded/html
+curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
+  http://127.0.0.1:3000/reports/degraded/markdown
+curl -fsS -H "x-ai-factory-test-auth: $AI_FACTORY_AUTH_TEST_BYPASS_TOKEN" \
+  http://127.0.0.1:3000/reports/degraded/json
 ```
 
 ## 6. Configure DNS
@@ -215,6 +239,7 @@ After Caddy is working, do not expose `3000` publicly.
 ```bash
 cd /opt/ai-factory-validator
 sudo deploy/update.sh
+sudo DRY_RUN=1 deploy/update.sh
 ```
 
 The update script fast-forwards the configured branch, installs dependencies, builds, regenerates artifacts, runs pytest, runs TypeScript lint, runs portal tests, restarts systemd, and runs `verify.sh`.
@@ -235,6 +260,7 @@ Roll back to a tag or commit:
 sudo /opt/ai-factory-validator/deploy/rollback.sh v0.1.0-interview
 # or
 sudo /opt/ai-factory-validator/deploy/rollback.sh <commit-sha>
+sudo DRY_RUN=1 /opt/ai-factory-validator/deploy/rollback.sh <commit-sha>
 ```
 
 Rollback checks out the target commit detached, reconciles dependencies, rebuilds, regenerates artifacts, restarts the service, and runs verification.

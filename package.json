@@ -13,7 +13,7 @@
     "test:portal": "node --import tsx --test tests-portal/**/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "verify:production": "npm run build && npm run lint && npm run test:portal && npm run test:e2e"
+    "verify:production": "npm run build && npm run lint && npm run test:portal && npm run test:e2e && bash -lc 'source .venv/bin/activate 2>/dev/null || true; pip install -e \".[dev]\"; pytest; ai-validator demo --scenario healthy --output-dir artifacts; ai-validator demo --scenario degraded --output-dir artifacts'"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
