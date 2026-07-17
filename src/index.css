@@ -201,3 +201,56 @@ body {
 .neon-text-emerald {
   animation: neon-flicker 5s infinite alternate;
 }
+
+.login-grid {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 20% 20%, rgba(118, 185, 0, 0.12), transparent 30%),
+    radial-gradient(circle at 80% 60%, rgba(34, 211, 238, 0.08), transparent 30%);
+  background-size: 48px 48px, 48px 48px, 100% 100%, 100% 100%;
+  mask-image: linear-gradient(to bottom, black, rgba(0, 0, 0, 0.72), transparent);
+}
+
+.signal-path {
+  position: absolute;
+  height: 1px;
+  width: 42vw;
+  min-width: 280px;
+  background: linear-gradient(90deg, transparent, rgba(118, 185, 0, 0.7), transparent);
+  opacity: 0.6;
+  animation: signal-drift 8s ease-in-out infinite;
+}
+
+.signal-path-a {
+  left: 8%;
+  top: 28%;
+  transform: rotate(12deg);
+}
+
+.signal-path-b {
+  right: 5%;
+  top: 68%;
+  transform: rotate(-9deg);
+  animation-delay: -3s;
+}
+
+@keyframes signal-drift {
+  0%, 100% {
+    opacity: 0.25;
+    filter: blur(0);
+  }
+  50% {
+    opacity: 0.7;
+    filter: blur(0.5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}

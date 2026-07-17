@@ -3,10 +3,53 @@ import path from "path";
 import fs from "fs";
 import { execFile } from "child_process";
 import { createServer as createViteServer } from "vite";
+import {
+  buildAuthConfig,
+  createSessionId,
+  signSessionId,
+  timingSafeVerifyPassword,
+  verifySignedSessionId,
+} from "./src/server/auth";
 
 const repoRoot = process.cwd();
 const artifactsDir = path.join(repoRoot, "artifacts");
 const sampleDataDir = path.join(repoRoot, "sample-data");
+const sessionCookieName = "ai_factory_session";
+
+type SessionRecord = {
+  email: string;
+  createdAt: number;
+  lastSeenAt: number;
+};
+
+const sessions = new Map<string, SessionRecord>();
+const loginAttempts = new Map<string, { count: number; lockedUntil: number; windowStartedAt: number }>();
+
+function parseCookies(header: string | undefined): Record<string, string> {
+  if (!header) return {};
+  return Object.fromEntries(
+    header.split(";").map((cookie) => {
+      const [name, ...valueParts] = cookie.trim().split("=");
+      return [decodeURIComponent(name), decodeURIComponent(valueParts.join("="))];
+    }).filter(([name]) => Boolean(name)),
+  );
+}
+
+function buildCookie(name: string, value: string, options: { maxAge?: number; secure: boolean }): string {
+  const parts = [
+    `${encodeURIComponent(name)}=${encodeURIComponent(value)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+  if (options.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
+  if (options.secure) parts.push("Secure");
+  return parts.join("; ");
+}
+
+function wantsHtml(req: express.Request): boolean {
+  return req.method === "GET" && (req.accepts(["html", "json"]) === "html" || !req.path.startsWith("/api/"));
+}
 
 function firstExistingPath(candidates: string[]): string | null {
   return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
@@ -62,8 +105,124 @@ function resolveValidatorExecutable(): { command: string; args: string[] } {
 async function startServer() {
   const app = express();
   const PORT = Number.parseInt(process.env.PORT ?? "3000", 10);
+  const authConfig = buildAuthConfig(process.env);
 
   app.use(express.json());
+
+  app.get("/healthz", (req, res) => {
+    return res.json({ ok: true, service: "ai-factory-validator" });
+  });
+
+  app.get("/api/auth/config", (req, res) => {
+    return res.json({ authRequired: authConfig.required });
+  });
+
+  const getSession = (req: express.Request): SessionRecord | null => {
+    if (!authConfig.required) {
+      return { email: "local-development", createdAt: Date.now(), lastSeenAt: Date.now() };
+    }
+    if (!authConfig.sessionSecret) return null;
+
+    if (authConfig.testBypassToken && req.get("x-ai-factory-test-auth") === authConfig.testBypassToken) {
+      return { email: "deployment-test-reviewer", createdAt: Date.now(), lastSeenAt: Date.now() };
+    }
+
+    const cookies = parseCookies(req.headers.cookie);
+    const sessionId = verifySignedSessionId(cookies[sessionCookieName], authConfig.sessionSecret);
+    if (!sessionId) return null;
+
+    const session = sessions.get(sessionId);
+    if (!session) return null;
+
+    const now = Date.now();
+    if (now - session.lastSeenAt > authConfig.sessionTtlSeconds * 1000) {
+      sessions.delete(sessionId);
+      return null;
+    }
+
+    session.lastSeenAt = now;
+    sessions.set(sessionId, session);
+    return session;
+  };
+
+  app.get("/api/auth/session", (req, res) => {
+    const session = getSession(req);
+    if (!session) {
+      return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
+    }
+    return res.json({ authenticated: true, email: session.email });
+  });
+
+  app.post("/api/auth/login", (req, res) => {
+    if (!authConfig.required) {
+      return res.json({ authenticated: true, localDevelopment: true });
+    }
+
+    const email = String(req.body?.email ?? "").trim().toLowerCase();
+    const password = String(req.body?.password ?? "");
+    const attemptKey = `${req.ip}:${email}`;
+    const now = Date.now();
+    const attempt = loginAttempts.get(attemptKey) ?? { count: 0, lockedUntil: 0, windowStartedAt: now };
+
+    if (attempt.lockedUntil > now) {
+      return res.status(423).json({ error: "Account temporarily locked", reason: "account-locked" });
+    }
+
+    if (now - attempt.windowStartedAt > 15 * 60 * 1000) {
+      attempt.count = 0;
+      attempt.windowStartedAt = now;
+      attempt.lockedUntil = 0;
+    }
+
+    const validEmail = email === authConfig.reviewerEmail;
+    const validPassword = Boolean(authConfig.passwordHash && timingSafeVerifyPassword(password, authConfig.passwordHash));
+
+    if (!validEmail || !validPassword || !authConfig.sessionSecret) {
+      attempt.count += 1;
+      if (attempt.count >= 5) {
+        attempt.lockedUntil = now + 15 * 60 * 1000;
+      }
+      loginAttempts.set(attemptKey, attempt);
+      return res.status(401).json({ error: "Invalid email or password", reason: "invalid-credentials" });
+    }
+
+    loginAttempts.delete(attemptKey);
+    const sessionId = createSessionId();
+    sessions.set(sessionId, { email, createdAt: now, lastSeenAt: now });
+    res.setHeader("Set-Cookie", buildCookie(sessionCookieName, signSessionId(sessionId, authConfig.sessionSecret), {
+      maxAge: authConfig.sessionTtlSeconds,
+      secure: authConfig.cookieSecure,
+    }));
+    return res.json({ authenticated: true });
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    if (authConfig.sessionSecret) {
+      const cookies = parseCookies(req.headers.cookie);
+      const sessionId = verifySignedSessionId(cookies[sessionCookieName], authConfig.sessionSecret);
+      if (sessionId) sessions.delete(sessionId);
+    }
+    res.setHeader("Set-Cookie", buildCookie(sessionCookieName, "", { maxAge: 0, secure: authConfig.cookieSecure }));
+    return res.json({ authenticated: false });
+  });
+
+  app.use((req, res, next) => {
+    if (!authConfig.required) return next();
+    if (req.path === "/login" || req.path.startsWith("/assets/") || req.path === "/favicon.ico") return next();
+
+    const session = getSession(req);
+    if (session) return next();
+
+    if (req.path.startsWith("/api/") || req.path.startsWith("/reports/")) {
+      return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
+    }
+
+    if (wantsHtml(req)) {
+      return res.redirect(302, "/login?reason=expired-session");
+    }
+
+    return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
+  });
 
   // 1. API: Get latest report results
   app.get("/api/results", (req, res) => {

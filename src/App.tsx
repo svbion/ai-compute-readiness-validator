@@ -10,6 +10,9 @@ import {
   FileText,
   Gauge,
   Layers,
+  Lock,
+  LogOut,
+  Mail,
   Network,
   Play,
   RefreshCw,
@@ -18,6 +21,8 @@ import {
   ShieldCheck,
   Sparkles,
   Waypoints,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   type CheckStatus,
@@ -97,6 +102,175 @@ function summaryLine(check: ValidationCheck | undefined, fallback: string) {
 
 function countChecks(cluster: Cluster | null, predicate: (check: ValidationCheck) => boolean) {
   return getAllChecks(cluster).filter(predicate).length;
+}
+
+function LoginPage() {
+  const queryReason = new URLSearchParams(window.location.search).get("reason");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(
+    queryReason === "expired-session" ? "Your session expired. Sign in again to continue." : null,
+  );
+  const [locked, setLocked] = useState(false);
+
+  const submitLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    setLocked(false);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        window.location.assign("/");
+        return;
+      }
+
+      const payload = await response.json().catch(() => ({ reason: "invalid-credentials" }));
+      if (payload.reason === "account-locked") {
+        setLocked(true);
+        setMessage("This reviewer entry is temporarily locked. Wait before trying again.");
+      } else {
+        setMessage("Invalid email or password.");
+      }
+    } catch {
+      setMessage("Authentication service is unavailable. Try again after the portal is healthy.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-[#030610] text-slate-100 selection:bg-emerald-500/25 selection:text-emerald-200">
+      <div className="absolute inset-0 opacity-70" aria-hidden="true">
+        <div className="login-grid absolute inset-0" />
+        <div className="absolute left-1/2 top-0 h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="absolute bottom-[-10rem] right-[-8rem] h-[30rem] w-[30rem] rounded-full bg-cyan-500/8 blur-3xl" />
+        <div className="signal-path signal-path-a" />
+        <div className="signal-path signal-path-b" />
+      </div>
+
+      <section className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-6 py-10 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-emerald-300">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(118,185,0,0.8)]" />
+            Invite-only reviewer access
+          </div>
+
+          <div className="space-y-5">
+            <h1 className="max-w-4xl text-4xl font-display font-bold tracking-tight text-slate-50 md:text-6xl">
+              AI Factory Validation Portal
+            </h1>
+            <p className="max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
+              Private access to AI compute infrastructure readiness, validation evidence, and customer-acceptance workflows.
+            </p>
+          </div>
+
+          <div className="grid max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
+            {["Linux", "GPU Compute", "InfiniBand / RDMA", "Slurm", "Kubernetes", "Storage", "Customer Acceptance"].map((item) => (
+              <span key={item} className="rounded-2xl border border-slate-800 bg-slate-950/45 px-3 py-2 text-xs text-slate-300 backdrop-blur">
+                {item}
+              </span>
+            ))}
+          </div>
+
+          <div className="max-w-2xl rounded-3xl border border-slate-800 bg-slate-950/45 p-5 text-sm leading-7 text-slate-400 backdrop-blur">
+            <p className="text-slate-300">Built by Sabion P. Frazier</p>
+            <p className="mt-2">
+              This project is an independent portfolio project and is not affiliated with, sponsored by, or endorsed by NVIDIA.
+            </p>
+          </div>
+        </div>
+
+        <div className="cyber-panel rounded-[2rem] border border-slate-800/80 bg-slate-950/75 p-6 shadow-2xl md:p-8">
+          <div className="mb-7 flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-slate-500">Secure entry</div>
+              <h2 className="mt-3 text-2xl font-display font-semibold text-slate-50">Reviewer sign in</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">Use an issued reviewer invitation when authentication is enabled.</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+              <Lock className="h-5 w-5 text-emerald-300" />
+            </div>
+          </div>
+
+          <form onSubmit={submitLogin} className="space-y-5">
+            <div>
+              <label htmlFor="reviewer-email" className="mb-2 block text-sm font-medium text-slate-200">Email</label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  id="reviewer-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-3 text-slate-100 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="reviewer-password" className="mb-2 block text-sm font-medium text-slate-200">Password</label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  id="reviewer-password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-12 text-slate-100 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute right-2 top-1/2 rounded-xl p-2 -translate-y-1/2 text-slate-400 transition hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/45 p-4 text-xs leading-6 text-slate-400">
+              Invitation required. Access is private, session-based, and does not store credentials in browser local storage.
+            </div>
+
+            {message && (
+              <div role="alert" aria-live="polite" className={`rounded-2xl border p-4 text-sm ${locked ? "border-amber-500/30 bg-amber-500/10 text-amber-100" : "border-red-500/30 bg-red-500/10 text-red-100"}`}>
+                {message}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/25 disabled:cursor-not-allowed disabled:bg-emerald-700"
+            >
+              {loading && <RefreshCw className="h-4 w-4 animate-spin" />}
+              {loading ? "Checking reviewer access" : "Sign in"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-xs leading-6 text-slate-500">
+            Privacy-oriented demo portal: no analytics, no public registration, no social login, and no vendor endorsement claim.
+          </p>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 export default function App() {
@@ -205,6 +379,15 @@ export default function App() {
     }));
   };
 
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    window.location.assign("/login");
+  };
+
+  if (window.location.pathname === "/login") {
+    return <LoginPage />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans antialiased selection:bg-emerald-500/25 selection:text-emerald-200">
       <header className="border-b border-slate-800/80 bg-slate-950/85 backdrop-blur sticky top-0 z-40">
@@ -245,6 +428,14 @@ export default function App() {
 
               <div className="flex flex-wrap gap-3 text-sm text-slate-400">
                 <span>Target profiles: DGX-class systems • HGX-based systems • OEM GPU platforms</span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-800 px-3 py-1 text-xs text-slate-300 transition hover:border-emerald-500/40 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Logout
+                </button>
               </div>
             </div>
 
