@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List
 from ai_validator.models import ValidationCheck, StatusEnum, SeverityEnum
 from ai_validator.collectors.base import BaseCollector
@@ -54,6 +55,8 @@ class GpuCollector(BaseCollector):
         # If tools exist, run detailed checks
         smi_gpus = CommandRunner.run_command(["nvidia-smi", "-L"])
         smi_query = CommandRunner.run_command(["nvidia-smi", "-q"])
+        smi_topo = CommandRunner.run_command(["nvidia-smi", "topo", "-m"])
+        smi_inventory = CommandRunner.run_command(["nvidia-smi", "--query-gpu=index,name,uuid,serial,driver_version,pci.bus_id,temperature.gpu,ecc.errors.uncorrected.volatile.total", "--format=csv,noheader"])
 
         # 3. Driver & CUDA Check
         driver_status = StatusEnum.PASS
@@ -81,7 +84,7 @@ class GpuCollector(BaseCollector):
             status=driver_status,
             severity=SeverityEnum.MEDIUM,
             summary=driver_summary,
-            evidence=[smi_query] if smi_query.exit_code == 0 else [],
+            evidence=[cmd for cmd in [smi_query, smi_inventory] if cmd.exit_code == 0],
             recommendation=driver_rec,
             node=node_name
         ))
@@ -112,7 +115,7 @@ class GpuCollector(BaseCollector):
             status=ecc_status,
             severity=SeverityEnum.CRITICAL,
             summary=ecc_summary,
-            evidence=[smi_query] if smi_query.exit_code == 0 else [],
+            evidence=[cmd for cmd in [smi_query, smi_inventory] if cmd.exit_code == 0],
             recommendation=ecc_rec,
             node=node_name
         ))
@@ -140,10 +143,9 @@ class GpuCollector(BaseCollector):
             status=nv_status,
             severity=SeverityEnum.HIGH,
             summary=nv_summary,
-            evidence=[nv_cmd] if nv_cmd.exit_code == 0 else [],
+            evidence=[cmd for cmd in [nv_cmd, smi_topo] if cmd.exit_code == 0],
             recommendation=nv_rec,
             node=node_name
         ))
 
         return checks
-import re

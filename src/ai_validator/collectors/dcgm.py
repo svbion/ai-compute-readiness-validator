@@ -48,9 +48,10 @@ class DcgmCollector(BaseCollector):
                 ))
             return checks
 
-        # If dcgmi is available, execute health and diagnostics checks
+        # If dcgmi is available, execute passive health checks only. Intrusive
+        # diagnostics such as dcgmi diag -r 2/-r 3 are intentionally left to a
+        # future explicit opt-in workflow.
         health_cmd = CommandRunner.run_command(["dcgmi", "health", "-c"])
-        diag_cmd = CommandRunner.run_command(["dcgmi", "diag", "-r", "1"])
 
         # Health check
         health_status = StatusEnum.PASS
@@ -74,25 +75,15 @@ class DcgmCollector(BaseCollector):
             node=node_name
         ))
 
-        # Diagnostics check
-        diag_status = StatusEnum.PASS
-        diag_summary = "Fast read-only DCGM software diagnostic Level 1 tests passed."
-        diag_rec = None
-
-        if diag_cmd.exit_code != 0:
-            diag_status = StatusEnum.FAIL
-            diag_summary = "DCGM Level 1 diagnostics failed. Inter-GPU or memory errors were detected."
-            diag_rec = "Isolate the node and run detailed stress diagnostics: 'dcgmi diag -r 2' or 'dcgmi diag -r 3' to confirm PCIe bandwidth, stress, and NVLink stability."
-
         checks.append(ValidationCheck(
             id="gpu.dcgm_diag",
             category="gpu",
             title="NVIDIA DCGM On-Demand Diagnostics",
-            status=diag_status,
+            status=StatusEnum.SKIPPED,
             severity=SeverityEnum.HIGH,
-            summary=diag_summary,
-            evidence=[diag_cmd],
-            recommendation=diag_rec,
+            summary="Active DCGM diagnostics were not executed. This validator pass is read-only by default.",
+            evidence=[],
+            recommendation="Use a future explicit opt-in workflow for active DCGM diagnostics after draining workloads and obtaining maintenance approval.",
             node=node_name
         ))
 

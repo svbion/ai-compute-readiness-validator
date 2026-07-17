@@ -10,6 +10,7 @@ from ai_validator.reporting.json_report import JsonReporter
 from ai_validator.reporting.html import HtmlReporter
 from ai_validator.reporting.markdown import MarkdownReporter
 from ai_validator.runner import CommandRunner
+from ai_validator.profiles import get_profile
 
 
 runner = CliRunner()
@@ -100,3 +101,22 @@ def test_command_runner_blocks_mutating_commands():
 
     assert evidence.exit_code == 126
     assert "blocked" in evidence.stderr.lower()
+
+
+def test_validate_command_accepts_real_hardware_profiles():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = runner.invoke(app, ["validate", "--profile", "dgx-class", "--name", "profile-smoke", "--output-dir", tmpdir])
+
+        assert result.exit_code == 0
+        assert os.path.exists(os.path.join(tmpdir, "latest-results.json"))
+        with open(os.path.join(tmpdir, "latest-results.json"), "r", encoding="utf-8") as handle:
+            content = handle.read()
+        assert '"selected_profile": "dgx-class"' in content
+        assert '"simulated": false' in content
+
+
+def test_dgx_profile_is_not_hardware_identity_claim():
+    profile = get_profile("dgx-class")
+
+    assert "expected-capability" in profile.notes.lower()
+    assert "authenticity" in profile.notes.lower()

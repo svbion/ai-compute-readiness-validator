@@ -1,6 +1,7 @@
 import os
 import sys
 from typing import Optional
+from datetime import datetime
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -13,6 +14,7 @@ from ai_validator.demo.generator import DemoGenerator
 from ai_validator.reporting.json_report import JsonReporter
 from ai_validator.reporting.html import HtmlReporter
 from ai_validator.reporting.markdown import MarkdownReporter
+from ai_validator.profiles import get_profile
 
 # Import collectors
 from ai_validator.collectors.linux import LinuxCollector
@@ -138,6 +140,7 @@ def print_terminal_summary(cluster: Cluster):
 
 @app.command()
 def validate(
+    profile: str = typer.Option("auto", "--profile", help="Validation profile: auto, gpu-workstation, single-gpu-node, dgx-class, hgx-based, oem-gpu-platform, slurm-gpu-cluster, kubernetes-gpu-cluster, ai-factory"),
     name: str = typer.Option("localhost-cluster", "--name", help="Name to assign to the validated cluster"),
     output_dir: str = typer.Option("artifacts", "--output-dir", help="Directory where reports are written")
 ):
@@ -145,7 +148,13 @@ def validate(
     Executes live validation on the local machine using secure, read-only system calls.
     Detects local host capabilities and generates detailed reports.
     """
-    console.print("[bold green]Starting live compute diagnostic validation...[/bold green]")
+    try:
+        selected_profile = get_profile(profile)
+    except ValueError as exc:
+        console.print(f"[bold red]{exc}[/bold red]", err=True)
+        sys.exit(1)
+
+    console.print(f"[bold green]Starting live compute diagnostic validation with profile [cyan]{selected_profile.id}[/cyan]...[/bold green]")
     
     # Determine local hostname
     import socket
@@ -207,7 +216,30 @@ def validate(
     cluster = Cluster(
         name=name,
         nodes=[node],
-        metadata={"execution_mode": "Live Validation"}
+        metadata={
+            "execution_mode": "Live Validation",
+            "validation_source": "Live Linux Host",
+            "collection_timestamp": datetime.utcnow().isoformat() + "Z",
+            "hostname": hostname,
+            "selected_profile": selected_profile.id,
+            "selected_profile_label": selected_profile.label,
+            "expected_capabilities": selected_profile.expected_capabilities,
+            "profile_notes": selected_profile.notes,
+            "detected_environment": "local-linux-host",
+            "hardware_identity_verified": False,
+            "collector_version": "ai-validator 0.1.0",
+            "git_commit": os.environ.get("AI_VALIDATOR_GIT_COMMIT", "unknown"),
+            "operating_system_evidence": "linux.os_version",
+            "gpu_evidence_source": "nvidia-smi when present; unavailable otherwise",
+            "cluster_evidence_source": "Slurm/Kubernetes/InfiniBand commands when present; unavailable otherwise",
+            "simulated": False,
+            "sanitization_status": "sanitized-by-command-runner",
+            "source_confidence": "live-host-read-only-commands",
+            "limitations": [
+                "No active diagnostics, stress tests, GPU resets, driver installation, firmware updates, or scheduler mutations were executed.",
+                "DGX-class and HGX-based profiles are expected-capability profiles, not hardware authenticity claims.",
+            ],
+        }
     )
     
     # Calculate score
