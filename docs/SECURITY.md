@@ -64,3 +64,7 @@ This is not a hardened remote execution platform. Current intentional boundaries
 - HTML reports are self-contained and portable, but they may include sanitized command evidence. Treat them as internal diagnostic artifacts.
 - The portal's benchmark section is still demo-oriented; the authoritative ingestion workflow is the CLI.
 - If future work introduces remote fan-out, file uploads, or multi-user access, the threat model and validation surface must be revisited.
+
+## Product branding note
+
+GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept, and the Git repository remains `ai-compute-readiness-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`.

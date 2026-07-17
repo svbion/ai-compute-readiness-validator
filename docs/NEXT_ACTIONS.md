@@ -27,3 +27,7 @@ ai-validator demo --scenario healthy
 ai-validator demo --scenario degraded
 pytest
 ```
+
+## Product branding note
+
+GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept, and the Git repository remains `ai-compute-readiness-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`.

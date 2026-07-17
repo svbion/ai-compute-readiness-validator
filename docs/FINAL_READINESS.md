@@ -2,7 +2,7 @@
 
 Status: final Phase 11 documentation/authentication coverage pass on `hermes-mvp`.
 
-This document records the final audit result for the AI Factory Validation Portal. It is intentionally conservative: no real NVIDIA/DGX/HGX hardware validation is claimed unless verified live evidence is collected and imported through the administrator-side workflow.
+This document records the final audit result for the GPU Validator. It is intentionally conservative: no real NVIDIA/DGX/HGX hardware validation is claimed unless verified live evidence is collected and imported through the administrator-side workflow.
 
 ## 1. Starting audit summary
 
@@ -230,3 +230,7 @@ Observed scenario results:
 Hardware statement:
 
 Real NVIDIA GPU validation was not executed in this pass. The local live smoke ran on the current local host only. No real DGX/HGX/DGX Cloud/LaunchPad hardware output was fabricated or introduced.
+
+## Product branding note
+
+GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept, and the Git repository remains `ai-compute-readiness-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`.

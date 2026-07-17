@@ -114,3 +114,7 @@ Legend:
 - `prefers-reduced-motion` disables long-running animations and transitions.
 - E2E currently exercises Chromium desktop and mobile Chromium. Current Edge is Chromium-equivalent for these paths. Safari/Firefox remain practical manual validation targets unless CI/browser availability is expanded.
 - Build output after login/auth additions remains small for the scope: one Vite bundle plus CSS, no stock imagery, no large static assets.
+
+## Product branding note
+
+GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept, and the Git repository remains `ai-compute-readiness-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`.

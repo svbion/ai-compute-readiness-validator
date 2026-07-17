@@ -1,13 +1,16 @@
-# Caddy reverse proxy for AI Factory Validation Portal.
-# DNS requirement: create an A/AAAA record for the hostname below pointing to
-# the Hetzner server before starting Caddy so Let's Encrypt can issue HTTPS.
+# Caddy reverse proxy for GPU Validator.
+# DNS requirement: create A/AAAA records for gpuvalidator.com and www.gpuvalidator.com
+# pointing to the Hetzner server before starting Caddy so Let's Encrypt can issue HTTPS.
 #
-# Example:
-#   export AI_FACTORY_DOMAIN=validator.example.com
-#   sudo caddy validate --config /etc/caddy/Caddyfile
-#   sudo systemctl reload caddy
+# Expected behavior:
+#   https://gpuvalidator.com reverse proxies to 127.0.0.1:3000
+#   https://www.gpuvalidator.com redirects permanently to https://gpuvalidator.com
 
-{$AI_FACTORY_DOMAIN} {
+www.gpuvalidator.com {
+	redir https://gpuvalidator.com{uri} permanent
+}
+
+gpuvalidator.com {
 	encode zstd gzip
 
 	header {

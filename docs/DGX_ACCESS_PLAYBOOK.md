@@ -136,3 +136,7 @@ Minimum DGX Cloud / Lepton evidence notes:
 - DGX/HGX identity requires reliable DMI/platform or provider evidence.
 - Imported evidence must be sanitized, checksum-verified when possible, and marked as imported.
 - Demo scenarios remain labelled simulated.
+
+## Product branding note
+
+GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept, and the Git repository remains `ai-compute-readiness-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`.

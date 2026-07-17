@@ -1,6 +1,8 @@
 # Hetzner Ubuntu 24.04 deployment
 
-This guide deploys the AI Factory Validation Portal to one Ubuntu 24.04 Hetzner Cloud server using Node.js, Python, systemd, and Caddy. It intentionally avoids Docker, Kubernetes, Terraform, Ansible, databases, or external cloud services.
+This guide deploys GPU Validator to one Ubuntu 24.04 Hetzner Cloud server using Node.js, Python, systemd, and Caddy. It intentionally avoids Docker, Kubernetes, Terraform, Ansible, databases, or external cloud services.
+
+GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept. The Git repository stays `ai-compute-readiness-validator`, the `ai-validator` CLI remains unchanged, and the installed service/path names remain `ai-factory-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`, with `https://www.gpuvalidator.com` redirecting permanently to the root domain.
 
 ## Production readiness audit
 
@@ -173,14 +175,16 @@ The `run-scenario` check should return HTTP `405`; the public reviewer portal is
 Create DNS records pointing your hostname to the Hetzner server:
 
 ```text
-A     validator.example.com    SERVER_IPV4
-AAAA  validator.example.com    SERVER_IPV6  # optional, only if IPv6 is enabled
+A      gpuvalidator.com        SERVER_IPV4
+AAAA   gpuvalidator.com        SERVER_IPV6  # optional, only if IPv6 is enabled
+A      www.gpuvalidator.com    SERVER_IPV4
+AAAA   www.gpuvalidator.com    SERVER_IPV6  # optional, only if IPv6 is enabled
 ```
 
 Wait for DNS propagation before enabling Caddy HTTPS. Confirm from your workstation:
 
 ```bash
-dig +short validator.example.com
+dig +short gpuvalidator.com
 ```
 
 ## 7. Enable HTTPS with Caddy
@@ -201,18 +205,12 @@ Install this repository's Caddyfile:
 
 ```bash
 cp /opt/ai-factory-validator/deploy/caddy/Caddyfile /etc/caddy/Caddyfile
-mkdir -p /etc/systemd/system/caddy.service.d
-cat >/etc/systemd/system/caddy.service.d/override.conf <<'EOF'
-[Service]
-Environment=AI_FACTORY_DOMAIN=validator.example.com
-EOF
-systemctl daemon-reload
 caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
 systemctl status caddy --no-pager
 ```
 
-Caddy automatically requests and renews HTTPS certificates when ports `80` and `443` are reachable and DNS is correct.
+The repository Caddyfile is configured for `gpuvalidator.com` and `www.gpuvalidator.com`; the `www` hostname redirects permanently to `https://gpuvalidator.com`. Caddy automatically requests and renews HTTPS certificates when ports `80` and `443` are reachable and DNS is correct.
 
 ## 8. Hetzner firewall recommendations
 
@@ -314,8 +312,8 @@ Caddy certificate problems:
 
 ```bash
 journalctl -u caddy -n 200 --no-pager
-dig +short validator.example.com
-curl -I http://validator.example.com
+dig +short gpuvalidator.com
+curl -I http://gpuvalidator.com
 ```
 
 Validation route failures:

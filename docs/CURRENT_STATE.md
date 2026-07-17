@@ -105,3 +105,7 @@ Real NVIDIA hardware readiness:
 - Keep validator operations read-only.
 - Do not claim real NVIDIA hardware validation without verified command evidence.
 - Do not add public registration, hard-coded credentials, telemetry, analytics, database dependency, Docker, Kubernetes deployment, Terraform, Ansible, or LLM dependencies.
+
+## Product branding note
+
+GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept, and the Git repository remains `ai-compute-readiness-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`.

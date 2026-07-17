@@ -98,7 +98,7 @@ log "Checking public health and login"
 request_without_auth GET /healthz 200 "${TMP_DIR}/healthz.json"
 python3 -m json.tool "${TMP_DIR}/healthz.json" >/dev/null
 request_without_auth GET /login 200 "${TMP_DIR}/login.html"
-assert_contains "${TMP_DIR}/login.html" '<div id="root"|AI Factory|script'
+assert_contains "${TMP_DIR}/login.html" '<div id="root"|GPU Validator|script'
 
 if is_auth_required; then
   log "Checking unauthenticated protection"
@@ -110,7 +110,7 @@ fi
 
 log "Checking authenticated portal root"
 request GET / 200 "${TMP_DIR}/root.html"
-assert_contains "${TMP_DIR}/root.html" '<div id="root"|AI Factory|script'
+assert_contains "${TMP_DIR}/root.html" '<div id="root"|GPU Validator|script'
 
 for scenario in healthy degraded; do
   log "Checking API results for ${scenario}"
@@ -123,10 +123,10 @@ for scenario in healthy degraded; do
 
   log "Checking report routes for ${scenario}"
   request GET "/reports/${scenario}/html" 200 "${TMP_DIR}/${scenario}.html"
-  assert_contains "${TMP_DIR}/${scenario}.html" '<html|AI Factory|Validation Report'
+  assert_contains "${TMP_DIR}/${scenario}.html" '<html|GPU Validator|Validation Report'
 
   request GET "/reports/${scenario}/markdown" 200 "${TMP_DIR}/${scenario}.md"
-  assert_contains "${TMP_DIR}/${scenario}.md" '^# AI Factory Validation Report|Evaluation Summary'
+  assert_contains "${TMP_DIR}/${scenario}.md" '^# GPU Validator|Evaluation Summary'
 
   request GET "/reports/${scenario}/json" 200 "${TMP_DIR}/${scenario}-report.json"
   python3 -m json.tool "${TMP_DIR}/${scenario}-report.json" >/dev/null

@@ -1,5 +1,5 @@
 [Unit]
-Description=AI Factory Validation Portal
+Description=GPU Validator
 Documentation=https://github.com/svbion/ai-compute-readiness-validator
 After=network-online.target
 Wants=network-online.target

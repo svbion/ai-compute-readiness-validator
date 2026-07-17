@@ -18,13 +18,15 @@ Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
 Requires-Dist: black>=23.0.0; extra == "dev"
 Requires-Dist: isort>=5.12.0; extra == "dev"
 
-# AI Factory Validation Portal
+# GPU Validator
 
-AI Factory Validation Portal is a read-only assessment toolkit and interview demo for GPU-accelerated AI compute infrastructure. It combines:
+GPU Validator is a read-only assessment toolkit and interview demo for GPU-accelerated AI compute infrastructure. It combines:
+
+GPU Validator is the product brand and `https://gpuvalidator.com` is the canonical production URL. The Git repository remains `ai-compute-readiness-validator`, the Python package/CLI remain compatible, and AI Factory remains a validation profile and infrastructure-readiness concept rather than the product name.
 - a Python CLI (`ai-validator`) that collects evidence, scores readiness, and emits JSON, Markdown, and standalone HTML reports
 - a Vite/React + Express portal that visualizes the same report data as a customer-acceptance workflow
 
-The portal is intentionally scoped as an enterprise validation and handoff interface for simulated or local evidence. It does not mutate host state, provision infrastructure, or require databases, authentication, telemetry, or cloud services.
+The portal is intentionally scoped as an enterprise validation and handoff interface for simulated, local, or imported sanitized evidence. It does not mutate host state, provision infrastructure, require a database, collect telemetry, or depend on cloud services. Production mode uses environment-driven invite-only authentication by default; local development may disable auth explicitly for operator testing.
 
 This project is an independent portfolio project and is not affiliated with, sponsored by, or endorsed by NVIDIA.
 
@@ -122,7 +124,8 @@ Open `http://localhost:3000`.
 
 Portal API behavior:
 - `GET /api/results?scenario=healthy|degraded` loads generated scenario artifacts from `artifacts/` when present and otherwise falls back to checked-in `sample-data/`
-- `POST /api/run-scenario` runs the local CLI from `.venv` when available and refreshes the scenario view from generated reports
+- `GET /api/evidence-sources` lists simulated sources and only exposes live/imported choices when valid live artifacts exist
+- `POST /api/run-scenario` intentionally returns `405`; the reviewer portal is read-only and scenario/live evidence generation remains an administrator-side CLI workflow
 - `GET /reports/:scenario/:format` serves safe report links for HTML, Markdown, and JSON evidence
 
 ## Live portal instructions
@@ -150,7 +153,7 @@ Recommended hosted pattern:
 - build with `npm run build`
 - run `node dist/server.cjs`
 - keep generated artifacts under `artifacts/`
-- ensure `.venv` exists on the host if `POST /api/run-scenario` should invoke the local CLI
+- generate demo/live/imported artifacts through administrator-side CLI tools before review; the public reviewer surface does not run validators or accept uploads
 
 If you only need a static fallback demo, pre-generate artifacts locally and serve the built portal. In that mode the portal can still load `sample-data/` or generated `artifacts/` without needing live collection.
 
@@ -208,4 +211,4 @@ ai-validator demo --scenario degraded --output-dir artifacts
 - Benchmark execution is not orchestrated by the portal; benchmark readiness currently focuses on ingestion scope and presentation.
 - Customer acceptance logic is derived from the existing readiness classification and structured findings; it is not a separate policy engine.
 
-See `docs/DEMO.md` for the two-minute walkthrough, `docs/ARCHITECTURE.md` for component flow, and `docs/ROADMAP.md` for future integration scope.
+See `docs/DEMO.md` for the two-minute walkthrough, `docs/ARCHITECTURE.md` for component flow, `docs/FUNCTIONAL_TEST_MATRIX.md` for coverage, `docs/FINAL_READINESS.md` for the final public deployment readiness audit, and `docs/ROADMAP.md` for future integration scope.

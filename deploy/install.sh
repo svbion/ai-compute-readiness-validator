@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install or refresh AI Factory Validation Portal on Ubuntu 24.04.
+# Install or refresh GPU Validator on Ubuntu 24.04.
 # Safe to rerun: packages are ensured, the repository is cloned or updated,
 # dependencies are reconciled, artifacts are regenerated, and systemd is updated.
 

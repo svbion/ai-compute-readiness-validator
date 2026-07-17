@@ -1,6 +1,8 @@
-# AI Factory Validation Portal
+# GPU Validator
 
-AI Factory Validation Portal is a read-only assessment toolkit and interview demo for GPU-accelerated AI compute infrastructure. It combines:
+GPU Validator is a read-only assessment toolkit and interview demo for GPU-accelerated AI compute infrastructure. It combines:
+
+GPU Validator is the product brand and `https://gpuvalidator.com` is the canonical production URL. The Git repository remains `ai-compute-readiness-validator`, the Python package/CLI remain compatible, and AI Factory remains a validation profile and infrastructure-readiness concept rather than the product name.
 - a Python CLI (`ai-validator`) that collects evidence, scores readiness, and emits JSON, Markdown, and standalone HTML reports
 - a Vite/React + Express portal that visualizes the same report data as a customer-acceptance workflow
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Update an installed AI Factory Validation Portal checkout.
+# Update an installed GPU Validator checkout.
 # Safe to rerun: updates code, reconciles dependencies, validates, restarts,
 # and checks the running service.
 

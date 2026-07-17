@@ -120,3 +120,7 @@ The portal is intentionally organized for customer-acceptance conversations:
 - report files remain first-class artifacts; the UI reads the same JSON model produced by the CLI
 - demo data remains deterministic so interview runs are reproducible
 - target-profile language must not imply vendor endorsement or certification
+
+## Product branding note
+
+GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept, and the Git repository remains `ai-compute-readiness-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`.
