@@ -5,7 +5,7 @@ async function login(page: Page) {
   await page.getByLabel("Email").fill("reviewer@example.invalid");
   await page.locator("#reviewer-password").fill("Reviewer Test Password 123!");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: "AI Factory Validation Portal" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "GPU Validator" })).toBeVisible();
   await expect(page.getByText("Scenario controls")).toBeVisible();
   await expect(page.getByLabel("Evidence source")).toBeVisible();
 }
@@ -13,8 +13,9 @@ async function login(page: Page) {
 test("login page loads with accessible private reviewer entry", async ({ page }) => {
   await page.goto("/login");
 
-  await expect(page.getByRole("heading", { name: "AI Factory Validation Portal" })).toBeVisible();
-  await expect(page.getByText("Private access to AI compute infrastructure readiness")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "GPU Validator" })).toBeVisible();
+  await expect(page.getByText("Private access to GPU infrastructure readiness")).toBeVisible();
+  await expect(page.getByText("InfiniBand / RDMA")).toBeVisible();
   await expect(page.getByLabel("Email")).toHaveAttribute("autocomplete", "email");
   await expect(page.locator("#reviewer-password")).toHaveAttribute("autocomplete", "current-password");
   await expect(page.getByRole("button", { name: "Show password" })).toBeVisible();
@@ -89,6 +90,10 @@ test("report links and authenticated API routes work", async ({ page }) => {
     await expect(page.locator(`a[href="${href}"]`)).toBeVisible();
     const response = await page.request.get(href);
     expect(response.ok()).toBeTruthy();
+    const reportText = await response.text();
+    if (!href.endsWith("/json")) {
+      expect(reportText).toContain("GPU Validator");
+    }
   }
 
   const apiResponse = await page.request.get("/api/results?scenario=degraded");

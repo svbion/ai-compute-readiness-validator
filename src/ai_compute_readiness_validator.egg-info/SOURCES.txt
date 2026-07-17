@@ -32,4 +32,5 @@ src/ai_validator/demo/scenarios.py
 src/ai_validator/reporting/html.py
 src/ai_validator/reporting/json_report.py
 src/ai_validator/reporting/markdown.py
+tests/test_evidence_tools.py
 tests/test_validation.py

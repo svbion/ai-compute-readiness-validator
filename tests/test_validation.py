@@ -74,10 +74,18 @@ def test_report_generation():
         # Test HTML
         HtmlReporter.generate_report(cluster, html_file)
         assert os.path.exists(html_file)
+        with open(html_file, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        assert "GPU Validator" in html_content
+        assert "AI Compute Infrastructure Readiness and Customer Acceptance Report" in html_content
         
         # Test Markdown
         MarkdownReporter.generate_report(cluster, md_file)
         assert os.path.exists(md_file)
+        with open(md_file, "r", encoding="utf-8") as f:
+            md_content = f.read()
+        assert "# GPU Validator" in md_content
+        assert "AI Compute Infrastructure Readiness and Customer Acceptance Report" in md_content
 
 
 def test_demo_command_writes_latest_and_scenario_reports():
