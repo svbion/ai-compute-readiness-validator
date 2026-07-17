@@ -4,7 +4,7 @@ AI Factory Validation Portal is a read-only assessment toolkit and interview dem
 - a Python CLI (`ai-validator`) that collects evidence, scores readiness, and emits JSON, Markdown, and standalone HTML reports
 - a Vite/React + Express portal that visualizes the same report data as a customer-acceptance workflow
 
-The portal is intentionally scoped as an enterprise validation and handoff interface for simulated or local evidence. It does not mutate host state, provision infrastructure, or require databases, authentication, telemetry, or cloud services.
+The portal is intentionally scoped as an enterprise validation and handoff interface for simulated, local, or imported sanitized evidence. It does not mutate host state, provision infrastructure, require a database, collect telemetry, or depend on cloud services. Production mode uses environment-driven invite-only authentication by default; local development may disable auth explicitly for operator testing.
 
 This project is an independent portfolio project and is not affiliated with, sponsored by, or endorsed by NVIDIA.
 
@@ -189,4 +189,4 @@ ai-validator demo --scenario degraded --output-dir artifacts
 - Benchmark execution is not orchestrated by the portal; benchmark readiness currently focuses on ingestion scope and presentation.
 - Customer acceptance logic is derived from the existing readiness classification and structured findings; it is not a separate policy engine.
 
-See `docs/DEMO.md` for the two-minute walkthrough, `docs/ARCHITECTURE.md` for component flow, and `docs/ROADMAP.md` for future integration scope.
+See `docs/DEMO.md` for the two-minute walkthrough, `docs/ARCHITECTURE.md` for component flow, `docs/FUNCTIONAL_TEST_MATRIX.md` for coverage, `docs/FINAL_READINESS.md` for the final public deployment readiness audit, and `docs/ROADMAP.md` for future integration scope.

@@ -1144,7 +1144,7 @@ export default function App() {
                     Base Command Manager integration, Ansible multi-node collection, DCGM orchestration, NCCL execution, HPL and HPL-AI execution, MLPerf result integration, baseline comparison, configuration drift detection, and customer acceptance workflow automation remain roadmap items only.
                   </div>
                   <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                    The current implementation intentionally limits itself to read-only live validation, deterministic scenarios, and report visualization without adding new services, authentication, or telemetry systems.
+                    The current implementation intentionally limits itself to read-only live validation, deterministic scenarios, invite-only reviewer authentication, and report visualization without adding databases, public registration, telemetry, or benchmark orchestration services.
                   </div>
                 </div>
               </div>

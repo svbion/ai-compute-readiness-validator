@@ -42,9 +42,10 @@ Persisted outputs are local files only:
 - Markdown reports
 - standalone HTML reports
 
-The project currently does not add:
+The project currently uses environment-driven invite-only portal authentication in production, implemented with local server-side sessions and no external identity provider or database. The project does not add:
 - remote telemetry
 - cloud upload
+- public registration
 - external auth flows
 - database persistence
 
@@ -54,6 +55,8 @@ This is not a hardened remote execution platform. Current intentional boundaries
 - local-only command execution
 - no SSH orchestration yet
 - no arbitrary user-supplied shell commands exposed through the web UI
+- no public upload or browser-side live-evidence import path
+- reviewer portal routes are read-only; live evidence import remains an administrator-side CLI action
 - demo scenarios are deterministic fixtures, not remote-controlled payloads
 
 ## Operational caveats

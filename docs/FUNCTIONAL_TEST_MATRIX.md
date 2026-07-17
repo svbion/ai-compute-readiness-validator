@@ -13,6 +13,7 @@ Legend:
 | Feature | Component or route | Expected behavior | Healthy result | Degraded result | Live-result behavior | Unauthenticated behavior | Reviewer behavior | Mobile behavior | Error behavior | Automated coverage | Manual status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Login page | `/login`, `LoginPage` | Dark enterprise AI-infrastructure entry page with email/password, labels, show/hide password, invitation-required message, attribution, disclaimer | N/A | N/A | N/A | Public | Can submit issued reviewer credentials | Playwright mobile project verifies visibility | Shows generic invalid/unavailable messages | `tests-e2e/portal.spec.ts` | Verified |
+| Auth configuration | `src/server/auth.ts`, `/api/auth/config` | Production defaults to auth-required; development can opt in/out by environment | N/A | N/A | N/A | Public config only reveals whether auth is required | No credential material exposed | N/A | Missing production secrets fail closed at startup/config validation | `tests-portal/auth.test.ts` | Verified |
 | Login loading state | `LoginPage` | Sign-in button shows loading copy/spinner while request is in flight | N/A | N/A | N/A | Public | Visible during auth request | Button remains visible/tappable | Network failure reports auth service unavailable | E2E exercises form submit path | Verified |
 | Invalid credentials | `POST /api/auth/login` | Generic `401` without revealing email/password validity | N/A | N/A | N/A | Public endpoint | Reviewer sees generic invalid message | Visible alert | Does not reveal which factor failed | E2E invalid credential test | Verified |
 | Account lockout | `POST /api/auth/login` | Repeated failures lock attempt key temporarily with `423` | N/A | N/A | N/A | Public endpoint | Reviewer sees generic locked state | Visible alert | No credential detail leakage | E2E lockout path | Verified |
@@ -31,6 +32,9 @@ Legend:
 | Reviewer-side run attempt | `POST /api/run-scenario` | Returns 405 because the reviewer portal is read-only | N/A | N/A | Live evidence generation remains administrator-side CLI only | 401 when auth required | Reviewer cannot trigger validation or import from browser | Responsive alert if surfaced | Shows read-only error message | E2E API assertion; deploy verify run-scenario | Verified |
 | Current-scenario indicator | Header scenario controls | Displays selected scenario label | Healthy label | Degraded label | Label reflects selected payload | Protected | Visible after login | Visible | N/A | E2E scenario switching | Verified |
 | No stale state after switching | `fetchResults` | Clears cluster before new scenario and does not retain old score | No `97.01%` after switching back healthy | No `100.00%` primary score after degraded | Same | Protected | Verified after login | Verified in mobile project | Error path clears cluster | E2E no stale data assertion | Verified |
+| Evidence source selector | Header source selector + `/api/evidence-sources` | Lists Simulated Healthy/Degraded and hides live choices unless valid live artifacts exist | Simulated Healthy selected | Simulated Degraded selected | Latest/Imported live choices appear only with valid metadata | 401 when auth required | Reviewer can switch sources, not upload/import | Select remains usable on mobile | Missing live source yields controlled unavailable state | E2E selector checks; production route verification | Verified |
+| Source context panel | `buildSourceContext`, Source context section | Shows provenance fields for selected payload | Simulated profile/environment/limitations | Simulated degraded profile/environment/limitations | Shows evidence source, profile, environment, timestamp, hardware identity, sanitization, confidence, limitations | Protected | Reviewer sees provenance before interpreting results | Responsive cards wrap | Missing metadata gets conservative fallback labels | `tests-portal/assessment.test.ts`, E2E | Verified |
+| Imported evidence banner | `buildSourceContext`, Source context section | Imported evidence gets a prominent banner warning to review sanitization/provenance/limitations | N/A | N/A | Imported Live Evidence shows amber status banner | Protected | Prevents confusing imported evidence with simulated/demo data | Banner wraps on mobile | N/A | Portal unit test for imported banner | Verified |
 
 ## Summary and acceptance
 
@@ -58,6 +62,8 @@ Legend:
 | Customer handoff | Handoff summary | Summarizes outcome, blockers, remediation, evidence, next step | Proceed with walkthrough | Keep dgx04 drained/remediate ECC | Derived from live checks | Protected | Visible | Responsive | Missing data tolerated | Manual + E2E | Verified |
 | Benchmark readiness | Benchmark tab | Distinguishes supported ingestion and roadmap-only execution | Supported ingestion labels | Same | Imported benchmark results display metrics | Protected | Tab accessible | Responsive cards | No benchmarks explains empty state | Manual + unit catalog test | Verified |
 | Interview walkthrough | Details element | Opens/closes and lists logical steps | Works | Works | Same | Protected | Browser-native details | Works on mobile | Does not block UI | Manual | Verified |
+| Report access card | Report Access links | Exposes safe HTML, Markdown, and JSON links only through server routes | Healthy report links | Degraded report links | Live/imported report links require controlled artifacts/regeneration | 401 when auth required | Opens evidence in new tab/API | Links remain tappable | Missing artifact returns 404 JSON | E2E report routes; deploy verify | Verified |
+| Future orchestration card | Benchmark tab | States roadmap scope without implying active orchestration | Roadmap-only text visible | Roadmap-only text visible | Same | Protected | No benchmark execution controls exposed | Responsive text blocks | N/A | Manual visual review | Verified |
 
 ## Reports and route safety
 
@@ -82,6 +88,10 @@ Legend:
 | rollback.sh | `deploy/rollback.sh` | Checkout tag/commit, rebuild/restart/verify | N/A | N/A | Rolls deployed service back | N/A | N/A | N/A | Rejects unknown target | bash -n + docs | Verified locally for syntax; server pending |
 | healthcheck.sh | `deploy/healthcheck.sh` | Non-zero on health failure | N/A | N/A | Checks running service | Public `/healthz` | N/A | N/A | Prints non-secret failure body | Local run | Verified |
 | verify.sh | `deploy/verify.sh` | Full route/API/report verification | Healthy route checks | Degraded route checks | Can use auth test token | Auth checks included | Authenticated checks included | N/A | Fails on bad HTTP/schema | Local run | Verified |
+| bootstrap.sh | `deploy/bootstrap.sh` | Compatibility wrapper dispatches first-time setup to `install.sh` | N/A | N/A | N/A | N/A | Operator-only deployment script | N/A | Fails via install.sh | `bash -n` | Verified |
+| Portable collector | `tools/collect-live-evidence.sh` | Collects read-only live evidence only when explicitly permitted | N/A | N/A | Produces manifest/checksums/reports; installs nothing and uses no sudo | N/A | Admin CLI only, not exposed in portal | N/A | Missing tools become unavailable/skipped | bash -n; local live smoke | Verified locally; pending NVIDIA hardware |
+| Sanitizer | `tools/sanitize-evidence.py` | Redacts usernames, IPs, secrets, serial-like values, MACs/domains by option and rejects symlink traversal | N/A | N/A | Sanitizes bundles before import/export | N/A | Admin CLI only | N/A | Malformed/traversal fixtures fail closed | `tests/test_evidence_tools.py` | Verified |
+| Importer | `tools/import-live-evidence.py` | Imports only sanitized live JSON with required metadata, checksum validity, simulated=false, and nvidia-smi proof | N/A | N/A | Writes controlled imported-live artifacts with provenance | N/A | Admin CLI only; no public upload | N/A | Rejects malformed JSON, invalid checksum, mislabeled simulated evidence, missing nvidia-smi proof, and traversal names | `tests/test_evidence_tools.py` | Verified |
 
 ## Error states
 
@@ -94,6 +104,7 @@ Legend:
 | Reviewer execution attempt | `POST /api/run-scenario` returns 405 with read-only message | Server smoke/code inspection, E2E, deploy verify | Verified |
 | Timeout | Command runner reports timeout in evidence | Python runner inspection | Verified |
 | Optional fields absent | Derivation helpers tolerate sparse payload | `tests-portal/assessment.test.ts` | Verified |
+| Secret/stack leakage | Auth/API/report errors return generic JSON/UI messages and do not include secrets or stack traces | E2E controlled error, auth tests, deployment route checks, code inspection | Verified |
 
 ## Browser, accessibility, and performance notes
 
