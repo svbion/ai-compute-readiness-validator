@@ -5,9 +5,11 @@ import { resolve } from "node:path";
 
 import {
   buildArtifactLinks,
+  buildSourceContext,
   deriveAcceptanceGate,
   deriveFabricHealth,
   deriveGpuHealth,
+  type EvidenceSourceOption,
   type Cluster,
 } from "../src/portal/assessment";
 
@@ -93,4 +95,57 @@ test("derivation helpers tolerate missing optional fields", () => {
 
   assert.equal(gate.acceptanceStatus, "Approved for handoff");
   assert.equal(gpuHealth.discoveredGpuCount, 0);
+});
+
+test("source context labels simulated and live evidence provenance", () => {
+  const healthy = loadScenario("healthy");
+  const simulatedSource: EvidenceSourceOption = {
+    id: "simulated-healthy",
+    label: "Simulated Healthy",
+    kind: "simulated",
+    endpoint: "/api/results?scenario=healthy",
+    available: true,
+  };
+  const simulatedContext = buildSourceContext(healthy, simulatedSource);
+
+  assert.equal(simulatedContext.evidenceSource, "Simulated Healthy");
+  assert.equal(simulatedContext.hardwareIdentityStatus, "Simulated hardware identity");
+  assert.equal(simulatedContext.sanitizationStatus, "Not required for simulated evidence");
+  assert.equal(simulatedContext.sourceConfidence, "Demo only");
+  assert.match(simulatedContext.limitations.join(" "), /not real hardware/i);
+
+  const liveCluster: Cluster = {
+    ...healthy,
+    timestamp: "2026-07-17T12:34:56Z",
+    metadata: {
+      ...healthy.metadata,
+      execution_mode: "Live Validation",
+      validation_source: "Imported Live Evidence",
+      selected_profile: "dgx-class",
+      collection_timestamp: "2026-07-17T12:34:56Z",
+      detected_environment: "DGX Cloud Lepton candidate",
+      hardware_identity_status: "Provider-reported H100 NVL instance; DMI unavailable",
+      sanitization_status: "Sanitized with redaction manifest",
+      source_confidence: "Medium - provider identity with sanitized command output",
+      limitations: ["No SSH host-level access; workload shell only."],
+      simulated: false,
+    },
+  };
+  const importedSource: EvidenceSourceOption = {
+    id: "imported-live",
+    label: "Imported Live Evidence",
+    kind: "imported-live",
+    endpoint: "/api/results?source=imported-live",
+    available: true,
+  };
+  const liveContext = buildSourceContext(liveCluster, importedSource);
+
+  assert.equal(liveContext.evidenceSource, "Imported Live Evidence");
+  assert.equal(liveContext.selectedValidationProfile, "dgx-class");
+  assert.equal(liveContext.detectedEnvironment, "DGX Cloud Lepton candidate");
+  assert.equal(liveContext.collectionTimestamp, "2026-07-17T12:34:56Z");
+  assert.equal(liveContext.hardwareIdentityStatus, "Provider-reported H100 NVL instance; DMI unavailable");
+  assert.equal(liveContext.sanitizationStatus, "Sanitized with redaction manifest");
+  assert.equal(liveContext.sourceConfidence, "Medium - provider identity with sanitized command output");
+  assert.deepEqual(liveContext.limitations, ["No SSH host-level access; workload shell only."]);
 });

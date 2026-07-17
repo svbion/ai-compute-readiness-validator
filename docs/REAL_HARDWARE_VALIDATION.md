@@ -213,6 +213,33 @@ tools/import-live-evidence.py <bundle-sanitized> --output-dir artifacts/imported
 
 The importer validates JSON, verifies checksums when supplied, preserves provenance, marks evidence as imported, distinguishes imported live evidence from simulated scenarios, copies artifacts into a controlled path, and never executes imported content. Imported HTML is not trusted; regenerate reports from normalized JSON before public display.
 
+## Portal source selector
+
+The portal supports four source contexts without redesigning the existing UI:
+
+- Simulated Healthy
+- Simulated Degraded
+- Latest Live Evidence
+- Imported Live Evidence
+
+Simulated sources are always available for reviewer demonstration. Live sources are only listed when valid live artifacts exist:
+
+- Latest Live Evidence requires a live `latest-results.json` with `metadata.simulated=false` and a non-imported live `validation_source`.
+- Imported Live Evidence requires a sanitized import under `artifacts/imported-live/<name>/latest-results.json` with `metadata.simulated=false` and imported-live metadata.
+
+For every loaded source, the portal prominently displays:
+
+- evidence source
+- selected validation profile
+- detected environment
+- collection timestamp
+- hardware identity status
+- sanitization status
+- source confidence
+- limitations
+
+If a lab only permits manual capture, create or import artifacts only from approved command output and clearly document the missing source context fields as limitations.
+
 ## Required provenance fields
 
 Every real run must include:

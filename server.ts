@@ -69,6 +69,49 @@ function getScenarioResultsPath(scenario?: string): string | null {
   ]);
 }
 
+function readJsonMetadata(filePath: string | null): Record<string, any> | null {
+  if (!filePath) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    return parsed?.metadata && typeof parsed.metadata === "object" ? parsed.metadata : null;
+  } catch {
+    return null;
+  }
+}
+
+function isValidLiveResults(filePath: string | null, imported: boolean): boolean {
+  const metadata = readJsonMetadata(filePath);
+  if (!metadata || metadata.simulated !== false) return false;
+  if (imported) return metadata.imported === true || metadata.validation_source === "Imported Live Evidence";
+  return metadata.validation_source !== "Imported Live Evidence";
+}
+
+function getLatestLiveResultsPath(): string | null {
+  const candidates = [
+    path.join(artifactsDir, "live", "latest-results.json"),
+    path.join(artifactsDir, "latest-live-results.json"),
+    path.join(artifactsDir, "latest-results.json"),
+  ];
+  return candidates.find((candidate) => isValidLiveResults(candidate, false)) ?? null;
+}
+
+function getImportedLiveResultsPath(): string | null {
+  const root = path.join(artifactsDir, "imported-live");
+  if (!fs.existsSync(root)) return null;
+  const candidates = fs.readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => path.join(root, entry.name, "latest-results.json"))
+    .filter((candidate) => isValidLiveResults(candidate, true));
+  return candidates.sort((left, right) => fs.statSync(right).mtimeMs - fs.statSync(left).mtimeMs)[0] ?? null;
+}
+
+function getResultsPathForRequest(query: express.Request["query"]): string | null {
+  const source = String(query.source ?? "");
+  if (source === "latest-live") return getLatestLiveResultsPath();
+  if (source === "imported-live") return getImportedLiveResultsPath();
+  return getScenarioResultsPath(query.scenario as string | undefined);
+}
+
 function getReportArtifactPath(scenario: string, format: string): { filePath: string | null; contentType: string } {
   const safeScenario = ["healthy", "degraded", "latest"].includes(scenario) ? scenario : "latest";
   const formatMap: Record<string, { suffix: string; contentType: string }> = {
@@ -224,10 +267,9 @@ async function startServer() {
     return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
   });
 
-  // 1. API: Get latest report results
+  // 1. API: Get validation results by scenario or live source
   app.get("/api/results", (req, res) => {
-    const scenario = req.query.scenario as string;
-    const filePath = getScenarioResultsPath(scenario);
+    const filePath = getResultsPathForRequest(req.query);
 
     if (!filePath) {
       return res.status(404).json({ error: "Validation results not found. Please trigger a scan." });
@@ -239,6 +281,47 @@ async function startServer() {
     } catch (err: any) {
       return res.status(500).json({ error: `Failed to load results: ${err.message}` });
     }
+  });
+
+  app.get("/api/evidence-sources", (req, res) => {
+    const latestLivePath = getLatestLiveResultsPath();
+    const importedLivePath = getImportedLiveResultsPath();
+    return res.json({
+      sources: [
+        {
+          id: "simulated-healthy",
+          label: "Simulated Healthy",
+          kind: "simulated",
+          endpoint: "/api/results?scenario=healthy",
+          available: true,
+          description: "Deterministic healthy demonstration scenario.",
+        },
+        {
+          id: "simulated-degraded",
+          label: "Simulated Degraded",
+          kind: "simulated",
+          endpoint: "/api/results?scenario=degraded",
+          available: true,
+          description: "Deterministic degraded demonstration scenario.",
+        },
+        ...(latestLivePath ? [{
+          id: "latest-live",
+          label: "Latest Live Evidence",
+          kind: "latest-live",
+          endpoint: "/api/results?source=latest-live",
+          available: true,
+          description: "Latest valid live validation artifact from this deployment.",
+        }] : []),
+        ...(importedLivePath ? [{
+          id: "imported-live",
+          label: "Imported Live Evidence",
+          kind: "imported-live",
+          endpoint: "/api/results?source=imported-live",
+          available: true,
+          description: "Most recent sanitized imported live evidence bundle.",
+        }] : []),
+      ],
+    });
   });
 
   app.get("/reports/:scenario/:format", (req, res) => {

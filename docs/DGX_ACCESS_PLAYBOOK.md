@@ -25,13 +25,54 @@ This is a factual, action-oriented checklist for obtaining temporary access to r
 
 ## NVIDIA DGX Cloud / DGX Cloud Lepton
 
-1. Confirm tenant/project access and acceptable-use policy.
-2. Determine whether access is SSH, notebook, container shell, or managed job only.
-3. Confirm whether host-level `nvidia-smi` output is visible.
-4. Confirm whether Kubernetes/Slurm infrastructure evidence is available or intentionally abstracted.
-5. Run `ai-validator validate --profile dgx-class` only when read-only host commands are permitted.
-6. If only benchmark logs are available, import benchmark evidence and label infrastructure evidence as unavailable/abstracted.
-7. Do not claim physical DGX identity unless platform identity evidence supports it.
+1. Inspect current access and marketplace availability through official NVIDIA DGX Cloud, DGX Cloud Lepton, or approved partner channels. Availability, instance names, and supported regions change over time.
+2. Request access or enroll through official NVIDIA channels only. Do not use unofficial resale, credential-sharing, or bypass paths.
+3. Confirm tenant/project access and acceptable-use policy before provisioning anything.
+4. Confirm the instance provider and actual hardware type before treating evidence as DGX, HGX, H100/H200/B200, GB200, or another NVIDIA platform. Preserve the provider-visible instance type in notes.
+5. Confirm hourly, reserved, marketplace, cloud-credit, or contract cost before provisioning.
+6. Set a cost and time limit before provisioning. Record the planned stop time, budget cap, owner, and who is authorized to extend it.
+7. Determine whether access is SSH, notebook, container shell, workload shell, or managed job only.
+8. Confirm whether host-level `nvidia-smi` output is visible.
+9. Confirm whether Kubernetes/Slurm infrastructure evidence is available or intentionally abstracted.
+10. Confirm the data-egress policy before collecting evidence:
+   - whether raw command output may leave the environment
+   - whether sanitized JSON may leave the environment
+   - whether screenshots are allowed
+   - whether file download, object storage, clipboard, or browser download is permitted
+11. Use the portable collector only when explicitly permitted by the lab/provider policy. Otherwise manually capture only approved command output.
+12. Run `ai-validator validate --profile dgx-class` only when read-only host commands are permitted.
+13. If only benchmark logs are available, import benchmark evidence and label infrastructure evidence as unavailable/abstracted.
+14. Terminate capacity immediately after evidence collection and sanitization are complete. Verify the instance/job/storage allocation is stopped or deleted and record the termination timestamp.
+15. Do not claim physical DGX identity unless platform identity evidence supports it.
+
+Minimum DGX Cloud / Lepton evidence notes:
+
+- access path used: DGX Cloud, DGX Cloud Lepton, partner marketplace, or other official channel
+- provider/region/project/tenant alias, sanitized as required
+- instance or workload type
+- declared GPU model and count
+- actual `nvidia-smi` GPU model and count if visible
+- SSH/workload-shell availability
+- host-level command visibility
+- data-egress policy
+- cost model and approved cost/time limit
+- provisioning timestamp
+- collection timestamp
+- termination timestamp
+- validation limitations
+
+## NVIDIA Inception / Innovation Lab
+
+1. Determine whether Sabion.AI or another eligible company can apply under current NVIDIA Inception program rules. Eligibility and benefit availability can change; inspect the current official program pages before starting.
+2. Complete the official Inception company profile only through NVIDIA-controlled forms and portals.
+3. Inspect current Inception benefits after approval. Look specifically for cloud credits, Innovation Lab access, technical enablement, partner credits, or startup infrastructure benefits.
+4. Request Innovation Lab access, cloud-credit benefits, or partner GPU access through official NVIDIA channels only.
+5. Confirm whether the benefit provides DGX-class hardware, DGX Cloud, partner cloud GPU capacity, a managed lab, or only credits/documentation.
+6. Confirm command, SSH, file-transfer, package-install, benchmark, and data-egress policies before using any collector.
+7. Set a cost and time limit if the benefit involves credits or metered cloud resources.
+8. Document expiration for the benefit, lab reservation, credit grant, or cloud allocation.
+9. Terminate any metered capacity after approved evidence collection.
+10. Label all evidence by actual access path and hardware identity status. Inception membership or Innovation Lab participation is not itself proof of DGX hardware identity.
 
 ## NVIDIA Innovation Lab / partner lab
 

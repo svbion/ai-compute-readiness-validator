@@ -60,7 +60,39 @@ export interface Cluster {
     total_active_weight?: number;
     category_averages?: Record<string, number>;
     critical_failure_count?: number;
+    validation_source?: string;
+    selected_profile?: string;
+    collection_timestamp?: string;
+    detected_environment?: string;
+    hardware_identity_status?: string;
+    sanitization_status?: string;
+    source_confidence?: string;
+    limitations?: string[];
+    simulated?: boolean;
+    imported?: boolean;
   };
+}
+
+export type EvidenceSourceKind = "simulated" | "latest-live" | "imported-live";
+
+export interface EvidenceSourceOption {
+  id: "simulated-healthy" | "simulated-degraded" | "latest-live" | "imported-live" | string;
+  label: string;
+  kind: EvidenceSourceKind;
+  endpoint: string;
+  available: boolean;
+  description?: string;
+}
+
+export interface SourceContext {
+  evidenceSource: string;
+  selectedValidationProfile: string;
+  detectedEnvironment: string;
+  collectionTimestamp: string;
+  hardwareIdentityStatus: string;
+  sanitizationStatus: string;
+  sourceConfidence: string;
+  limitations: string[];
 }
 
 export interface AcceptanceGate {
@@ -136,6 +168,39 @@ export function getStatusTone(status: string): string {
 
 export function isSimulatedScenario(cluster: Cluster | null | undefined): boolean {
   return Boolean(cluster?.metadata?.execution_mode?.toLowerCase().includes("demonstration"));
+}
+
+export function buildSourceContext(cluster: Cluster | null | undefined, source: EvidenceSourceOption | null | undefined): SourceContext {
+  const metadata = cluster?.metadata ?? {};
+  const simulated = source?.kind === "simulated" || metadata.simulated === true || isSimulatedScenario(cluster);
+  const sourceLabel = source?.label ?? metadata.validation_source ?? "Unknown evidence source";
+
+  if (simulated) {
+    return {
+      evidenceSource: sourceLabel,
+      selectedValidationProfile: metadata.selected_profile ?? "Simulated AI factory profile",
+      detectedEnvironment: "Deterministic interview demonstration data",
+      collectionTimestamp: cluster?.timestamp ?? metadata.collection_timestamp ?? "Not collected from live hardware",
+      hardwareIdentityStatus: "Simulated hardware identity",
+      sanitizationStatus: "Not required for simulated evidence",
+      sourceConfidence: "Demo only",
+      limitations: [
+        "Simulated scenario data is deterministic and not real hardware evidence.",
+        "DGX-class labels in demo node names are scenario labels only, not a hardware authenticity claim.",
+      ],
+    };
+  }
+
+  return {
+    evidenceSource: metadata.validation_source ?? sourceLabel,
+    selectedValidationProfile: metadata.selected_profile ?? "Profile not declared",
+    detectedEnvironment: metadata.detected_environment ?? "Live environment not classified",
+    collectionTimestamp: metadata.collection_timestamp ?? cluster?.timestamp ?? "Collection timestamp unavailable",
+    hardwareIdentityStatus: metadata.hardware_identity_status ?? "Hardware identity not independently confirmed",
+    sanitizationStatus: metadata.sanitization_status ?? (metadata.imported ? "Imported evidence; sanitization manifest required" : "Sanitization status not declared"),
+    sourceConfidence: metadata.source_confidence ?? "Unknown - review attached evidence and limitations",
+    limitations: metadata.limitations?.length ? metadata.limitations : ["No limitations were supplied with this live evidence payload."],
+  };
 }
 
 function extractFirstNumber(summary: string, pattern: RegExp): number | null {

@@ -7,6 +7,7 @@ async function login(page: Page) {
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { name: "AI Factory Validation Portal" })).toBeVisible();
   await expect(page.getByText("Scenario controls")).toBeVisible();
+  await expect(page.getByLabel("Evidence source")).toBeVisible();
 }
 
 test("login page loads with accessible private reviewer entry", async ({ page }) => {
@@ -46,10 +47,19 @@ test("healthy and degraded scenarios render expected classifications without sta
   await login(page);
 
   await page.getByRole("button", { name: "Healthy", exact: true }).click();
+  await expect(page.getByLabel("Evidence source")).toHaveValue("simulated-healthy");
   await expect(page.getByText("100.00%").first()).toBeVisible();
   await expect(page.getByText("Approved for handoff").first()).toBeVisible();
+  const sourceContext = page.locator("section").filter({ hasText: "Source context" }).first();
+  await expect(sourceContext).toBeVisible();
+  await expect(sourceContext).toContainText("Simulated Healthy");
+  await expect(sourceContext).toContainText("Hardware identity status");
+  await expect(sourceContext).toContainText("Sanitization status");
+  await expect(sourceContext).toContainText("Source confidence");
+  await expect(sourceContext).toContainText("Limitations");
 
   await page.getByRole("button", { name: "Degraded", exact: true }).click();
+  await expect(page.getByLabel("Evidence source")).toHaveValue("simulated-degraded");
   await expect(page.getByText("97.01%")).toBeVisible();
   await expect(page.getByText("Remediation required").first()).toBeVisible();
   await expect(page.getByText("Handoff blocked").first()).toBeVisible();

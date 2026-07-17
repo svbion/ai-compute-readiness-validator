@@ -29,7 +29,9 @@ import {
   type Cluster,
   type Node,
   type ValidationCheck,
+  type EvidenceSourceOption,
   buildArtifactLinks,
+  buildSourceContext,
   buildBenchmarkCatalog,
   deriveAcceptanceGate,
   deriveFabricHealth,
@@ -57,6 +59,25 @@ const scenarioMetadata = {
 } as const;
 
 const scopeBadges = ["Linux", "GPU Compute", "InfiniBand", "Slurm", "Kubernetes", "Storage"];
+
+const fallbackSources: EvidenceSourceOption[] = [
+  {
+    id: "simulated-healthy",
+    label: "Simulated Healthy",
+    kind: "simulated",
+    endpoint: "/api/results?scenario=healthy",
+    available: true,
+    description: "Deterministic healthy demonstration scenario.",
+  },
+  {
+    id: "simulated-degraded",
+    label: "Simulated Degraded",
+    kind: "simulated",
+    endpoint: "/api/results?scenario=degraded",
+    available: true,
+    description: "Deterministic degraded demonstration scenario.",
+  },
+];
 
 const statusPillClasses: Record<"healthy" | "warning" | "critical", string> = {
   healthy: "bg-emerald-500/12 text-emerald-300 border border-emerald-500/25",
@@ -276,6 +297,8 @@ function LoginPage() {
 export default function App() {
   const [activeTab, setActiveTab] = useState<"diagnostics" | "benchmarks">("diagnostics");
   const [selectedScenario, setSelectedScenario] = useState<"healthy" | "degraded">("degraded");
+  const [selectedSourceId, setSelectedSourceId] = useState("simulated-degraded");
+  const [evidenceSources, setEvidenceSources] = useState<EvidenceSourceOption[]>(fallbackSources);
   const [cluster, setCluster] = useState<Cluster | null>(null);
   const [selectedNodeName, setSelectedNodeName] = useState<string>("dgx01");
   const [loading, setLoading] = useState(false);
@@ -283,15 +306,15 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [expandedChecks, setExpandedChecks] = useState<Record<string, boolean>>({});
 
-  const fetchResults = async (scenario: "healthy" | "degraded") => {
+  const fetchResults = async (source: EvidenceSourceOption) => {
     setLoading(true);
     setError(null);
-    setLoadingMessage(`Loading ${scenarioMetadata[scenario].label.toLowerCase()} evidence...`);
+    setLoadingMessage(`Loading ${source.label.toLowerCase()} evidence...`);
     setCluster(null);
     setExpandedChecks({});
 
     try {
-      const response = await fetch(`/api/results?scenario=${scenario}`);
+      const response = await fetch(source.endpoint);
       if (!response.ok) {
         const payload = await response.json().catch(() => ({ error: "Failed to load validation results." }));
         throw new Error(payload.error ?? "Failed to load validation results.");
@@ -312,8 +335,24 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchResults(selectedScenario);
-  }, [selectedScenario]);
+    fetch("/api/evidence-sources")
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Failed to load evidence sources.")))
+      .then((payload) => {
+        const sources = Array.isArray(payload.sources) ? payload.sources.filter((source: EvidenceSourceOption) => source.available) : fallbackSources;
+        setEvidenceSources(sources.length ? sources : fallbackSources);
+      })
+      .catch(() => setEvidenceSources(fallbackSources));
+  }, []);
+
+  useEffect(() => {
+    const source = evidenceSources.find((candidate) => candidate.id === selectedSourceId) ?? fallbackSources[1];
+    fetchResults(source);
+  }, [selectedSourceId, evidenceSources]);
+
+  const selectSimulatedScenario = (scenario: "healthy" | "degraded") => {
+    setSelectedScenario(scenario);
+    setSelectedSourceId(`simulated-${scenario}`);
+  };
 
   const triggerScenarioRun = async () => {
     setLoading(true);
@@ -355,6 +394,8 @@ export default function App() {
   const validationProfile = useMemo(() => deriveValidationProfile(cluster), [cluster]);
   const benchmarkCatalog = useMemo(() => buildBenchmarkCatalog(cluster), [cluster]);
   const reportLinks = useMemo(() => buildArtifactLinks(selectedScenario), [selectedScenario]);
+  const selectedSource = evidenceSources.find((source) => source.id === selectedSourceId) ?? fallbackSources[1];
+  const sourceContext = useMemo(() => buildSourceContext(cluster, selectedSource), [cluster, selectedSource]);
   const simulated = isSimulatedScenario(cluster);
   const selectedNode = cluster?.nodes.find((node) => node.name === selectedNodeName) ?? cluster?.nodes[0] ?? null;
 
@@ -452,7 +493,7 @@ export default function App() {
                       return (
                         <button
                           key={scenario}
-                          onClick={() => setSelectedScenario(scenario)}
+                          onClick={() => selectSimulatedScenario(scenario)}
                           disabled={loading}
                           className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition cursor-pointer ${
                             active
@@ -484,8 +525,33 @@ export default function App() {
                 </div>
               </div>
 
+              <div className="cyber-panel rounded-2xl border border-slate-800/80 p-3.5">
+                <label htmlFor="evidence-source" className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
+                  Evidence source
+                </label>
+                <select
+                  id="evidence-source"
+                  value={selectedSourceId}
+                  disabled={loading}
+                  onChange={(event) => {
+                    const nextSource = evidenceSources.find((source) => source.id === event.target.value);
+                    setSelectedSourceId(event.target.value);
+                    if (nextSource?.id === "simulated-healthy") setSelectedScenario("healthy");
+                    if (nextSource?.id === "simulated-degraded") setSelectedScenario("degraded");
+                  }}
+                  className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10"
+                >
+                  {evidenceSources.map((source) => (
+                    <option key={source.id} value={source.id}>{source.label}</option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                  {selectedSource.description ?? "Only valid live artifacts are listed; simulated scenarios remain available for demonstration."}
+                </p>
+              </div>
+
               <div className="text-[11px] text-slate-500 leading-relaxed">
-                The displayed environment is simulated for interview demonstration. Target profile language reflects compatibility goals only and does not claim this demo is running on DGX or HGX hardware.
+                Simulated sources are deterministic interview demonstrations. Live and imported choices appear only when valid live artifacts exist and must not be treated as DGX/HGX proof without supporting identity evidence.
               </div>
             </div>
           </div>
@@ -537,6 +603,47 @@ export default function App() {
             <Sparkles className="h-8 w-8 text-slate-500 mx-auto mb-3" />
             <div className="text-sm font-semibold text-slate-100">No validation evidence loaded.</div>
             <div className="text-xs text-slate-400 mt-2">Choose a scenario or run the current one to populate the portal.</div>
+          </section>
+        )}
+
+        {cluster && (
+          <section className="cyber-panel rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-emerald-300">Source context</div>
+                <h2 className="mt-2 text-xl font-display font-semibold text-slate-50">{sourceContext.evidenceSource}</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
+                  Evidence source: {sourceContext.evidenceSource} • Selected validation profile: {sourceContext.selectedValidationProfile} • Detected environment: {sourceContext.detectedEnvironment}
+                </p>
+              </div>
+              <span className={`rounded-full px-3 py-1.5 text-xs font-mono uppercase tracking-wider ${sourceContext.sourceConfidence === "Demo only" ? "border border-slate-700 bg-slate-900 text-slate-300" : "border border-emerald-500/25 bg-emerald-500/12 text-emerald-300"}`}>
+                {sourceContext.sourceConfidence}
+              </span>
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {[
+                { label: "Evidence source", value: sourceContext.evidenceSource },
+                { label: "Selected validation profile", value: sourceContext.selectedValidationProfile },
+                { label: "Collection timestamp", value: sourceContext.collectionTimestamp },
+                { label: "Hardware identity status", value: sourceContext.hardwareIdentityStatus },
+                { label: "Sanitization status", value: sourceContext.sanitizationStatus },
+                { label: "Source confidence", value: sourceContext.sourceConfidence },
+                { label: "Detected environment", value: sourceContext.detectedEnvironment },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950/35 p-4">
+                  <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">{item.label}</div>
+                  <div className="mt-2 text-sm leading-relaxed text-slate-200">{item.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/35 p-4">
+              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">Limitations</div>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed text-slate-300">
+                {sourceContext.limitations.map((limitation) => (
+                  <li key={limitation}>{limitation}</li>
+                ))}
+              </ul>
+            </div>
           </section>
         )}
 
