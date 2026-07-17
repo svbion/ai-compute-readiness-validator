@@ -10,7 +10,10 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test:portal": "node --import tsx --test tests-portal/**/*.test.ts"
+    "test:portal": "node --import tsx --test tests-portal/**/*.test.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "verify:production": "npm run build && npm run lint && npm run test:portal && npm run test:e2e"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -26,6 +29,7 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/d3": "^7.4.3",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
