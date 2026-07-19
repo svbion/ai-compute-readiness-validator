@@ -63,6 +63,14 @@ assert_contains "${out}" "configure Caddy"
 [[ ! -e "${TMP_ROOT}/caddy-app" ]] || fail "Caddy dry run mutated app dir"
 pass "Caddy-enabled dry-run path is non-mutating"
 
+# Caddy configuration rendering must initialize domain variables before use.
+out="${TMP_ROOT}/caddy-render.out"
+bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_DRY_RUN=true AI_FACTORY_APP_DIR='${TMP_ROOT}/caddy-render-app' AI_FACTORY_ENABLE_CADDY=true AI_FACTORY_DOMAIN=gpuvalidator.com AI_FACTORY_PORT=3000 load_deploy_config; install_or_update_caddy" >"${out}" 2>&1
+assert_contains "${out}" "Caddy enabled for gpuvalidator.com"
+assert_contains "${out}" "would backup"
+assert_not_contains "${out}" 'unbound variable'
+pass "Caddy-enabled render path initializes domain variables"
+
 # Safe dotenv parser handles shell-sensitive values without eval/expansion.
 env_file="${TMP_ROOT}/safe.env"
 bad_touch="${TMP_ROOT}/bad"

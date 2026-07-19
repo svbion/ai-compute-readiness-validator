@@ -20,6 +20,7 @@
 - Fixed shell-sensitive production env parsing bug where unquoted `scrypt$...` hashes could be expanded by Bash under `set -u`.
 - Added safe dotenv parsing in `deploy/lib/common.sh` via `dotenv_get` and `dotenv_load_selected`; deployment scripts no longer shell-source `.env.production`.
 - Hardened first-install `.env.production` generation so generated secrets are single-quoted and never printed.
+- Fixed Caddy render-time domain initialization so `set -u` cannot trip on a lower-case local `domain` referenced in its own declaration.
 - Confirmed `deploy/preflight.sh`, `deploy/status.sh`, deployment shell tests, and Hetzner documentation exist.
 
 ## Files changed by implementation commit
@@ -54,6 +55,13 @@
 - Safe parser preserves literal `$`, `=`, quotes, semicolons, command-substitution text, and backticks as data; it rejects malformed variable names and never uses `eval`.
 - Deployment tests prove malicious dotenv content does not create files or execute commands, secret-safe status reports only `SET length=N` or `EMPTY`, existing `.env.production` is preserved, generated secrets are quoted, and `healthcheck.sh`/`verify.sh` load dollar-containing hashes safely.
 
+## Caddy domain initialization fix
+
+- Bug root cause: `render_caddy_config` declared `local output="$1" domain="$2" port="$3" www_domain="www.${domain}"`; Bash expands the full `local` assignment before the lower-case `domain` variable is initialized, so `set -u` failed with `domain: unbound variable` after Caddy installation.
+- Fix: `deploy/lib/common.sh` now initializes Caddy render locals in separate steps and uses explicit `caddy_domain`/`caddy_port` names derived from canonical `DOMAIN` before rendering.
+- Regression coverage: `tests-deploy/test-deployment-scripts.sh` now exercises the Caddy-enabled `install_or_update_caddy` render path in dry-run mode and asserts no unbound-variable failure.
+- Commit target: `fix(deploy): fix caddy domain variable initialization`.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.
@@ -62,6 +70,7 @@
 
 - `bash -n deploy/*.sh deploy/lib/*.sh tests-deploy/*.sh`: passed.
 - `npm run test:deploy`: passed.
+- Caddy-enabled render regression test: passed.
 - Runtime-aware dirty-tree deployment tests: passed.
 - Zero-mutation dry-run fixture with temporary `AI_FACTORY_APP_DIR`: passed; app directory was not created and secret-like output was not printed.
 - `npm run build`: passed.
