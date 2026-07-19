@@ -94,19 +94,57 @@ if (cd "${ROOT_DIR}" && AI_FACTORY_APP_DIR="${TMP_ROOT}/no-env" AI_FACTORY_PORT=
 fi
 pass "health retry fails after configured attempts"
 
-# Dirty Git working tree is rejected by shared helper.
-repo="${TMP_ROOT}/repo"
-git init "${repo}" >/dev/null
-git -C "${repo}" config user.email test@example.invalid
-git -C "${repo}" config user.name Test
-printf 'clean\n' >"${repo}/file.txt"
-git -C "${repo}" add file.txt && git -C "${repo}" commit -m init >/dev/null
-printf 'dirty\n' >>"${repo}/file.txt"
-if bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${repo}' AI_FACTORY_APP_USER='$(id -un)' load_deploy_config; ensure_clean_git_tree" >"${TMP_ROOT}/dirty.out" 2>&1; then
-  fail "dirty git tree was not rejected"
+init_dirty_repo() {
+  local repo="$1"
+  git init "${repo}" >/dev/null
+  git -C "${repo}" config user.email test@example.invalid
+  git -C "${repo}" config user.name Test
+  mkdir -p "${repo}/artifacts" "${repo}/src"
+  printf '{"clean":true}\n' >"${repo}/artifacts/latest-results.json"
+  printf 'clean\n' >"${repo}/src/app.ts"
+  git -C "${repo}" add artifacts/latest-results.json src/app.ts && git -C "${repo}" commit -m init >/dev/null
+}
+
+run_clean_check() {
+  local repo="$1" out="$2"
+  bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${repo}' AI_FACTORY_APP_USER='$(id -un)' load_deploy_config; ensure_clean_git_tree" >"${out}" 2>&1
+}
+
+# Runtime-generated artifacts alone do not block safe updates.
+repo="${TMP_ROOT}/runtime-only"
+init_dirty_repo "${repo}"
+printf '{"dirty":true}\n' >"${repo}/artifacts/latest-results.json"
+mkdir -p "${repo}/.cache" "${repo}/.npm"
+printf 'cache\n' >"${repo}/.cache/runtime"
+printf 'npm\n' >"${repo}/.npm/runtime"
+printf 'less history\n' >"${repo}/.lesshst"
+run_clean_check "${repo}" "${TMP_ROOT}/runtime-only.out"
+assert_contains "${TMP_ROOT}/runtime-only.out" "Repository contains runtime-generated artifacts only."
+assert_contains "${TMP_ROOT}/runtime-only.out" "Continuing with deployment."
+pass "runtime-generated artifacts only do not block safe update"
+
+# Runtime-generated artifacts plus a source change still block safe updates.
+repo="${TMP_ROOT}/runtime-plus-source"
+init_dirty_repo "${repo}"
+printf '{"dirty":true}\n' >"${repo}/artifacts/latest-results.json"
+printf 'source dirty\n' >>"${repo}/src/app.ts"
+if run_clean_check "${repo}" "${TMP_ROOT}/runtime-plus-source.out"; then
+  fail "runtime artifacts plus source change were not rejected"
 fi
-assert_contains "${TMP_ROOT}/dirty.out" "Refusing to update dirty working tree"
-pass "dirty Git working tree is rejected"
+assert_contains "${TMP_ROOT}/runtime-plus-source.out" "src/app.ts"
+assert_contains "${TMP_ROOT}/runtime-plus-source.out" "Refusing to update dirty working tree"
+pass "runtime artifacts plus source changes block safe update"
+
+# Source changes alone still block safe updates.
+repo="${TMP_ROOT}/source-only"
+init_dirty_repo "${repo}"
+printf 'source dirty\n' >>"${repo}/src/app.ts"
+if run_clean_check "${repo}" "${TMP_ROOT}/source-only.out"; then
+  fail "source-only dirty tree was not rejected"
+fi
+assert_contains "${TMP_ROOT}/source-only.out" "src/app.ts"
+assert_contains "${TMP_ROOT}/source-only.out" "Refusing to update dirty working tree"
+pass "source-only dirty tree is rejected"
 
 # Safe repository ownership behavior: git operations are routed through app-user helper.
 out="${TMP_ROOT}/safe-git.out"

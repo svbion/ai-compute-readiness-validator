@@ -12,6 +12,8 @@
 - Confirmed shared deployment helpers live in `deploy/lib/common.sh`.
 - Confirmed repository Git operations are routed through the application user helper.
 - Confirmed dirty working tree protection is implemented for update paths.
+- Updated dirty working tree protection to ignore documented runtime-generated outputs only: `artifacts/**`, `.cache/**`, `.npm/**`, `.lesshst`, `dist/**`, `.venv/**`, and `node_modules/**`.
+- Confirmed runtime-only dirty trees continue with a clear deployment message while source changes still block updates.
 - Confirmed systemd and backend HTTP readiness retry logic is implemented.
 - Confirmed Caddy is optional, installed/configured only when enabled, and activated after backend health passes.
 - Confirmed authentication validation reports only `SET`/`EMPTY` states and does not print secret values.
@@ -35,6 +37,12 @@
 - `package.json`
 - `tests-deploy/test-deployment-scripts.sh`
 
+## Runtime-aware dirty-tree fix
+
+- Added runtime-aware filtering in `deploy/lib/common.sh` for safe update checks.
+- Added deployment tests covering runtime artifacts only, runtime artifacts plus source changes, and source changes only.
+- Commit target: `fix(deploy): ignore runtime artifacts during safe update`.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.
@@ -43,6 +51,7 @@
 
 - `bash -n deploy/*.sh deploy/lib/*.sh tests-deploy/*.sh`: passed.
 - `npm run test:deploy`: passed.
+- Runtime-aware dirty-tree deployment tests: passed.
 - Zero-mutation dry-run fixture with temporary `AI_FACTORY_APP_DIR`: passed; app directory was not created and secret-like output was not printed.
 - `npm run build`: passed.
 - `npm run lint`: passed.
@@ -55,7 +64,8 @@
 - Existing `.env.production` is preserved by install/update paths.
 - Use `AI_FACTORY_DRY_RUN=true` before any real server install or update.
 - Do not expose port `3000` publicly after Caddy is verified; public access should be ports `80`/`443`.
-- The deploy scripts reject dirty working trees by default; use `AI_FACTORY_ALLOW_DIRTY_UPDATE=true` only deliberately.
+- The deploy scripts reject source-code dirty working trees by default, but tolerate documented runtime-generated artifacts during update.
+- Use `AI_FACTORY_ALLOW_DIRTY_UPDATE=true` only deliberately; it bypasses the safety check and should not be needed for normal artifact churn.
 - Caddy should be enabled only after DNS points at the Hetzner server and backend health passes.
 
 ## Remaining server steps

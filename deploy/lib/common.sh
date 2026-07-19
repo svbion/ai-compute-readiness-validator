@@ -183,17 +183,53 @@ git_output_in_repo() {
   (cd "${APP_DIR}" && sudo -H -u "${APP_USER}" -- git "$@")
 }
 
+is_runtime_generated_path() {
+  local path="$1"
+  case "${path}" in
+    artifacts/*|.cache/*|.npm/*|.lesshst|dist/*|.venv/*|node_modules/*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+is_runtime_generated_status_line() {
+  local line="$1" path old_path new_path
+  path="${line:3}"
+  if [[ "${path}" == *" -> "* ]]; then
+    old_path="${path%% -> *}"
+    new_path="${path##* -> }"
+    is_runtime_generated_path "${old_path}" && is_runtime_generated_path "${new_path}"
+    return
+  fi
+  is_runtime_generated_path "${path}"
+}
+
 ensure_clean_git_tree() {
   [[ -d "${APP_DIR}/.git" ]] || return 0
   if bool_is_true "${ALLOW_DIRTY_UPDATE}"; then
     deploy_warn "AI_FACTORY_ALLOW_DIRTY_UPDATE is true; proceeding despite any local modifications."
     return 0
   fi
-  local status
+  local status blocking_status="" runtime_status="" line
   status="$(git_output_in_repo status --porcelain=v1 2>/dev/null || git -C "${APP_DIR}" status --porcelain=v1)"
-  if [[ -n "${status}" ]]; then
-    printf '%s\n' "${status}" >&2
+  while IFS= read -r line; do
+    [[ -n "${line}" ]] || continue
+    if is_runtime_generated_status_line "${line}"; then
+      runtime_status+="${line}"$'\n'
+    else
+      blocking_status+="${line}"$'\n'
+    fi
+  done <<<"${status}"
+  if [[ -n "${blocking_status}" ]]; then
+    printf '%s' "${blocking_status}" >&2
     deploy_fail "Refusing to update dirty working tree in ${APP_DIR}. Commit/stash changes or set AI_FACTORY_ALLOW_DIRTY_UPDATE=true deliberately."
+  fi
+  if [[ -n "${runtime_status}" ]]; then
+    deploy_log "Repository contains runtime-generated artifacts only."
+    deploy_log "Continuing with deployment."
   fi
 }
 
