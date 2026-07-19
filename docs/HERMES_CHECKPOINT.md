@@ -17,6 +17,9 @@
 - Confirmed systemd and backend HTTP readiness retry logic is implemented.
 - Confirmed Caddy is optional, installed/configured only when enabled, and activated after backend health passes.
 - Confirmed authentication validation reports only `SET`/`EMPTY` states and does not print secret values.
+- Fixed shell-sensitive production env parsing bug where unquoted `scrypt$...` hashes could be expanded by Bash under `set -u`.
+- Added safe dotenv parsing in `deploy/lib/common.sh` via `dotenv_get` and `dotenv_load_selected`; deployment scripts no longer shell-source `.env.production`.
+- Hardened first-install `.env.production` generation so generated secrets are single-quoted and never printed.
 - Confirmed `deploy/preflight.sh`, `deploy/status.sh`, deployment shell tests, and Hetzner documentation exist.
 
 ## Files changed by implementation commit
@@ -43,6 +46,14 @@
 - Added deployment tests covering runtime artifacts only, runtime artifacts plus source changes, and source changes only.
 - Commit target: `fix(deploy): ignore runtime artifacts during safe update`.
 
+## Shell-sensitive env parsing fix
+
+- Bug root cause: deployment helpers sourced `.env.production` as Bash, so unquoted password hashes like `scrypt$...` were subject to shell parameter expansion; with `set -u`, substrings such as `$6` caused unbound-variable failures.
+- Implementation commit: `b8d7991 fix(deploy): safely parse shell-sensitive production env values`.
+- Files changed by implementation commit: `.env.production.example`, `README.md`, `deploy/lib/common.sh`, `docs/HETZNER_DEPLOYMENT.md`, and `tests-deploy/test-deployment-scripts.sh`.
+- Safe parser preserves literal `$`, `=`, quotes, semicolons, command-substitution text, and backticks as data; it rejects malformed variable names and never uses `eval`.
+- Deployment tests prove malicious dotenv content does not create files or execute commands, secret-safe status reports only `SET length=N` or `EMPTY`, existing `.env.production` is preserved, generated secrets are quoted, and `healthcheck.sh`/`verify.sh` load dollar-containing hashes safely.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.
@@ -57,10 +68,14 @@
 - `npm run lint`: passed.
 - `npm run test:portal`: passed, 14 tests.
 - `pytest` using existing `.venv`: passed, 16 tests.
+- Focused literal parse for `scrypt$1234567890abcdef$abcdef1234567890`: passed.
 
 ## Production safety notes
 
 - Do not print, commit, or transmit `.env.production` values or authentication secrets.
+- Treat `.env.production` as dotenv data, not shell script; deployment tooling parses selected keys without shell evaluation.
+- Keep password hashes and other `$`-containing values single-quoted for human clarity and Node dotenv compatibility.
+- Do not use command substitutions or backticks in production env files.
 - Existing `.env.production` is preserved by install/update paths.
 - Use `AI_FACTORY_DRY_RUN=true` before any real server install or update.
 - Do not expose port `3000` publicly after Caddy is verified; public access should be ports `80`/`443`.
@@ -85,6 +100,11 @@ cd /opt/ai-factory-validator
 git fetch origin
 git checkout hermes-mvp
 git pull --ff-only origin hermes-mvp
+python3 - <<'PY'
+import pathlib, re, sys
+line = next((ln for ln in pathlib.Path('.env.production').read_text().splitlines() if ln.startswith('AI_FACTORY_REVIEWER_PASSWORD_HASH=')), '')
+sys.exit(0 if re.match(r"^AI_FACTORY_REVIEWER_PASSWORD_HASH='[^']+'$", line) else 1)
+PY
 sudo -E env AI_FACTORY_DRY_RUN=true AI_FACTORY_APP_DIR=/opt/ai-factory-validator AI_FACTORY_BRANCH=hermes-mvp AI_FACTORY_DOMAIN=gpuvalidator.com AI_FACTORY_ENABLE_CADDY=true AI_FACTORY_AUTH_REQUIRED=true ./deploy/preflight.sh
 sudo -E env AI_FACTORY_DRY_RUN=true AI_FACTORY_APP_DIR=/opt/ai-factory-validator AI_FACTORY_BRANCH=hermes-mvp AI_FACTORY_DOMAIN=gpuvalidator.com AI_FACTORY_ENABLE_CADDY=true AI_FACTORY_AUTH_REQUIRED=true ./deploy/update.sh
 sudo -E env AI_FACTORY_APP_DIR=/opt/ai-factory-validator AI_FACTORY_BRANCH=hermes-mvp AI_FACTORY_DOMAIN=gpuvalidator.com AI_FACTORY_ENABLE_CADDY=true AI_FACTORY_AUTH_REQUIRED=true ./deploy/update.sh
