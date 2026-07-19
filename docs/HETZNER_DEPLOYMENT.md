@@ -165,7 +165,17 @@ The real install script performs, in order:
 - installs/configures Caddy only when `AI_FACTORY_ENABLE_CADDY=true`
 - prints a secret-safe deployment summary
 
-The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Replace the placeholder reviewer email and password hash out-of-band before sharing the portal.
+The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Generated shell-sensitive values are single-quoted. Replace the placeholder reviewer email and password hash out-of-band before sharing the portal.
+
+`.env.production` is dotenv data, not an arbitrary shell script. The Node application reads it through `dotenv`, and the deployment scripts safely parse only selected `KEY=VALUE` records without `eval`, shell expansion, command substitution, or backtick execution. Values containing `$`, including `scrypt$...` password hashes, are supported safely and should remain single-quoted for human clarity:
+
+```dotenv
+AI_FACTORY_REVIEWER_EMAIL=reviewer@example.invalid
+AI_FACTORY_REVIEWER_PASSWORD_HASH='scrypt$exampleSalt$exampleDerivedKey'
+AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='token$with$dollar-signs'
+```
+
+Never use command substitutions such as `$(...)` or backticks in production env files, and never commit real `.env.production` secrets.
 
 Generate a reviewer password hash on the server without storing the plaintext password in the repository:
 
@@ -174,7 +184,7 @@ cd /opt/ai-factory-validator
 node --import tsx -e "import { createPasswordHash } from './src/server/auth.ts'; console.log(createPasswordHash(process.argv[1]))" 'temporary-password-to-rotate'
 ```
 
-Then edit `/opt/ai-factory-validator/.env.production` and set the real reviewer email, the generated `scrypt$...` hash, a server-generated session secret, and a local-only `AI_FACTORY_AUTH_TEST_BYPASS_TOKEN` for deployment verification. Do not commit these values and do not send them over chat.
+Then edit `/opt/ai-factory-validator/.env.production` and set the real reviewer email, the generated single-quoted `scrypt$...` hash, a server-generated session secret, and a local-only `AI_FACTORY_AUTH_TEST_BYPASS_TOKEN` for deployment verification. Do not commit these values and do not send them over chat.
 
 ## 5. Verify the service
 

@@ -71,6 +71,71 @@ secret_state() {
   fi
 }
 
+trim_whitespace() {
+  local value="$1"
+  value="${value#"${value%%[!$' \t\r\n']*}"}"
+  value="${value%"${value##*[!$' \t\r\n']}"}"
+  printf '%s' "${value}"
+}
+
+is_valid_env_name() {
+  [[ "${1:-}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]
+}
+
+dotenv_unquote_value() {
+  local value
+  value="$(trim_whitespace "$1")"
+  if [[ "${value}" == "'"*"'" && "${#value}" -ge 2 ]]; then
+    printf '%s' "${value:1:${#value}-2}"
+  elif [[ "${value}" == '"'*'"' && "${#value}" -ge 2 ]]; then
+    printf '%s' "${value:1:${#value}-2}"
+  else
+    printf '%s' "${value}"
+  fi
+}
+
+dotenv_get() {
+  local file="$1" requested_key="$2" line key raw_value value line_no=0
+  is_valid_env_name "${requested_key}" || deploy_fail "Invalid dotenv variable name requested: ${requested_key}"
+  [[ -f "${file}" ]] || return 1
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    line_no=$((line_no + 1))
+    line="$(trim_whitespace "${line}")"
+    [[ -z "${line}" || "${line}" == \#* ]] && continue
+    [[ "${line}" == *"="* ]] || deploy_fail "Malformed dotenv line ${line_no} in ${file}: missing KEY=VALUE."
+    key="$(trim_whitespace "${line%%=*}")"
+    raw_value="${line#*=}"
+    is_valid_env_name "${key}" || deploy_fail "Malformed dotenv line ${line_no} in ${file}: invalid variable name."
+    [[ "${key}" == "${requested_key}" ]] || continue
+    value="$(dotenv_unquote_value "${raw_value}")"
+    printf '%s' "${value}"
+    return 0
+  done <"${file}"
+  return 1
+}
+
+dotenv_load_selected() {
+  local file="$1" requested_key value
+  shift
+  [[ -f "${file}" ]] || return 0
+  for requested_key in "$@"; do
+    is_valid_env_name "${requested_key}" || deploy_fail "Invalid dotenv variable name requested: ${requested_key}"
+    if value="$(dotenv_get "${file}" "${requested_key}")"; then
+      printf -v "${requested_key}" '%s' "${value}"
+      export "${requested_key}"
+    fi
+  done
+}
+
+single_quote_dotenv_value() {
+  local value="$1"
+  if [[ "${value}" == *"'"* ]]; then
+    deploy_fail "Cannot safely single-quote dotenv value containing a single quote."
+  fi
+  printf "'%s'" "${value}"
+}
+
 load_deploy_config() {
   APP_NAME="$(resolve_env AI_FACTORY_APP_NAME APP_NAME "${APP_NAME_DEFAULT}")"
   APP_DIR="$(resolve_env AI_FACTORY_APP_DIR APP_DIR "${APP_DIR_DEFAULT}")"
@@ -259,10 +324,12 @@ retry() {
 source_env_file_if_present() {
   local env_file="${APP_DIR}/.env.production"
   if [[ -f "${env_file}" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "${env_file}"
-    set +a
+    dotenv_load_selected "${env_file}" \
+      PORT NODE_ENV BASE_URL DOMAIN AUTH_REQUIRED VERIFY_CADDY VERIFY_TLS \
+      AI_FACTORY_DOMAIN AI_FACTORY_AUTH_REQUIRED AI_FACTORY_SESSION_SECRET \
+      AI_FACTORY_REVIEWER_EMAIL AI_FACTORY_REVIEWER_PASSWORD_HASH \
+      AI_FACTORY_AUTH_TEST_BYPASS_TOKEN AI_FACTORY_BASE_URL \
+      AI_FACTORY_VERIFY_CADDY AI_FACTORY_VERIFY_TLS
     PORT="${PORT:-${PORT_DEFAULT}}"
     DOMAIN="${AI_FACTORY_DOMAIN:-${DOMAIN:-${DOMAIN_DEFAULT}}}"
     AUTH_REQUIRED="${AI_FACTORY_AUTH_REQUIRED:-${AUTH_REQUIRED:-}}"
@@ -320,8 +387,12 @@ create_env_if_missing() {
 import pathlib, secrets, sys
 path = pathlib.Path(sys.argv[1])
 text = path.read_text()
-text = text.replace("replace-with-at-least-32-random-characters", secrets.token_urlsafe(48))
-text = text.replace("AI_FACTORY_AUTH_TEST_BYPASS_TOKEN=", f"AI_FACTORY_AUTH_TEST_BYPASS_TOKEN={secrets.token_urlsafe(32)}")
+def sq(value: str) -> str:
+    if "'" in value:
+        raise ValueError("generated secret unexpectedly contained a single quote")
+    return f"'{value}'"
+text = text.replace("AI_FACTORY_SESSION_SECRET='replace-with-at-least-32-random-characters'", f"AI_FACTORY_SESSION_SECRET={sq(secrets.token_urlsafe(48))}")
+text = text.replace("AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='replace-with-local-verification-token'", f"AI_FACTORY_AUTH_TEST_BYPASS_TOKEN={sq(secrets.token_urlsafe(32))}")
 path.write_text(text)
 PY
   else

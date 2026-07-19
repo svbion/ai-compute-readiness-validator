@@ -144,6 +144,16 @@ sudo -E env \
 
 Dry run performs zero mutations: it does not run apt, create users, touch Git, create `.env.production`, install dependencies, build, restart services, or configure Caddy. Real install uses the same command without `AI_FACTORY_DRY_RUN=true`. The installer supports reruns, preserves existing `.env.production` secrets, waits for backend health before Caddy activation, installs Caddy only when explicitly enabled, and runs Git operations as the application user to avoid dubious-ownership failures. Use `deploy/preflight.sh` for read-only host checks and `deploy/status.sh` for secret-safe operational status.
 
+Production `.env.production` is dotenv data, not an arbitrary shell script. Deployment tooling safely parses selected `KEY=VALUE` records without shell evaluation, so password hashes containing `$` are supported without Bash expansion. Keep shell-sensitive values single-quoted for human clarity and Node `dotenv` compatibility, for example:
+
+```dotenv
+AI_FACTORY_REVIEWER_EMAIL=reviewer@example.invalid
+AI_FACTORY_REVIEWER_PASSWORD_HASH='scrypt$exampleSalt$exampleDerivedKey'
+AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='token$with$dollar-signs'
+```
+
+Never use command substitutions or backticks in production env files, and never commit real `.env.production` secrets.
+
 Recommended hosted pattern:
 - build with `npm run build`
 - run `node dist/server.cjs`
