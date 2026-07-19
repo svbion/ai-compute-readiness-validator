@@ -22,7 +22,7 @@ Repository findings from `package.json`, `server.ts`, `pyproject.toml`, and `REA
 - Python package install: `python3 -m venv .venv` then `pip install -e ".[dev]"`.
 - CLI entry point: `.venv/bin/ai-validator` or `python -m ai_validator.cli`.
 - Generated artifacts: `artifacts/latest-*`, `artifacts/healthy-*`, and `artifacts/degraded-*`.
-- Production environment variables: `PORT`, `NODE_ENV`, `PYTHONUNBUFFERED`, and authentication settings. Production defaults to authentication-required; session secrets, reviewer credential hashes, and deployment verification tokens are generated or supplied on the server and must never be committed.
+- Production environment variables: `PORT`, `PYTHONUNBUFFERED`, and authentication settings. The systemd service sets `NODE_ENV=production` at runtime, while `.env.production` intentionally omits `NODE_ENV` so Vite does not warn during builds. Production auth is explicitly enabled with `AI_FACTORY_AUTH_REQUIRED=true`; session secrets, reviewer credential hashes, and deployment verification tokens are generated or supplied on the server and must never be committed.
 - Persistent writable paths under systemd: `artifacts/` for generated reports. The service also reads `.venv/` and `dist/` generated during install/update.
 
 ## Target layout
@@ -167,6 +167,8 @@ The real install script performs, in order:
 
 The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Generated shell-sensitive values are single-quoted. Replace the placeholder reviewer email and password hash out-of-band before sharing the portal.
 
+Do not add `NODE_ENV=production` to `.env.production`. `deploy/systemd/ai-factory-validator.service` sets it for the running Express server, and `npm run build` sets it for the build command. Keeping `NODE_ENV` out of `.env.production` avoids Vite's unsupported-`NODE_ENV` warning while preserving production runtime behavior and authentication requirements.
+
 `.env.production` is dotenv data, not an arbitrary shell script. The Node application reads it through `dotenv`, and the deployment scripts safely parse only selected `KEY=VALUE` records without `eval`, shell expansion, command substitution, or backtick execution. Values containing `$`, including `scrypt$...` password hashes, are supported safely and should remain single-quoted for human clarity:
 
 ```dotenv
@@ -195,6 +197,8 @@ journalctl -u ai-factory-validator -n 100 --no-pager
 /opt/ai-factory-validator/deploy/verify.sh
 npm run verify:production
 ```
+
+For full post-deploy manual checks, follow `docs/PRODUCTION_SMOKE_TEST.md`.
 
 Manual curl checks:
 

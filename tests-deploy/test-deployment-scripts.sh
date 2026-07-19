@@ -218,6 +218,56 @@ run_clean_check() {
   bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${repo}' AI_FACTORY_APP_USER='$(id -un)' load_deploy_config; ensure_clean_git_tree" >"${out}" 2>&1
 }
 
+run_git_status_probe() {
+  local repo="$1" out="$2"
+  bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${repo}' AI_FACTORY_APP_USER='$(id -un)' AI_FACTORY_BRANCH=main load_deploy_config; printf 'branch=%s\n' \"\$(git_current_branch_in_repo)\"; printf 'short=%s\n' \"\$(git_short_commit_in_repo)\"; printf 'subject=%s\n' \"\$(git_commit_subject_in_repo)\"; printf 'sync=%s\n' \"\$(git_origin_sync_state_in_repo)\"; printf 'tree=%s\n' \"\$(git_status_state_in_repo)\"" >"${out}" 2>&1
+}
+
+add_origin_for_repo() {
+  local repo="$1" origin="$2"
+  git init --bare "${origin}" >/dev/null
+  git -C "${repo}" remote add origin "${origin}"
+  git -C "${repo}" branch -M main
+  git -C "${repo}" push -u origin main >/dev/null 2>&1
+}
+
+# Git status helpers report a normal branch, commit details, sync, and clean tree.
+repo="${TMP_ROOT}/git-normal"
+origin="${TMP_ROOT}/git-normal-origin.git"
+init_dirty_repo "${repo}"
+add_origin_for_repo "${repo}" "${origin}"
+run_git_status_probe "${repo}" "${TMP_ROOT}/git-normal.out"
+assert_contains "${TMP_ROOT}/git-normal.out" "branch=main"
+assert_contains "${TMP_ROOT}/git-normal.out" "short="
+assert_contains "${TMP_ROOT}/git-normal.out" "subject=init"
+assert_contains "${TMP_ROOT}/git-normal.out" "sync=matches origin/main"
+assert_contains "${TMP_ROOT}/git-normal.out" "tree=clean"
+pass "Git status helper reports normal branch and origin sync"
+
+# Git status helpers accurately report detached HEAD.
+repo="${TMP_ROOT}/git-detached"
+origin="${TMP_ROOT}/git-detached-origin.git"
+init_dirty_repo "${repo}"
+add_origin_for_repo "${repo}" "${origin}"
+git -C "${repo}" checkout --detach HEAD >/dev/null 2>&1
+run_git_status_probe "${repo}" "${TMP_ROOT}/git-detached.out"
+assert_contains "${TMP_ROOT}/git-detached.out" "branch=detached"
+pass "Git status helper reports detached HEAD only when actually detached"
+
+# Git commands route through the application-user helper and work as the current user in tests.
+repo="${TMP_ROOT}/git-app-user"
+init_dirty_repo "${repo}"
+bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${repo}' AI_FACTORY_APP_USER='$(id -un)' load_deploy_config; git_output_in_repo rev-parse --short HEAD" >"${TMP_ROOT}/git-app-user.out" 2>&1
+assert_not_contains "${TMP_ROOT}/git-app-user.out" 'sudo|dubious ownership|permission denied'
+pass "Git status helper can run as APP_USER"
+
+# Missing or inaccessible repositories do not masquerade as detached branches.
+missing_repo="${TMP_ROOT}/missing-repo"
+if bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${missing_repo}' AI_FACTORY_APP_USER='$(id -un)' load_deploy_config; git_status_raw_in_repo" >"${TMP_ROOT}/git-missing.out" 2>&1; then
+  fail "missing repository unexpectedly produced git status"
+fi
+pass "missing repository is detected without fake detached status"
+
 # Runtime-generated artifacts alone do not block safe updates.
 repo="${TMP_ROOT}/runtime-only"
 init_dirty_repo "${repo}"
@@ -229,6 +279,8 @@ printf 'less history\n' >"${repo}/.lesshst"
 run_clean_check "${repo}" "${TMP_ROOT}/runtime-only.out"
 assert_contains "${TMP_ROOT}/runtime-only.out" "Repository contains runtime-generated artifacts only."
 assert_contains "${TMP_ROOT}/runtime-only.out" "Continuing with deployment."
+run_git_status_probe "${repo}" "${TMP_ROOT}/runtime-only-status.out"
+assert_contains "${TMP_ROOT}/runtime-only-status.out" "tree=runtime-only"
 pass "runtime-generated artifacts only do not block safe update"
 
 # Runtime-generated artifacts plus a source change still block safe updates.
@@ -241,6 +293,8 @@ if run_clean_check "${repo}" "${TMP_ROOT}/runtime-plus-source.out"; then
 fi
 assert_contains "${TMP_ROOT}/runtime-plus-source.out" "src/app.ts"
 assert_contains "${TMP_ROOT}/runtime-plus-source.out" "Refusing to update dirty working tree"
+run_git_status_probe "${repo}" "${TMP_ROOT}/runtime-plus-source-status.out"
+assert_contains "${TMP_ROOT}/runtime-plus-source-status.out" "tree=dirty-source"
 pass "runtime artifacts plus source changes block safe update"
 
 # Source changes alone still block safe updates.
@@ -252,6 +306,8 @@ if run_clean_check "${repo}" "${TMP_ROOT}/source-only.out"; then
 fi
 assert_contains "${TMP_ROOT}/source-only.out" "src/app.ts"
 assert_contains "${TMP_ROOT}/source-only.out" "Refusing to update dirty working tree"
+run_git_status_probe "${repo}" "${TMP_ROOT}/source-only-status.out"
+assert_contains "${TMP_ROOT}/source-only-status.out" "tree=dirty-source"
 pass "source-only dirty tree is rejected"
 
 # Safe repository ownership behavior: git operations are routed through app-user helper.

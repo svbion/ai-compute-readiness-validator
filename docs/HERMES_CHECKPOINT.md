@@ -21,6 +21,9 @@
 - Added safe dotenv parsing in `deploy/lib/common.sh` via `dotenv_get` and `dotenv_load_selected`; deployment scripts no longer shell-source `.env.production`.
 - Hardened first-install `.env.production` generation so generated secrets are single-quoted and never printed.
 - Fixed Caddy render-time domain initialization so `set -u` cannot trip on a lower-case local `domain` referenced in its own declaration.
+- Production is live at `https://gpuvalidator.com`; DNS, HTTPS, browser access, authentication, backend service, Caddy, and deployment verification have been validated.
+- Improved production status and deployment summaries to inspect Git as `AI_FACTORY_APP_USER`, report branch/commit/origin sync accurately, and filter documented runtime artifacts.
+- Removed Vite's `.env.production` `NODE_ENV` warning by keeping `NODE_ENV` in systemd/runtime and the npm build command, not in the dotenv file.
 - Confirmed `deploy/preflight.sh`, `deploy/status.sh`, deployment shell tests, and Hetzner documentation exist.
 
 ## Files changed by implementation commit
@@ -62,6 +65,14 @@
 - Regression coverage: `tests-deploy/test-deployment-scripts.sh` now exercises the Caddy-enabled `install_or_update_caddy` render path in dry-run mode and asserts no unbound-variable failure.
 - Commit target: `fix(deploy): fix caddy domain variable initialization`.
 
+## Production operations cleanup
+
+- Current live deployment commit before this cleanup: `540d33e`.
+- Cleanup completed: status Git inspection now uses shared app-user Git helpers; deployment summary reports the actual deployed commit/subject; `deploy/status.sh` reports product, app dir, configured/checked-out branch, commit SHA/subject, origin sync, filtered working tree state, service/PID, local health/login, Caddy version/state/config, DNS/public HTTP(S), artifact timestamps, disk use, and secret-safe auth states.
+- Build config cleanup: `.env.production.example` no longer includes `NODE_ENV`; `deploy/systemd/ai-factory-validator.service` continues setting runtime `NODE_ENV=production`, and `npm run build` sets `NODE_ENV=production` for the production build while using a Vite mode that does not load `.env.production`.
+- Added `docs/PRODUCTION_SMOKE_TEST.md` for DNS, TLS, redirect, auth, API/report, local service, Caddy, logs, rollback, and secret-safety checks.
+- Next objective: public landing page.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.
@@ -78,6 +89,7 @@
 - `npm run test:portal`: passed, 14 tests.
 - `pytest` using existing `.venv`: passed, 16 tests.
 - Focused literal parse for `scrypt$1234567890abcdef$abcdef1234567890`: passed.
+- Production status Git fixture tests: normal branch, detached HEAD, app-user Git, missing repo, runtime-only dirty paths, and source dirty paths passed.
 
 ## Production safety notes
 

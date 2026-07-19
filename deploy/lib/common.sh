@@ -229,7 +229,11 @@ run_as_app_in_repo() {
     printf '\n'
     return 0
   fi
-  (cd "${APP_DIR}" && sudo -H -u "${APP_USER}" -- "$@")
+  if [[ "$(id -un 2>/dev/null || true)" == "${APP_USER}" ]]; then
+    (cd "${APP_DIR}" && "$@")
+  else
+    (cd "${APP_DIR}" && sudo -H -u "${APP_USER}" -- "$@")
+  fi
 }
 
 run_as_app_shell_in_repo() {
@@ -245,7 +249,11 @@ git_in_repo() { run_as_app_in_repo git "$@"; }
 
 git_output_in_repo() {
   if [[ "${DRY_RUN:-false}" == true ]]; then return 0; fi
-  (cd "${APP_DIR}" && sudo -H -u "${APP_USER}" -- git "$@")
+  if [[ "$(id -un 2>/dev/null || true)" == "${APP_USER}" ]]; then
+    (cd "${APP_DIR}" && git "$@")
+  else
+    (cd "${APP_DIR}" && sudo -H -u "${APP_USER}" -- git "$@")
+  fi
 }
 
 is_runtime_generated_path() {
@@ -272,14 +280,8 @@ is_runtime_generated_status_line() {
   is_runtime_generated_path "${path}"
 }
 
-ensure_clean_git_tree() {
-  [[ -d "${APP_DIR}/.git" ]] || return 0
-  if bool_is_true "${ALLOW_DIRTY_UPDATE}"; then
-    deploy_warn "AI_FACTORY_ALLOW_DIRTY_UPDATE is true; proceeding despite any local modifications."
-    return 0
-  fi
-  local status blocking_status="" runtime_status="" line
-  status="$(git_output_in_repo status --porcelain=v1 2>/dev/null || git -C "${APP_DIR}" status --porcelain=v1)"
+filter_git_status() {
+  local status="$1" mode="$2" blocking_status="" runtime_status="" line
   while IFS= read -r line; do
     [[ -n "${line}" ]] || continue
     if is_runtime_generated_status_line "${line}"; then
@@ -288,6 +290,61 @@ ensure_clean_git_tree() {
       blocking_status+="${line}"$'\n'
     fi
   done <<<"${status}"
+  case "${mode}" in
+    blocking) printf '%s' "${blocking_status}" ;;
+    runtime) printf '%s' "${runtime_status}" ;;
+    state)
+      if [[ -n "${blocking_status}" ]]; then printf dirty-source
+      elif [[ -n "${runtime_status}" ]]; then printf runtime-only
+      else printf clean
+      fi
+      ;;
+    *) deploy_fail "Unknown filter_git_status mode: ${mode}" ;;
+  esac
+}
+
+git_status_raw_in_repo() {
+  [[ -d "${APP_DIR}/.git" ]] || return 1
+  git_output_in_repo status --porcelain=v1 2>/dev/null
+}
+
+git_status_state_in_repo() {
+  local status
+  status="$(git_status_raw_in_repo 2>/dev/null || true)"
+  filter_git_status "${status}" state
+}
+
+git_current_branch_in_repo() {
+  local branch
+  branch="$(git_output_in_repo branch --show-current 2>/dev/null || true)"
+  if [[ -n "${branch}" ]]; then printf '%s' "${branch}"; else printf detached; fi
+}
+
+git_commit_sha_in_repo() { git_output_in_repo rev-parse HEAD 2>/dev/null || printf unknown; }
+git_short_commit_in_repo() { git_output_in_repo rev-parse --short HEAD 2>/dev/null || printf unknown; }
+git_commit_subject_in_repo() { git_output_in_repo log -1 --pretty=%s 2>/dev/null || printf unknown; }
+
+git_origin_sync_state_in_repo() {
+  local head upstream
+  head="$(git_output_in_repo rev-parse HEAD 2>/dev/null || true)"
+  upstream="$(git_output_in_repo rev-parse "origin/${REPO_BRANCH}" 2>/dev/null || true)"
+  if [[ -z "${head}" ]]; then printf unknown
+  elif [[ -z "${upstream}" ]]; then printf "origin/${REPO_BRANCH}-unknown"
+  elif [[ "${head}" == "${upstream}" ]]; then printf "matches origin/%s" "${REPO_BRANCH}"
+  else printf "differs from origin/%s" "${REPO_BRANCH}"
+  fi
+}
+
+ensure_clean_git_tree() {
+  [[ -d "${APP_DIR}/.git" ]] || return 0
+  if bool_is_true "${ALLOW_DIRTY_UPDATE}"; then
+    deploy_warn "AI_FACTORY_ALLOW_DIRTY_UPDATE is true; proceeding despite any local modifications."
+    return 0
+  fi
+  local status blocking_status runtime_status
+  status="$(git_status_raw_in_repo 2>/dev/null || git -C "${APP_DIR}" status --porcelain=v1)"
+  blocking_status="$(filter_git_status "${status}" blocking)"
+  runtime_status="$(filter_git_status "${status}" runtime)"
   if [[ -n "${blocking_status}" ]]; then
     printf '%s' "${blocking_status}" >&2
     deploy_fail "Refusing to update dirty working tree in ${APP_DIR}. Commit/stash changes or set AI_FACTORY_ALLOW_DIRTY_UPDATE=true deliberately."
@@ -516,9 +573,13 @@ install_or_update_caddy() {
 }
 
 final_summary() {
-  local commit="unknown" service_state="unknown" health_state="not checked" caddy_state="disabled"
+  local commit="unknown" short_commit="unknown" subject="unknown" branch="unknown" sync_state="unknown" service_state="unknown" health_state="not checked" caddy_state="disabled"
   if [[ -d "${APP_DIR}/.git" ]]; then
-    commit="$(git -C "${APP_DIR}" rev-parse --short HEAD 2>/dev/null || printf unknown)"
+    branch="$(git_current_branch_in_repo)"
+    commit="$(git_commit_sha_in_repo)"
+    short_commit="$(git_short_commit_in_repo)"
+    subject="$(git_commit_subject_in_repo)"
+    sync_state="$(git_origin_sync_state_in_repo)"
   fi
   if command -v systemctl >/dev/null 2>&1; then
     service_state="$(systemctl is-active "${SERVICE_NAME}" 2>/dev/null || printf unknown)"
@@ -529,8 +590,12 @@ final_summary() {
 
 [deploy] Deployment summary
 [deploy]   product: GPU Validator
-[deploy]   branch: ${REPO_BRANCH}
+[deploy]   configured branch: ${REPO_BRANCH}
+[deploy]   checked-out branch: ${branch}
 [deploy]   commit: ${commit}
+[deploy]   short commit: ${short_commit}
+[deploy]   commit subject: ${subject}
+[deploy]   origin sync: ${sync_state}
 [deploy]   app directory: ${APP_DIR}
 [deploy]   service state: ${service_state}
 [deploy]   local health: ${health_state}
