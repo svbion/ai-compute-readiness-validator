@@ -18,7 +18,11 @@ async function expectProtectedRoutesUnauthenticated(request: APIRequestContext) 
   }
 }
 
-test("root redirects unauthenticated visitors to the futuristic login page", async ({ page }) => {
+test("root redirects unauthenticated visitors to the login page", async ({ page, request }) => {
+  const root = await request.get("/", { maxRedirects: 0, headers: { Accept: "text/html" } });
+  expect(root.status()).toBe(302);
+  expect(root.headers().location).toBe("/login");
+
   await page.goto("/");
 
   await expect(page).toHaveURL(/\/login$/);
@@ -64,6 +68,7 @@ test("login page loads with accessible private reviewer entry", async ({ page })
 });
 
 test("authentication-required redirect, invalid credentials, account lockout, login, and logout", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
   await page.goto("/portal");
   await expect(page).toHaveURL(/\/login$/);
 

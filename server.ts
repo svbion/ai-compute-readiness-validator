@@ -301,12 +301,17 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
     return res.json({ authenticated: false });
   });
 
+  app.get("/", (req, res) => {
+    if (wantsHtml(req)) return res.redirect(302, "/login");
+    return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
+  });
+
   app.use((req, res, next) => {
     if (!authConfig.required) return next();
 
     const session = getSession(req);
     if (session) {
-      if (wantsHtml(req) && (req.path === "/" || req.path === "/login")) {
+      if (wantsHtml(req) && req.path === "/login") {
         return res.redirect(302, "/portal");
       }
       attachSessionUser(req, session);

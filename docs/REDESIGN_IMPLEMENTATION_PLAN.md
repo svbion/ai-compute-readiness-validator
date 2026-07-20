@@ -113,3 +113,12 @@ Risks: current login-only production posture.
 - Benchmark imports and benchmark job approval state.
 - Runner registration/heartbeat/job APIs.
 - User administration and audit history.
+
+
+## Deadline sprint pause
+
+Nonessential visual redesign phases are paused for the July 21, 2026 2:00 PM America/New_York deadline. Phase 3 GPU Inventory remains the latest completed redesign phase. The current sprint focus is backend/RunPod integration readiness:
+
+1. Completed Step 1: `/` redirects to `/login`; `docs/RUNPOD_MVP_ARCHITECTURE.md` audits the current application and defines the outbound-polling RunPod MVP.
+2. Next Step: implement the agent API scaffold and persistence models for agent registration, heartbeat, validation job creation, polling/claiming, and result upload.
+3. Deferred until after the backend/agent deadline path: Clusters, Reports, Alerts, Settings, AI Copilot, public marketing pages, and additional reference-image phases.

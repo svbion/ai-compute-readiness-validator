@@ -119,7 +119,7 @@ npm run build
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000/login`. The root URL `/` redirects deterministically to `/login` so the public application landing route is the private login page, not a marketing homepage.
 
 Portal API behavior:
 - `GET /api/results?scenario=healthy|degraded` loads generated scenario artifacts from `artifacts/` when present and otherwise falls back to checked-in `sample-data/`
@@ -205,7 +205,7 @@ AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='token$with$dollar-signs'
 
 Authentication uses username as the only login identifier. Email remains optional user profile metadata and is ignored during authentication. Production should bootstrap the administrator `sfrazier` into `/opt/ai-factory-validator/shared/users/store.json` with `ai-validator users bootstrap-admin`; environment reviewer credentials are only a temporary fallback.
 
-The public UI is login-only. Unauthenticated `/` and legacy marketing/documentation paths redirect to `/login`; authenticated `/` and `/login` redirect to `/portal`.
+The public UI is login-only. `/` always redirects to `/login`; legacy marketing/documentation paths redirect unauthenticated users to `/login`; authenticated `/login` redirects to `/portal`. Protected `/portal` routes remain unavailable without authentication.
 
 Never use command substitutions or backticks in production env files, and never commit real `.env.production` secrets.
 
@@ -216,6 +216,11 @@ Recommended hosted pattern:
 - generate demo/live/imported artifacts through administrator-side CLI tools before review; the public reviewer surface does not run validators or accept uploads
 
 If you only need a static fallback demo, pre-generate artifacts locally and serve the built portal. In that mode the portal can still load `sample-data/` or generated `artifacts/` without needing live collection.
+
+
+## Deadline RunPod MVP pivot
+
+Visual redesign phases are paused for the July 21, 2026 deadline sprint. The next product step is backend/agent integration, documented in `docs/RUNPOD_MVP_ARCHITECTURE.md`: GPUValidator frontend → backend → queued validation job → outbound-polling RunPod agent → real GPU command execution → result upload → dashboard and inventory display. The backend should not SSH into RunPod during normal operation.
 
 ## Local fallback demo
 

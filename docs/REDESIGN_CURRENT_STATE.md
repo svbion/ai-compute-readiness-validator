@@ -277,3 +277,14 @@ Completed after commit `20a3618 feat(dashboard): redesign infrastructure overvie
 - One inventory row is derived per reported GPU count. Per-GPU unavailable fields are rendered as `Not collected` rather than fabricated.
 - Hardware health is not inferred from absent telemetry. The page separates validation status, evidence completeness, and hardware-health unknown/failed/warning derived only from accepted findings or validation failure states.
 - Detail drawer sections preserve evidence provenance where comparison cells provide source command/file metadata.
+
+
+## Deadline sprint pivot — root login and RunPod audit
+
+- Latest completed visual phase: Phase 3 GPU Inventory (`/portal/inventory/gpus`).
+- Nonessential visual redesign work is paused until after the July 21, 2026 2:00 PM America/New_York deadline.
+- Public root `/` now redirects deterministically to `/login`; the public URL no longer serves a landing or marketing page.
+- Authenticated `/login` continues to redirect safely to `/portal`, and unauthenticated protected routes continue to redirect to `/login` or return `401` for API/report requests.
+- Direct navigation to `/login` remains supported in production because the Express server serves the SPA fallback after static assets and auth middleware.
+- RunPod backend/agent architecture audit is documented in `docs/RUNPOD_MVP_ARCHITECTURE.md`.
+- Next implementation step: agent API scaffold and persistence models for outbound-polling RunPod validation jobs.

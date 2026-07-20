@@ -229,3 +229,27 @@ Status: implemented and validated.
 ### Next phase
 
 Recommended Phase 4 scope: Clusters only, mapping existing engagement list/detail/readiness data into a truthful cluster route without starting validation center, benchmarks, monitoring, alerts, reports, Copilot, settings, auth, or public marketing pages.
+
+
+## Deadline Sprint Step 1 — Root Login Redirect and RunPod Architecture Audit
+
+Date: 2026-07-20
+Status: implemented and validated.
+
+### Routing
+
+- Changed Express root handling so `GET /` redirects deterministically to `/login`.
+- Preserved `/login` as the private reviewer login page.
+- Preserved authenticated `/login` redirect to `/portal`.
+- Preserved unauthenticated protected-route behavior: HTML routes redirect to `/login`; API/report routes return `401`.
+- Kept direct SPA navigation for `/login` and protected routes working in production-style builds.
+
+### Deadline pivot
+
+- Paused nonessential visual redesign phases after Phase 3 GPU Inventory.
+- Added `docs/RUNPOD_MVP_ARCHITECTURE.md` with backend, frontend, persistence, deployment, evidence, inventory, dashboard, existing runner, and RunPod outbound-polling agent audit.
+- Defined smallest viable RunPod architecture and proposed API/data models.
+
+### Next step
+
+- Implement the agent API scaffold and persistence models. Do not begin Clusters, Reports, Alerts, Settings, AI Copilot, public marketing pages, or additional reference-image phases.

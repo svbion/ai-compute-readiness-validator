@@ -158,7 +158,7 @@ test("disabled, expired, and locked users cannot authenticate", async () => {
   });
 });
 
-test("public UI is login-only and root/login redirect authenticated sessions to portal", async () => {
+test("public UI is login-only and login redirects authenticated sessions to portal", async () => {
   await withServer(async (baseUrl) => {
     const root = await fetch(`${baseUrl}/`, { redirect: "manual", headers: { Accept: "text/html" } });
     assert.equal(root.status, 302);
@@ -177,6 +177,6 @@ test("public UI is login-only and root/login redirect authenticated sessions to 
     assert.equal(authedLogin.headers.get("location"), "/portal");
     const authedRoot = await fetch(`${baseUrl}/`, { redirect: "manual", headers: { Accept: "text/html", Cookie: login.cookie } });
     assert.equal(authedRoot.status, 302);
-    assert.equal(authedRoot.headers.get("location"), "/portal");
+    assert.equal(authedRoot.headers.get("location"), "/login");
   });
 });
