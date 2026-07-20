@@ -2,7 +2,7 @@
 
 Status: deadline sprint architecture audit for the July 21, 2026 2:00 PM America/New_York deadline.
 
-Scope: define the smallest viable production architecture for connecting GPUValidator to real GPU execution through an outbound-polling RunPod agent. This document is an audit and proposal only; the full agent API is not implemented in this step.
+Scope: define the smallest viable production architecture for connecting GPUValidator to real GPU execution through an outbound-polling RunPod agent. Step 2 implements the backend agent API, file-backed persistence, authentication, heartbeat, hardware-discovery validation-job queue, state transitions, and result upload protocol. The RunPod agent process itself is not implemented yet.
 
 ## Deadline pivot
 
@@ -214,7 +214,7 @@ No CORS middleware exists. Same-origin browser calls avoid CORS. Agent calls are
 5. Raw output is bounded, sanitized, checksummed, and stored as evidence.
 6. Dashboard and GPU Inventory read from accepted structured results/evidence, not from live shell sessions.
 
-### Proposed API contract
+### Implemented API contract
 
 Adapted to the existing `/api/v1` convention:
 
@@ -232,11 +232,35 @@ GET  /api/v1/validations/:validationId
 
 Mapping to existing conventions:
 
-- `agents` should replace or evolve `runners` for validation-wide RunPod execution.
-- `validations` should create validation jobs, not benchmark-only jobs.
-- `jobs/:jobId/results` should accept structured command evidence and optionally raw bounded excerpts.
+- `agents` is implemented as the validation-wide RunPod-facing protocol in `src/server/agents.ts`.
+- `validations` creates hardware-discovery validation jobs, not benchmark-only jobs.
+- `jobs/:jobId/results` accepts structured command evidence and bounded stdout/stderr excerpts.
 - Authenticated reviewer/admin APIs remain cookie/session protected.
-- Agent APIs use bearer token auth and no browser session cookie.
+- Agent protocol APIs use `Authorization: Bearer <GPUVALIDATOR_AGENT_TOKEN>` and no browser session cookie.
+- `POST /api/v1/agents/:agentId/jobs/:jobId/running` is also implemented for explicit running-state reporting.
+
+
+
+### Step 2 implementation status
+
+Implemented in `src/server/agents.ts`:
+
+- Agent bearer-token authentication with `GPUVALIDATOR_AGENT_TOKEN`.
+- Idempotent registration keyed by stable `name + hostname`.
+- Heartbeat updates for status, capabilities, GPU count, agent version, and last error.
+- Online/offline/degraded derivation at read time using `GPUVALIDATOR_AGENT_OFFLINE_SECONDS` (default 90 seconds).
+- File-backed arrays in the existing engagement store: `validation_agents`, `validations`, `validation_jobs`, and `validation_results`.
+- Hardware-discovery validation creation for online capable agents only.
+- One queued job per allowlisted command.
+- One-at-a-time job polling, claim conflict protection, running-state update, cancellation/timeout handling, wrong-agent rejection, duplicate-result idempotency, and conflicting-result rejection.
+- Result upload for `completed`, `failed`, `unavailable`, and `timed_out` states with output truncation and command evidence checksums.
+
+Not implemented in Step 2:
+
+- RunPod agent process/binary.
+- Frontend management UI for agents/validations.
+- Database-backed queue or migrations.
+- Automatic ingestion of uploaded structured results into the existing dashboard/GPU inventory derivation path.
 
 ### Proposed typed models
 

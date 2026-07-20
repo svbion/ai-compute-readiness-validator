@@ -14,6 +14,7 @@ import { registerEvidenceRoutes } from "./src/server/evidence";
 import { registerIntelligenceRoutes } from "./src/server/intelligence";
 import { registerBenchmarkRoutes } from "./src/server/benchmarks";
 import { registerExecutionRoutes } from "./src/server/execution";
+import { registerAgentRoutes } from "./src/server/agents";
 import { registerUserRoutes, UserStore, type PublicUser } from "./src/server/users";
 
 const repoRoot = process.cwd();
@@ -72,6 +73,13 @@ function isUploadTokenRoute(pathname: string): boolean {
 
 function isRunnerRoute(pathname: string): boolean {
   return pathname.startsWith("/api/v1/runners/");
+}
+
+function isAgentProtocolRoute(req: express.Request): boolean {
+  if (req.path === "/api/v1/agents/register" || req.path === "/api/v1/agents/heartbeat") return true;
+  if (req.path.startsWith("/api/v1/agents/") && req.path.includes("/jobs/")) return true;
+  if (req.path.startsWith("/api/v1/jobs/") && req.path.endsWith("/results")) return true;
+  return false;
 }
 
 function firstExistingPath(candidates: string[]): string | null {
@@ -321,6 +329,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
     if (req.path === "/login" || isPublicRoute(req.path)) return next();
     if (isUploadTokenRoute(req.path)) return next();
     if (isRunnerRoute(req.path)) return next();
+    if (isAgentProtocolRoute(req)) return next();
 
     if (req.path.startsWith("/api/") || req.path.startsWith("/reports/")) {
       return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
@@ -338,6 +347,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
   registerEvidenceRoutes(app, engagementStore);
   registerBenchmarkRoutes(app, engagementStore);
   registerExecutionRoutes(app, engagementStore);
+  registerAgentRoutes(app, engagementStore);
   registerIntelligenceRoutes(app, engagementStore);
 
   // 1. API: Get validation results by scenario or live source

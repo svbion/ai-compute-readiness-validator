@@ -288,3 +288,26 @@ Completed after commit `20a3618 feat(dashboard): redesign infrastructure overvie
 - Direct navigation to `/login` remains supported in production because the Express server serves the SPA fallback after static assets and auth middleware.
 - RunPod backend/agent architecture audit is documented in `docs/RUNPOD_MVP_ARCHITECTURE.md`.
 - Next implementation step: agent API scaffold and persistence models for outbound-polling RunPod validation jobs.
+
+
+## Deadline Sprint Step 2 — Agent API and validation job protocol
+
+Date: 2026-07-20
+Status: implemented and validated.
+
+Visual redesign phases remain paused for the RunPod deadline pivot. The next product increment is not Clusters, Reports, Alerts, Settings, AI Copilot, public marketing, or another reference-image phase; it is building the RunPod-side agent against the backend contract.
+
+Implemented backend capabilities:
+
+- `src/server/agents.ts` adds a validation-wide agent API separate from the older benchmark runner scaffold.
+- Agent endpoints use `Authorization: Bearer <GPUVALIDATOR_AGENT_TOKEN>` and do not inherit reviewer-session privileges.
+- Registration is idempotent for stable `name + hostname`, so agent process restarts do not create duplicate records.
+- Heartbeats update capabilities, GPU count, agent version, degraded errors, and last heartbeat time.
+- Offline state is derived at read time from `last_heartbeat_at` using `GPUVALIDATOR_AGENT_OFFLINE_SECONDS` with a default of 90 seconds.
+- `POST /api/v1/validations` supports the initial `hardware-discovery` profile only and queues server-defined command jobs for selected online capable agents.
+- Job polling returns one queued job at a time; claiming protects against duplicate work; running-state updates are explicit.
+- Result upload supports completed, failed, unavailable, and timed-out outcomes with bounded stdout/stderr, structured result storage, command evidence checksums, duplicate-result idempotency, and wrong-agent rejection.
+
+Persistence remains repository-consistent file-backed JSON in the existing engagement store. New arrays are `validation_agents`, `validations`, `validation_jobs`, and `validation_results`. This is sufficient for the deadline MVP but should be replaced by transactional database-backed queue semantics before multi-agent production scale.
+
+Documentation added: `docs/AGENT_API.md`.

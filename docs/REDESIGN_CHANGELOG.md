@@ -253,3 +253,53 @@ Status: implemented and validated.
 ### Next step
 
 - Implement the agent API scaffold and persistence models. Do not begin Clusters, Reports, Alerts, Settings, AI Copilot, public marketing pages, or additional reference-image phases.
+
+
+## Deadline Sprint Step 2 — Agent API and validation job protocol
+
+Date: 2026-07-20
+Status: implemented and validated.
+
+### Scope
+
+- Continued from Step 1 root-login routing commit.
+- Kept visual redesign phases paused.
+- Did not create the RunPod agent.
+- Did not modify unrelated visual-design pages.
+
+### Backend protocol added
+
+- Added `src/server/agents.ts` with typed agent, heartbeat, validation-job, command-evidence, and validation-result records.
+- Added agent bearer-token auth using `GPUVALIDATOR_AGENT_TOKEN`.
+- Added idempotent agent registration keyed by stable `name + hostname`.
+- Added heartbeat updates and read-time offline/degraded/online derivation.
+- Added hardware-discovery validation creation.
+- Added queued job polling, atomic claim semantics, running-state update, timeout maintenance, and cancelled-job exclusion.
+- Added result upload for completed, failed, unavailable, and timed-out states with bounded output, checksums, duplicate handling, and wrong-agent rejection.
+
+### API endpoints added
+
+- `POST /api/v1/agents/register`
+- `POST /api/v1/agents/heartbeat`
+- `GET /api/v1/agents`
+- `GET /api/v1/agents/:agentId`
+- `GET /api/v1/agents/:agentId/jobs/next`
+- `POST /api/v1/agents/:agentId/jobs/:jobId/claim`
+- `POST /api/v1/agents/:agentId/jobs/:jobId/running`
+- `POST /api/v1/jobs/:jobId/results`
+- `POST /api/v1/validations`
+- `GET /api/v1/validations/:validationId`
+
+### Tests added
+
+- `tests-portal/agent-api.test.ts` covers registration, idempotency, missing/invalid token rejection, heartbeat/capability updates, offline derivation, validation creation, job assignment, claim conflict, running transition, completed/failed/unavailable/timed-out result upload, duplicate result upload, wrong-agent rejection, unsupported commands, output truncation, timeout handling, and cancelled-job behavior.
+
+### Documentation
+
+- Added `docs/AGENT_API.md` with request/response examples and security expectations.
+- Updated `docs/RUNPOD_MVP_ARCHITECTURE.md` with implementation status and the added running-state endpoint.
+- Updated current-state documentation for the RunPod deadline pivot.
+
+### Next step
+
+Build the RunPod-side outbound-polling agent against `docs/AGENT_API.md`; do not begin visual redesign phases.
