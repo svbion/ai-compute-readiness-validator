@@ -1,0 +1,8 @@
+# simulated=true
+# all_reduce_perf fixture with driver/fabric mismatch symptom
+NCCL version 2.18.3 CUDA Version 12.2
+NCCL INFO NET/Socket : Using TCP transport
+# nodes=2 nranks=16
+# size count type redop root time algbw busbw #wrong
+1048576 262144 float sum -1 410.0 2.5 4.8 0
+1073741824 268435456 float sum -1 99100.0 10.8 20.3 1

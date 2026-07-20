@@ -1,0 +1,6 @@
+# simulated=true
+NVIDIA HPL version 24.03
+nodes=2 16 GPUs
+T/V                N    NB     P     Q               Time                 Gflops
+WR11R2C4      143360   288     4     4            1543.20          1.2754e+06
+||Ax-b||/||A||||x||  = 1.2e-12 ...... PASSED

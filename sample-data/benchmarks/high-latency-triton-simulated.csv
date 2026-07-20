@@ -1,0 +1,2 @@
+Concurrency,Inferences/Second,Avg latency, p95 latency, p99 latency, Queue, Compute, Requests
+16,2100,155.0,280.0,410.0,80.0,70.0,8400

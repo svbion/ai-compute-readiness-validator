@@ -3,6 +3,7 @@ import path from "path";
 import crypto from "crypto";
 import type express from "express";
 import type { Engagement, EngagementNode, EvidenceRecord, EngagementStore, PlatformProfile, ValidationStatus, AcceptanceStatus } from "./engagements";
+import { deriveBenchmarkFindings, type BenchmarkRun, type BenchmarkFinding } from "./benchmarks";
 
 export const PARSER_VERSION = "1.0.0";
 export const FINDINGS_RULE_VERSION = "1.0.0";
@@ -385,12 +386,17 @@ function nodeStatus(findings: Finding[], score: number): ValidationStatus {
   return score >= 80 ? "ready" : "remediation_required";
 }
 
-export function deriveReadiness(engagement: Engagement, facts: ParsedNodeFacts[], findings: Finding[]): EngagementReadiness {
+export function deriveReadiness(engagement: Engagement, facts: ParsedNodeFacts[], findings: (Finding | BenchmarkFinding)[], benchmarkRuns: BenchmarkRun[] = []): EngagementReadiness {
+  const acceptedBenchmarks = benchmarkRuns.filter((run) => run.status === "accepted" || run.status === "parsed");
   const nodes = facts.map((fact): NodeReadiness => {
     const nodeId = fact.node_id.value ?? "unknown";
     const nodeFindings = findings.filter((finding) => finding.node_id === nodeId || finding.node_id === null);
     const val = <T = unknown>(field: keyof ParsedNodeFacts) => (fact[field] as ParsedValue<T> | undefined)?.value ?? null;
-    const breakdown: Record<string, ScoreSection> = { evidence_completeness: section(20), linux: section(15), gpu: section(30), topology: section(15), fabric: section(10), consistency: section(10), benchmarks: { score: 0, max: 0, deductions: ["Benchmark results are evaluated separately and are not included in the current readiness score."], status: "not_evaluated" } };
+    const nodeBenchmarks = acceptedBenchmarks.filter((run) => run.node_id === nodeId || run.node_id === null);
+    const benchmarkEvaluated = nodeBenchmarks.length > 0;
+    const breakdown: Record<string, ScoreSection> = benchmarkEvaluated
+      ? { evidence_completeness: section(16), linux: section(12), gpu: section(24), topology: section(12), fabric: section(8), consistency: section(8), benchmarks: section(20) }
+      : { evidence_completeness: section(20), linux: section(15), gpu: section(30), topology: section(15), fabric: section(10), consistency: section(10), benchmarks: { score: 0, max: 0, deductions: ["Benchmark results are not evaluated for this node."], status: "not_evaluated" } };
     if (!val("operating_system") || !val("kernel_version")) deduct(breakdown.evidence_completeness, 5, "Missing Linux identity evidence.");
     if (!val("driver_version") || !val("gpu_count")) deduct(breakdown.evidence_completeness, 7, "Missing GPU inventory or driver evidence.");
     if ((val<number>("command_missing_count") ?? 0) > 0) deduct(breakdown.evidence_completeness, 4, "Collector reported missing commands.");
@@ -407,8 +413,13 @@ export function deriveReadiness(engagement: Engagement, facts: ParsedNodeFacts[]
       const bucket = finding.category === "cluster_consistency" ? breakdown.consistency : finding.category === "evidence_quality" ? breakdown.evidence_completeness : finding.rule_id.includes("nvlink") ? breakdown.topology : finding.rule_id.includes("ofed") ? breakdown.fabric : finding.rule_id.includes("gpu") || finding.rule_id.includes("driver") || finding.rule_id.includes("cuda") ? breakdown.gpu : breakdown.linux;
       if (amount) deduct(bucket, amount, `${finding.severity.toUpperCase()}: ${finding.title}`);
     }
+    for (const finding of findings.filter((item) => item.category === "benchmarks" && (item.node_id === nodeId || item.node_id === null))) {
+      if (breakdown.benchmarks.max === 0) continue;
+      const amount = finding.severity === "critical" ? 20 : finding.severity === "high" ? 12 : finding.severity === "medium" ? 6 : finding.severity === "low" ? 3 : 0;
+      if (amount) deduct(breakdown.benchmarks, amount, `${finding.severity.toUpperCase()}: ${finding.title}`);
+    }
     const score = Math.round(Object.values(breakdown).reduce((sum, item) => sum + item.score, 0));
-    return { node_id: nodeId, score, status: nodeStatus(nodeFindings.filter((f) => f.node_id === nodeId), score), breakdown, deduction_reasons: Object.values(breakdown).flatMap((item) => item.deductions) };
+    return { node_id: nodeId, score, status: nodeStatus(nodeFindings.filter((f) => f.node_id === nodeId && f.category !== "benchmarks") as Finding[], score), breakdown, deduction_reasons: Object.values(breakdown).flatMap((item) => item.deductions) };
   });
   const blockingCritical = findings.some((f) => f.blocking && f.severity === "critical");
   const blockingHigh = findings.some((f) => f.blocking && f.severity === "high");
@@ -423,9 +434,10 @@ export function deriveReadiness(engagement: Engagement, facts: ParsedNodeFacts[]
   for (const key of ["evidence_completeness", "linux", "gpu", "topology", "fabric", "consistency", "benchmarks"]) {
     const max = nodes[0]?.breakdown[key]?.max ?? 0;
     const avg = nodes.length ? Math.round(nodes.reduce((sum, node) => sum + (node.breakdown[key]?.score ?? 0), 0) / nodes.length) : 0;
-    breakdown[key] = { score: avg, max, deductions: [...new Set(nodes.flatMap((node) => node.breakdown[key]?.deductions ?? []))], status: key === "benchmarks" ? "not_evaluated" : undefined };
+    const status = key === "benchmarks" ? (max === 0 ? "not_evaluated" : "evaluated") : undefined;
+    breakdown[key] = { score: avg, max, deductions: [...new Set(nodes.flatMap((node) => node.breakdown[key]?.deductions ?? []))], status };
   }
-  return { engagement_id: engagement.id, readiness_score, acceptance_status, expected_node_count: engagement.expected_node_count, received_node_count: engagement.received_node_count, ready_node_count: ready, remediation_node_count: remediation, failed_node_count: failed, blocking_findings_count: findings.filter((finding) => finding.blocking).length, evaluated_at: new Date().toISOString(), simulated_demo_warning: findings.some((finding) => finding.rule_id === "simulated-evidence") ? "DEMONSTRATION ONLY — NOT VALID FOR CUSTOMER ACCEPTANCE" : null, nodes, breakdown, deduction_reasons: Object.values(breakdown).flatMap((item) => item.deductions) };
+  return { engagement_id: engagement.id, readiness_score, acceptance_status, expected_node_count: engagement.expected_node_count, received_node_count: engagement.received_node_count, ready_node_count: ready, remediation_node_count: remediation, failed_node_count: failed, blocking_findings_count: findings.filter((finding) => finding.blocking).length, evaluated_at: new Date().toISOString(), simulated_demo_warning: findings.some((finding) => finding.rule_id === "simulated-evidence" || finding.rule_id === "benchmark-simulated") ? "DEMONSTRATION ONLY — NOT VALID FOR CUSTOMER ACCEPTANCE" : null, nodes, breakdown, deduction_reasons: Object.values(breakdown).flatMap((item) => item.deductions) };
 }
 
 export function evaluateEngagement(store: EngagementStore, engagementId: string) {
@@ -434,11 +446,12 @@ export function evaluateEngagement(store: EngagementStore, engagementId: string)
   if (!engagement) return null;
   const nodes = document.nodes.filter((node) => node.engagement_id === engagementId);
   const records = document.evidence_records.filter((record) => record.engagement_id === engagementId && record.ingestion_status === "accepted");
+  const benchmarkRuns = document.benchmark_runs.filter((record) => record.engagement_id === engagementId);
   const facts = records.map((record) => parseAcceptedEvidence(record, path.join(evidenceStorageRoot(), record.storage_key)));
   const workingEngagement = { ...engagement, received_node_count: nodes.filter((node) => node.collection_status !== "awaiting_evidence").length };
   const comparison = deriveClusterComparison(engagementId, facts, nodes);
-  const findings = deriveFindings(workingEngagement, facts, comparison);
-  const readiness = deriveReadiness(workingEngagement, facts, findings);
+  const findings = [...deriveFindings(workingEngagement, facts, comparison), ...deriveBenchmarkFindings(engagementId, nodes.map((node) => node.id), benchmarkRuns as any)];
+  const readiness = deriveReadiness(workingEngagement, facts, findings, benchmarkRuns as any);
   const nodeById = new Map(readiness.nodes.map((node) => [node.node_id, node]));
   document.nodes = document.nodes.map((node) => {
     if (node.engagement_id !== engagementId) return node;

@@ -221,6 +221,21 @@
 
 - NCCL, NVIDIA HPL, and inference benchmark result importers.
 
+## Phase 3B.4 NCCL, NVIDIA HPL, and inference benchmark intelligence
+
+- Added versioned benchmark run records for `nccl`, `hpl`, `triton_perf_analyzer`, and `genai_perf` with status, SHA-256, metrics, warnings, storage ID, and provenance.
+- Added parsers for NCCL Tests, NVIDIA HPL, Triton Performance Analyzer, and GenAI-Perf outputs. Parsers tolerate whitespace, comments, banners, ANSI colors, missing metrics, and unknown tool versions.
+- Added token-authenticated `POST /api/v1/benchmarks/upload` and reviewer `GET /api/v1/engagements/{engagement_id}/benchmarks`; benchmark files are stored separately from infrastructure evidence.
+- Added configurable benchmark findings for NCCL bandwidth thresholds, HPL residual failure, inference latency thresholds, missing/outdated benchmark evidence, and simulated benchmark evidence. No default performance thresholds are invented.
+- Updated readiness to expose benchmark scoring as a 20-point evaluated category when benchmark evidence is present; absent benchmark evidence remains `Not Evaluated` and does not automatically fail acceptance.
+- Replaced the engagement benchmark placeholder with NCCL, HPL, and Inference cards showing status, key metrics, and provenance links.
+- Added CLI `ai-validator benchmark import --type nccl|hpl|triton|genai-perf --input <file>` for local import of existing benchmark files only; no benchmark execution, SSH, or software installation was added.
+- Added simulated demo benchmark fixtures under `sample-data/benchmarks/` and documentation in `docs/BENCHMARK_INTELLIGENCE.md`.
+
+### Phase 3B.4 next milestone
+
+- Container-aware collector improvements and real benchmark execution, with explicit safety gates and lab approval before any execution support is introduced.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.

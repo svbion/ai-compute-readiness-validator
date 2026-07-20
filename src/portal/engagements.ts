@@ -107,6 +107,20 @@ export interface EvidenceRecordSummary {
   storage_id: string;
 }
 
+export interface BenchmarkRunSummary {
+  id: string;
+  engagement_id: string;
+  node_id: string | null;
+  benchmark_type: "nccl" | "hpl" | "triton_perf_analyzer" | "genai_perf";
+  status: string;
+  simulated: boolean;
+  input_file: string;
+  sha256: string;
+  metrics: Record<string, unknown>;
+  warnings: string[];
+  provenance: ProvenanceReference;
+}
+
 export interface ActivityEntry {
   id: string;
   engagement_id: string;

@@ -207,7 +207,7 @@ Use the response `error_id` for log correlation. Do not log or share plaintext t
 
 ## Current limitations
 
-- No benchmark parsing during bundle ingestion; benchmark status is `Awaiting Benchmark Evidence` and excluded from the current readiness score.
+- Benchmark parsing is implemented for separate benchmark uploads/imports; infrastructure evidence bundle ingestion still does not execute or embed benchmarks.
 - No PDF report generation.
 - No raw evidence downloads from the portal.
 - No remote SSH execution or remote package installation.

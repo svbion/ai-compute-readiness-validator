@@ -1,0 +1,8 @@
+# simulated=true
+# all_reduce_perf fixture
+NCCL version 2.21.5 CUDA Version 12.4
+# transport: NVLink nodes=2 nranks=16
+# nThread 1 nGpus 16 minBytes 8 maxBytes 1073741824 step: 2(factor) warmup iters: 5 iters: 20 agg iters: 1 validation: 1
+# size count type redop root time algbw busbw #wrong
+1048576 262144 float sum -1 35.0 29.9 56.1 0
+1073741824 268435456 float sum -1 4220.0 254.4 477.0 0

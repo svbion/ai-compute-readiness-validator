@@ -12,6 +12,7 @@ import {
 import { EngagementStore, registerEngagementRoutes } from "./src/server/engagements";
 import { registerEvidenceRoutes } from "./src/server/evidence";
 import { registerIntelligenceRoutes } from "./src/server/intelligence";
+import { registerBenchmarkRoutes } from "./src/server/benchmarks";
 
 const repoRoot = process.cwd();
 const artifactsDir = path.join(repoRoot, "artifacts");
@@ -59,7 +60,7 @@ function isPublicRoute(pathname: string): boolean {
 }
 
 function isUploadTokenRoute(pathname: string): boolean {
-  return pathname === "/api/v1/evidence/uploads";
+  return pathname === "/api/v1/evidence/uploads" || pathname === "/api/v1/benchmarks/upload";
 }
 
 function firstExistingPath(candidates: string[]): string | null {
@@ -268,6 +269,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
 
   registerEngagementRoutes(app, engagementStore);
   registerEvidenceRoutes(app, engagementStore);
+  registerBenchmarkRoutes(app, engagementStore);
   registerIntelligenceRoutes(app, engagementStore);
 
   // 1. API: Get validation results by scenario or live source

@@ -35,6 +35,7 @@ from ai_validator.benchmarks.hpl import HplParser
 from ai_validator.benchmarks.fio import FioParser
 from ai_validator.benchmarks.iperf import IperfParser
 from ai_validator.benchmarks.osu import OsuParser
+from ai_validator.benchmarks.intelligence import parse_benchmark_file, write_import
 
 app = typer.Typer(help="GPU Validator - Assessment CLI")
 console = Console()
@@ -451,73 +452,45 @@ def version():
 
 @app.command()
 def benchmark(
-    action: str = typer.Argument(..., help="Action to execute: 'ingest'"),
-    benchmark_type: str = typer.Option("nccl", "--type", help="Benchmark log type to parse: 'nccl', 'hpl', 'fio', 'iperf', 'osu'"),
-    file: str = typer.Option(..., "--file", help="Path to raw benchmark log file to ingest")
+    action: str = typer.Argument(..., help="Action to execute: 'import'"),
+    benchmark_type: str = typer.Option("nccl", "--type", help="Benchmark log type to parse: nccl, hpl, triton, genai-perf"),
+    input_file: Optional[str] = typer.Option(None, "--input", help="Path to raw benchmark output file to import"),
+    file: Optional[str] = typer.Option(None, "--file", help="Deprecated alias for --input"),
+    engagement_id: str = typer.Option("local-import", "--engagement-id", help="Engagement ID to attach in the local import record"),
+    node_id: Optional[str] = typer.Option(None, "--node-id", help="Optional node ID to attach in the local import record"),
+    output_dir: str = typer.Option("artifacts/benchmark-imports", "--output-dir", help="Directory for local imported benchmark JSON records"),
+    simulated: bool = typer.Option(False, "--simulated", help="Mark imported benchmark output as simulated/demo evidence"),
 ):
     """
-    Ingests and parses historical execution logs of standard communication and compute benchmarks.
-    Appends the parsed performance profiles to the current diagnostic reports.
+    Imports and parses existing NCCL, NVIDIA HPL, Triton perf_analyzer, or GenAI-Perf output.
+    This command never launches benchmarks or installs benchmark software.
     """
-    if action.lower() != "ingest":
-        console.print("[bold red]Unsupported action. Use 'ingest'.[/bold red]")
-        sys.exit(1)
-        
-    if not os.path.exists(file):
-        console.print(f"[bold red]Error: Benchmark log file '{file}' does not exist.[/bold red]", err=True)
+    if action.lower() not in {"import", "ingest"}:
+        console.print("[bold red]Unsupported action. Use 'import'.[/bold red]")
         sys.exit(1)
 
-    console.print(f"Ingesting [cyan]{benchmark_type.upper()}[/cyan] log from: [cyan]{file}[/cyan]")
-    
-    # Select parser
-    parser_type = benchmark_type.strip().lower()
-    if parser_type == "nccl":
-        result = NcclParser.parse(file)
-    elif parser_type == "hpl":
-        result = HplParser.parse(file)
-    elif parser_type == "fio":
-        result = FioParser.parse(file)
-    elif parser_type == "iperf":
-        result = IperfParser.parse(file)
-    elif parser_type in ("osu", "osu-mpi"):
-        result = OsuParser.parse(file)
-    else:
-        console.print(f"[bold red]Unsupported benchmark type: '{benchmark_type}'. Supported: nccl, hpl, fio, iperf, osu[/bold red]", err=True)
+    selected_input = input_file or file
+    if not selected_input or not os.path.exists(selected_input):
+        console.print(f"[bold red]Error: Benchmark input file '{selected_input}' does not exist.[/bold red]", err=True)
         sys.exit(1)
 
-    # Load existing latest cluster or start with placeholder
-    latest_results_path = "artifacts/latest-results.json"
-    cluster = None
-    if os.path.exists(latest_results_path):
-        try:
-            with open(latest_results_path, "r", encoding="utf-8") as f:
-                cluster = Cluster.model_validate_json(f.read())
-        except Exception:
-            pass
+    parser_type = benchmark_type.strip().lower().replace("-", "_")
+    if parser_type == "triton":
+        parser_type = "triton_perf_analyzer"
+    if parser_type in {"genai", "genai_perf"}:
+        parser_type = "genai_perf"
+    if parser_type not in {"nccl", "hpl", "triton_perf_analyzer", "genai_perf"}:
+        console.print(f"[bold red]Unsupported benchmark type: '{benchmark_type}'. Supported: nccl, hpl, triton, genai-perf[/bold red]", err=True)
+        sys.exit(1)
 
-    if not cluster:
-        # Create placeholder
-        console.print("[dim]No active validation session found. Creating fresh benchmark report container...[/dim]")
-        cluster = Cluster(
-            name="benchmark-ingested-report",
-            nodes=[],
-            metadata={"execution_mode": "Benchmark Ingestion"}
-        )
-
-    # Add result
-    cluster.benchmark_results.append(result)
-    
-    # Re-evaluate
-    scored_cluster = ScoringEngine.evaluate_cluster(cluster)
-    
-    # Save reports
-    JsonReporter.generate_report(scored_cluster, latest_results_path)
-    HtmlReporter.generate_report(scored_cluster, "artifacts/latest-report.html")
-    MarkdownReporter.generate_report(scored_cluster, "artifacts/latest-report.md")
-    
-    console.print(f"[bold green]Benchmark data parsed and saved successfully![/bold green]")
-    console.print(f"Metrics extracted: [bold yellow]{result.metrics}[/bold yellow]")
-    console.print(f"Updated HTML report at: [cyan]artifacts/latest-report.html[/cyan]\n")
+    run = parse_benchmark_file(parser_type, Path(selected_input), engagement_id=engagement_id, node_id=node_id, simulated=simulated)  # type: ignore[arg-type]
+    output_path = write_import(run, Path(output_dir))
+    console.print("[bold green]Benchmark import parsed and persisted.[/bold green]")
+    console.print(f"Benchmark ID: [cyan]{run.id}[/cyan]")
+    console.print(f"Status: [cyan]{run.status}[/cyan]")
+    console.print(f"SHA-256: {run.sha256}")
+    console.print(f"Output: [cyan]{output_path}[/cyan]")
+    console.print(f"Metrics extracted: [bold yellow]{run.metrics}[/bold yellow]")
 
 
 if __name__ == "__main__":

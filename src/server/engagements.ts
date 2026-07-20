@@ -25,6 +25,8 @@ export const collectionStatuses = ["awaiting_evidence", "received", "validating"
 export const validationStatuses = ["not_evaluated", "ready", "observations", "remediation_required", "failed"] as const;
 export const uploadTokenStatuses = ["active", "used", "expired", "revoked"] as const;
 export const ingestionStatuses = ["received", "validating", "accepted", "rejected", "superseded"] as const;
+export const benchmarkStatuses = ["imported", "parsed", "accepted", "rejected", "superseded"] as const;
+export const benchmarkTypes = ["nccl", "hpl", "triton_perf_analyzer", "genai_perf"] as const;
 
 export type PlatformProfile = typeof platformProfiles[number];
 export type EngagementStatus = typeof engagementStatuses[number];
@@ -33,6 +35,8 @@ export type CollectionStatus = typeof collectionStatuses[number];
 export type ValidationStatus = typeof validationStatuses[number];
 export type UploadTokenStatus = typeof uploadTokenStatuses[number];
 export type IngestionStatus = typeof ingestionStatuses[number];
+export type BenchmarkStatus = typeof benchmarkStatuses[number];
+export type BenchmarkType = typeof benchmarkTypes[number];
 
 export interface EngagementNode {
   id: string;
@@ -104,6 +108,26 @@ export interface EvidenceRecord {
   supersedes_evidence_id: string | null;
 }
 
+export interface BenchmarkRun {
+  id: string;
+  schema_version: string;
+  engagement_id: string;
+  node_id: string | null;
+  benchmark_type: BenchmarkType;
+  benchmark_version: string | null;
+  tool_version: string | null;
+  collected_at: string;
+  uploaded_at: string;
+  status: BenchmarkStatus;
+  simulated: boolean;
+  input_file: string;
+  sha256: string;
+  warnings: string[];
+  metrics: Record<string, unknown>;
+  raw_storage_id: string;
+  provenance: Record<string, unknown>;
+}
+
 export interface EngagementActivityEntry {
   id: string;
   engagement_id: string;
@@ -144,6 +168,7 @@ interface StoreDocument {
   nodes: EngagementNode[];
   upload_tokens: EvidenceUploadToken[];
   evidence_records: EvidenceRecord[];
+  benchmark_runs: BenchmarkRun[];
   activity_entries: EngagementActivityEntry[];
 }
 
@@ -215,6 +240,10 @@ function safeEvidenceRecord(record: EvidenceRecord): Omit<EvidenceRecord, "stora
   return { ...publicRecord, storage_id: record.id };
 }
 
+function safeBenchmarkRun(record: BenchmarkRun): BenchmarkRun {
+  return { ...record };
+}
+
 function deriveCounts(engagement: Engagement, nodes: EngagementNode[]): Engagement {
   const engagementNodes = nodes.filter((node) => node.engagement_id === engagement.id && node.collection_status !== "superseded");
   const received = engagementNodes.filter((node) => node.collection_status !== "awaiting_evidence").length;
@@ -237,6 +266,7 @@ function validateDocument(document: StoreDocument): StoreDocument {
   const nodes = Array.isArray(document.nodes) ? document.nodes : [];
   const uploadTokens = Array.isArray(document.upload_tokens) ? document.upload_tokens : [];
   const evidenceRecords = Array.isArray(document.evidence_records) ? document.evidence_records : [];
+  const benchmarkRuns = Array.isArray(document.benchmark_runs) ? document.benchmark_runs : [];
   const activityEntries = Array.isArray(document.activity_entries) ? document.activity_entries : [];
   return {
     schema_version: ENGAGEMENT_SCHEMA_VERSION,
@@ -244,6 +274,7 @@ function validateDocument(document: StoreDocument): StoreDocument {
     nodes,
     upload_tokens: uploadTokens,
     evidence_records: evidenceRecords,
+    benchmark_runs: benchmarkRuns,
     activity_entries: activityEntries,
   };
 }
@@ -269,13 +300,13 @@ export class EngagementStore {
 
   read(): StoreDocument {
     if (!fs.existsSync(this.filePath)) {
-      return { schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: [], nodes: [], upload_tokens: [], evidence_records: [], activity_entries: [] };
+      return { schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: [], nodes: [], upload_tokens: [], evidence_records: [], benchmark_runs: [], activity_entries: [] };
     }
     const parsed = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
     if (parsed.schema_version && parsed.schema_version !== ENGAGEMENT_SCHEMA_VERSION) {
       throw new Error(`Unsupported engagement store schema_version ${parsed.schema_version}`);
     }
-    return validateDocument({ schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: parsed.engagements ?? [], nodes: parsed.nodes ?? [], upload_tokens: parsed.upload_tokens ?? [], evidence_records: parsed.evidence_records ?? [], activity_entries: parsed.activity_entries ?? [] });
+    return validateDocument({ schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: parsed.engagements ?? [], nodes: parsed.nodes ?? [], upload_tokens: parsed.upload_tokens ?? [], evidence_records: parsed.evidence_records ?? [], benchmark_runs: parsed.benchmark_runs ?? [], activity_entries: parsed.activity_entries ?? [] });
   }
 
   write(document: StoreDocument): void {
@@ -313,6 +344,27 @@ export class EngagementStore {
       .filter((record) => record.engagement_id === engagementId)
       .sort((left, right) => right.uploaded_at.localeCompare(left.uploaded_at))
       .map(safeEvidenceRecord);
+  }
+
+  listBenchmarks(engagementId: string): BenchmarkRun[] {
+    return this.read().benchmark_runs
+      .filter((record) => record.engagement_id === engagementId)
+      .sort((left, right) => right.uploaded_at.localeCompare(left.uploaded_at))
+      .map(safeBenchmarkRun);
+  }
+
+  acceptBenchmarkRun(benchmark: Omit<BenchmarkRun, "id" | "schema_version" | "status">): BenchmarkRun {
+    const document = this.read();
+    if (!document.engagements.some((engagement) => engagement.id === benchmark.engagement_id)) throw new Error("Engagement not found.");
+    if (benchmark.node_id && !document.nodes.some((node) => node.engagement_id === benchmark.engagement_id && node.id === benchmark.node_id)) throw new Error("Engagement node not found.");
+    const previous = document.benchmark_runs.find((run) => run.engagement_id === benchmark.engagement_id && run.node_id === benchmark.node_id && run.benchmark_type === benchmark.benchmark_type && run.status === "accepted");
+    if (previous) previous.status = "superseded";
+    const record: BenchmarkRun = { ...benchmark, id: `bmk_${this.idGenerator()}`, schema_version: "1.0.0", status: benchmark.warnings.some((warning) => warning.startsWith("No ")) ? "rejected" : "accepted" };
+    document.benchmark_runs.push(record);
+    this.addActivity(document, benchmark.engagement_id, benchmark.node_id, "benchmark_imported", "upload-token", "Benchmark evidence imported.", { benchmark_id: record.id, benchmark_type: record.benchmark_type, status: record.status, simulated: record.simulated });
+    this.touchEngagement(document, benchmark.engagement_id, benchmark.uploaded_at);
+    this.write(document);
+    return safeBenchmarkRun(record);
   }
 
   listActivity(engagementId: string): EngagementActivityEntry[] {

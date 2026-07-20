@@ -1,0 +1,8 @@
+# simulated=true
+Input token throughput (tokens/sec): 18800
+Output token throughput (tokens/sec): 7200
+Requests: 12000
+Time to first token (ms): 42.5
+Inter token latency (ms): 7.3
+p95 latency (ms): 82.0
+p99 latency (ms): 111.0

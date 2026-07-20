@@ -86,6 +86,9 @@ ai-validator collect --profile dgx-class --output evidence-bundle --sanitize
 ai-validator collect --profile linux-host --output evidence-bundle --dry-run
 ai-validator bundle --input evidence-bundle --output node01-evidence.tar.gz
 ai-validator upload --bundle node01-evidence.tar.gz --url https://gpuvalidator.com/api/v1/evidence/uploads --token-file /secure/path/upload-token.txt
+ai-validator benchmark import --type nccl --input all_reduce.txt
+ai-validator benchmark import --type hpl --input hpl.txt
+ai-validator benchmark import --type triton --input perf.csv
 ai-validator demo --scenario healthy --output-dir artifacts
 ai-validator demo --scenario degraded --output-dir artifacts
 ai-validator report --input artifacts/degraded-results.json --output-dir artifacts/regenerated
@@ -94,6 +97,8 @@ ai-validator report --input artifacts/degraded-results.json --output-dir artifac
 `ai-validator collect` creates administrator-side local evidence bundles for Linux and NVIDIA GPU hosts. It is read-only, uses an internal command allowlist with argv-list subprocess execution, records per-command metadata and SHA-256 checksums, handles missing optional NVIDIA/DCGM utilities without failing the whole run, and can sanitize host-identifying fields with deterministic replacements. Optional DCGM diagnostics are skipped unless `--include-diagnostics` is explicitly passed. See `docs/EVIDENCE_COLLECTION.md` for supported profiles, exact commands, bundle layout, manifest schema, and safety exclusions.
 
 `ai-validator bundle` packages a validated collector directory into a deterministic `.tar.gz` archive. `ai-validator upload` sends that archive outbound over HTTPS using a scoped upload bearer token from `--token-file` or `GPU_VALIDATOR_UPLOAD_TOKEN`; it never accepts plaintext tokens on the command line. See `docs/EVIDENCE_INGESTION.md` for token lifecycle, archive validation, storage layout, duplicate behavior, and portal workflow.
+
+`ai-validator benchmark import` parses existing NCCL Tests, NVIDIA HPL, Triton Performance Analyzer, and GenAI-Perf output files into versioned benchmark records. It imports files only; it does not run benchmarks, install benchmark software, use SSH, or claim MLPerf compliance. See `docs/BENCHMARK_INTELLIGENCE.md` for supported formats, metrics, configurable thresholds, findings, readiness, provenance, and demo fixtures.
 
 Demo runs emit both rolling and scenario-specific artifacts:
 - `latest-results.json`, `latest-report.html`, `latest-report.md`
@@ -117,6 +122,8 @@ Portal API behavior:
 - `GET /api/v1/engagements` and related authenticated `/api/v1/engagements/*` routes manage multi-node validation engagements using file-backed JSON persistence
 - authenticated `POST|GET /api/v1/engagements/:engagementId/nodes/:nodeId/upload-tokens` routes create/list scoped evidence upload tokens; revoke uses `/upload-tokens/:tokenId/revoke`
 - `POST /api/v1/evidence/uploads` accepts token-authenticated outbound collector `.tar.gz` uploads and rejects unsafe, expired, duplicate, or malformed uploads
+- `POST /api/v1/benchmarks/upload` accepts token-authenticated existing benchmark output files and stores them separately from infrastructure evidence
+- `GET /api/v1/engagements/:engagementId/benchmarks` lists imported benchmark runs and benchmark findings
 - `GET /api/v1/engagements/:engagementId/comparison|findings|readiness` evaluates accepted evidence into parsed facts, cluster comparison, rule-based findings, readiness score, and acceptance decision
 - `GET /api/v1/engagements/:engagementId/evidence/:evidenceId/provenance` returns scoped parsed-value provenance without raw storage paths or raw file contents
 - `POST /api/run-scenario` intentionally returns `405`; the reviewer portal is read-only and scenario/live evidence generation remains an administrator-side CLI workflow
@@ -139,7 +146,7 @@ Then walk through:
 3. `/portal/engagements` for the multi-node validation engagement foundation
 4. the NVIS simulated demo engagement fixture, clearly labeled `SIMULATED DEMO`
 5. report links for HTML, Markdown, and JSON evidence
-6. benchmark readiness tab for supported ingestion vs roadmap-only orchestration
+6. benchmark cards for NCCL, HPL, and inference imports with provenance links
 
 Engagement demo flow:
 
@@ -208,14 +215,13 @@ npm run dev
 
 This preserves the interview walkthrough without depending on physical hardware.
 
-## Benchmark readiness scope
+## Benchmark intelligence scope
 
-Current CLI ingestion support:
-- NCCL Tests
-- HPL
-- fio
-- iperf3
-- OSU MPI
+Current engagement benchmark import support:
+- NCCL Tests (`all_reduce_perf`, `all_gather_perf`, `reduce_scatter_perf`, `broadcast_perf`)
+- NVIDIA HPL
+- Triton Performance Analyzer
+- GenAI-Perf
 
 Portal language distinguishes:
 - supported result ingestion
@@ -223,6 +229,7 @@ Portal language distinguishes:
 - future orchestration
 
 Roadmap-only items include:
+- benchmark execution/orchestration
 - HPL-AI execution
 - HPCG execution
 - MLPerf result integration
@@ -245,8 +252,8 @@ ai-validator demo --scenario degraded --output-dir artifacts
 ## Current limitations
 
 - Live validation is single-host only; it does not orchestrate remote multi-node collection.
-- Evidence bundle collection is local-only and administrator-side; it does not upload bundles to the portal yet.
-- Engagement evidence upload is not implemented yet; engagement nodes remain placeholders until a future secure ingestion workflow attaches evidence bundles.
+- Evidence bundle collection is local-only and administrator-side; engagement uploads are outbound HTTPS using scoped upload tokens.
+- Benchmark intelligence imports existing output files only; it does not launch benchmarks or claim official MLPerf compliance.
 - Scenario data is simulated interview evidence, not production telemetry.
 - Benchmark execution is not orchestrated by the portal; benchmark readiness currently focuses on ingestion scope and presentation.
 - Customer acceptance logic is derived from the existing readiness classification and structured findings; it is not a separate policy engine.
