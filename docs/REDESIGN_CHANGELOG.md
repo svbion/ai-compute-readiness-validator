@@ -303,3 +303,37 @@ Status: implemented and validated.
 ### Next step
 
 Build the RunPod-side outbound-polling agent against `docs/AGENT_API.md`; do not begin visual redesign phases.
+
+
+## Deadline Sprint Step 3 — Standalone RunPod GPU agent
+
+Date: 2026-07-20
+Status: implemented and validated.
+
+### Scope
+
+- Continued from Step 2 agent API commit.
+- Created the standalone outbound-polling Python agent under `agent/`.
+- Did not modify unrelated frontend pages.
+- Did not attempt external RunPod access.
+
+### Agent capabilities
+
+- Validates required environment variables and masks secrets in logs/repr output.
+- Registers with `POST /api/v1/agents/register`.
+- Sends heartbeats to `POST /api/v1/agents/heartbeat`.
+- Discovers hostname, OS, agent version, `nvidia-smi`, GPU count/models, CUDA availability, PyTorch availability, and NCCL test availability.
+- Polls one job at a time, claims it, marks it running, executes allowlisted argv-only commands, and uploads results.
+- Enforces command timeout, stdout/stderr limits, exit code capture, timestamps, duration, unavailable binary handling, and sanitized output.
+- Parses NVIDIA list, inventory CSV, topology, driver version, CUDA version, and PyTorch GPU count output without crashing on malformed rows.
+- Retries transient API/network failures and stops clearly on invalid agent tokens.
+- Handles SIGINT/SIGTERM for clean foreground shutdown.
+- Includes explicit local simulation fixtures for four GPUs, missing CUDA, missing PyTorch, malformed output, and timeout behavior.
+
+### Tests added
+
+- `agent/tests/test_agent_core.py` covers configuration, token masking, command lookup, unsupported commands, timeout, unavailable binaries, output truncation, parsers, capability discovery, four-GPU simulation, malformed output, client heartbeat/poll/result upload, retry behavior, auth failure, and graceful runtime shutdown.
+
+### Next step
+
+Run the agent in a real RunPod pod with outbound HTTPS to GPUValidator and a configured `GPUVALIDATOR_AGENT_TOKEN`, then create a hardware-discovery validation from the backend.

@@ -1,6 +1,6 @@
 # GPUValidator Agent API
 
-Status: implemented backend protocol for the deadline MVP. This is the server-side contract only; the RunPod agent binary/process is not built yet.
+Status: implemented backend protocol plus standalone outbound-polling Python RunPod agent. The agent lives under `agent/` and can be run with `python -m gpuvalidator_agent` after installation or with `PYTHONPATH=agent`.
 
 ## Authentication
 
@@ -353,3 +353,29 @@ The deadline MVP uses the existing file-backed engagement store. It preserves th
 - `validation_results`
 
 This is repository-consistent and testable, but not a long-term concurrent queue. Production hardening should move these records to a transactional database with migrations and indexed claim updates.
+
+
+## Standalone Python agent
+
+The Step 3 agent implementation lives in `agent/gpuvalidator_agent`.
+
+Run foreground after configuring environment variables:
+
+```bash
+cd agent
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -e .
+GPUVALIDATOR_API_URL=https://gpuvalidator.com \
+GPUVALIDATOR_AGENT_TOKEN=replace-with-secret \
+GPUVALIDATOR_AGENT_NAME=runpod-a100-1 \
+python -m gpuvalidator_agent
+```
+
+Local simulation mode is available only when explicitly enabled:
+
+```bash
+GPUVALIDATOR_SIMULATE=true python -m gpuvalidator_agent
+```
+
+Simulation reports four GPUs, missing CUDA toolkit, missing PyTorch, malformed inventory rows, and timeout-capable fixtures for tests. Do not enable it in production.

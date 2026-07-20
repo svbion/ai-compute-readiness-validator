@@ -2,7 +2,7 @@
 
 Status: deadline sprint architecture audit for the July 21, 2026 2:00 PM America/New_York deadline.
 
-Scope: define the smallest viable production architecture for connecting GPUValidator to real GPU execution through an outbound-polling RunPod agent. Step 2 implements the backend agent API, file-backed persistence, authentication, heartbeat, hardware-discovery validation-job queue, state transitions, and result upload protocol. The RunPod agent process itself is not implemented yet.
+Scope: define the smallest viable production architecture for connecting GPUValidator to real GPU execution through an outbound-polling RunPod agent. Step 2 implements the backend agent API, file-backed persistence, authentication, heartbeat, hardware-discovery validation-job queue, state transitions, and result upload protocol. Step 3 adds the standalone Python RunPod agent under `agent/`; external RunPod deployment/access is still not attempted from this repository.
 
 ## Deadline pivot
 
@@ -417,6 +417,21 @@ Allowed commands must be server-provided argv arrays, never free-form shell stri
 - optional DCGM level 1 diagnostics only if policy explicitly allows it
 
 No arbitrary shell execution, no package installation, no SSH, no privilege escalation, no file exfiltration outside bounded evidence outputs.
+
+### Step 3 standalone agent status
+
+Implemented in `agent/gpuvalidator_agent`:
+
+- Foreground Python command: `python -m gpuvalidator_agent`.
+- Required config: `GPUVALIDATOR_API_URL`, `GPUVALIDATOR_AGENT_TOKEN`, `GPUVALIDATOR_AGENT_NAME`.
+- Optional config: polling/heartbeat intervals, command timeout, TLS verification, log level, agent ID file, and explicit simulation mode.
+- Capability discovery for hostname, OS, agent version, `nvidia-smi`, GPU count/models, CUDA, PyTorch, and NCCL test availability.
+- Typed command allowlist matching backend hardware-discovery jobs.
+- `subprocess.run(..., shell=False)` execution with timeout, stdout/stderr limits, exit code, timestamps, duration, unavailable-binary handling, and sanitized logs/output.
+- Parsers for `nvidia-smi -L`, inventory CSV, topology text, driver version, CUDA version, and PyTorch GPU count.
+- Outbound API client with bounded retry/backoff, authentication failure stop behavior, heartbeat, polling, claim, running-state report, and result upload.
+- Graceful SIGINT/SIGTERM shutdown.
+- Local simulation fixture mode for four GPUs, missing CUDA, missing PyTorch, malformed output, and timeout paths.
 
 ### Job timeout
 

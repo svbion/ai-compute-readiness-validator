@@ -1,0 +1,2 @@
+# stdlib-only runtime; pytest is needed only for tests
+pytest>=7.0
