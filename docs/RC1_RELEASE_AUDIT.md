@@ -2,7 +2,7 @@
 
 ## Release commit
 
-To be filled with the final implementation commit SHA after validation and commit.
+Implementation commit: `eaa8055 fix(rc1): harden authentication, live runner workflows, and functional readiness`.
 
 ## Scope
 
