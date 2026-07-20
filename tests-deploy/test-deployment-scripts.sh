@@ -190,8 +190,14 @@ AI_FACTORY_VERIFY_TLS=0
 EOF
 (cd "${ROOT_DIR}" && AI_FACTORY_APP_DIR="${verify_app}" AI_FACTORY_PORT="${port}" AI_FACTORY_HEALTH_RETRIES=2 AI_FACTORY_HEALTH_RETRY_DELAY=0 ./deploy/healthcheck.sh) >"${TMP_ROOT}/hash-healthcheck.out" 2>&1
 (cd "${ROOT_DIR}" && AI_FACTORY_APP_DIR="${verify_app}" AI_FACTORY_PORT="${port}" AI_FACTORY_HEALTH_RETRIES=2 AI_FACTORY_HEALTH_RETRY_DELAY=0 ./deploy/verify.sh) >"${TMP_ROOT}/hash-verify.out" 2>&1
+(cd "${ROOT_DIR}" && AI_FACTORY_APP_DIR="${verify_app}" AI_FACTORY_PORT="${port}" AI_FACTORY_HEALTH_RETRIES=2 AI_FACTORY_HEALTH_RETRY_DELAY=0 ./deploy/status.sh) >"${TMP_ROOT}/hash-status.out" 2>&1
 assert_not_contains "${TMP_ROOT}/hash-healthcheck.out" 'scrypt\$1234567890abcdef\$abcdef1234567890|token\$with\$characters|secret\$with\$characters'
 assert_not_contains "${TMP_ROOT}/hash-verify.out" 'scrypt\$1234567890abcdef\$abcdef1234567890|token\$with\$characters|secret\$with\$characters'
+assert_not_contains "${TMP_ROOT}/hash-status.out" 'scrypt\$1234567890abcdef\$abcdef1234567890|token\$with\$characters|secret\$with\$characters|SET length='
+assert_contains "${TMP_ROOT}/hash-status.out" "AI_FACTORY_SESSION_SECRET"
+assert_contains "${TMP_ROOT}/hash-status.out" "AI_FACTORY_REVIEWER_PASSWORD_HASH"
+grep -E '^\[status\] AI_FACTORY_SESSION_SECRET[[:space:]]+SET$' "${TMP_ROOT}/hash-status.out" >/dev/null || fail "status did not report session secret as SET only"
+grep -E '^\[status\] AI_FACTORY_REVIEWER_PASSWORD_HASH[[:space:]]+SET$' "${TMP_ROOT}/hash-status.out" >/dev/null || fail "status did not report reviewer hash as SET only"
 pass "healthcheck and verify load quoted dollar-containing auth values safely"
 kill "${server_pid}" 2>/dev/null || true
 pass "health retry succeeds when HTTP becomes available after delay"
@@ -267,6 +273,17 @@ if bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${mis
   fail "missing repository unexpectedly produced git status"
 fi
 pass "missing repository is detected without fake detached status"
+
+# Inaccessible repositories report unknown Git fields rather than masquerading as detached HEAD.
+repo="${TMP_ROOT}/git-inaccessible"
+init_dirty_repo "${repo}"
+chmod 000 "${repo}/.git"
+bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${repo}' AI_FACTORY_APP_USER='$(id -un)' load_deploy_config; printf 'readable=%s\n' \"\$(git_repo_readable_in_repo && printf yes || printf no)\"; printf 'branch=%s\n' \"\$(git_current_branch_in_repo)\"; printf 'commit=%s\n' \"\$(git_commit_sha_in_repo)\"" >"${TMP_ROOT}/git-inaccessible.out" 2>&1
+chmod 700 "${repo}/.git"
+assert_contains "${TMP_ROOT}/git-inaccessible.out" "readable=no"
+assert_contains "${TMP_ROOT}/git-inaccessible.out" "branch=unknown"
+assert_contains "${TMP_ROOT}/git-inaccessible.out" "commit=unknown"
+pass "inaccessible repository is detected without fake detached status"
 
 # Runtime-generated artifacts alone do not block safe updates.
 repo="${TMP_ROOT}/runtime-only"

@@ -14,6 +14,7 @@ STATUS_ERRORS=0
 line() { printf '[status] %-34s %s\n' "$1" "$2"; }
 warn_line() { line "$1" "$2"; }
 error_line() { STATUS_ERRORS=$((STATUS_ERRORS + 1)); line "$1" "$2"; }
+auth_line() { if [[ -n "${2:-}" ]]; then line "$1" SET; else line "$1" EMPTY; fi; }
 http_status() {
   local status
   status="$(curl -sS -m "${HEALTH_TIMEOUT}" -o /dev/null -w '%{http_code}' "$1" 2>/dev/null)" || status="000"
@@ -25,7 +26,7 @@ line app_dir "${APP_DIR}"
 line configured_branch "${REPO_BRANCH}"
 line local_port "${PORT}"
 
-if [[ -d "${APP_DIR}/.git" ]]; then
+if git_repo_readable_in_repo; then
   line checked_out_branch "$(git_current_branch_in_repo)"
   line commit_sha "$(git_commit_sha_in_repo)"
   line short_commit "$(git_short_commit_in_repo)"
@@ -89,9 +90,9 @@ for file in "${APP_DIR}"/artifacts/healthy-results.json "${APP_DIR}"/artifacts/d
   if [[ -e "${file}" ]]; then line "artifact_$(basename "${file}")" "$(stat -c '%y' "${file}" 2>/dev/null || stat -f '%Sm' "${file}" 2>/dev/null || printf present)"; fi
 done
 line disk_usage "$(df -h "${APP_DIR}" 2>/dev/null | awk 'NR==2 {print $5 " used, " $4 " available"}' || printf unknown)"
-secret_state AI_FACTORY_SESSION_SECRET "${AI_FACTORY_SESSION_SECRET:-}"
-secret_state AI_FACTORY_REVIEWER_EMAIL "${AI_FACTORY_REVIEWER_EMAIL:-}"
-secret_state AI_FACTORY_REVIEWER_PASSWORD_HASH "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}"
-secret_state AI_FACTORY_AUTH_TEST_BYPASS_TOKEN "${AI_FACTORY_AUTH_TEST_BYPASS_TOKEN:-}"
+auth_line AI_FACTORY_SESSION_SECRET "${AI_FACTORY_SESSION_SECRET:-}"
+auth_line AI_FACTORY_REVIEWER_EMAIL "${AI_FACTORY_REVIEWER_EMAIL:-}"
+auth_line AI_FACTORY_REVIEWER_PASSWORD_HASH "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}"
+auth_line AI_FACTORY_AUTH_TEST_BYPASS_TOKEN "${AI_FACTORY_AUTH_TEST_BYPASS_TOKEN:-}"
 
 exit "${STATUS_ERRORS}"

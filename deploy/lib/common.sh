@@ -256,6 +256,11 @@ git_output_in_repo() {
   fi
 }
 
+git_repo_readable_in_repo() {
+  [[ -d "${APP_DIR}/.git" ]] || return 1
+  [[ "$(git_output_in_repo rev-parse --is-inside-work-tree 2>/dev/null || true)" == true ]]
+}
+
 is_runtime_generated_path() {
   local path="$1"
   case "${path}" in
@@ -304,7 +309,7 @@ filter_git_status() {
 }
 
 git_status_raw_in_repo() {
-  [[ -d "${APP_DIR}/.git" ]] || return 1
+  git_repo_readable_in_repo || return 1
   git_output_in_repo status --porcelain=v1 2>/dev/null
 }
 
@@ -316,16 +321,18 @@ git_status_state_in_repo() {
 
 git_current_branch_in_repo() {
   local branch
+  git_repo_readable_in_repo || { printf unknown; return 0; }
   branch="$(git_output_in_repo branch --show-current 2>/dev/null || true)"
   if [[ -n "${branch}" ]]; then printf '%s' "${branch}"; else printf detached; fi
 }
 
-git_commit_sha_in_repo() { git_output_in_repo rev-parse HEAD 2>/dev/null || printf unknown; }
-git_short_commit_in_repo() { git_output_in_repo rev-parse --short HEAD 2>/dev/null || printf unknown; }
-git_commit_subject_in_repo() { git_output_in_repo log -1 --pretty=%s 2>/dev/null || printf unknown; }
+git_commit_sha_in_repo() { git_repo_readable_in_repo && git_output_in_repo rev-parse HEAD 2>/dev/null || printf unknown; }
+git_short_commit_in_repo() { git_repo_readable_in_repo && git_output_in_repo rev-parse --short HEAD 2>/dev/null || printf unknown; }
+git_commit_subject_in_repo() { git_repo_readable_in_repo && git_output_in_repo log -1 --pretty=%s 2>/dev/null || printf unknown; }
 
 git_origin_sync_state_in_repo() {
   local head upstream
+  git_repo_readable_in_repo || { printf unknown; return 0; }
   head="$(git_output_in_repo rev-parse HEAD 2>/dev/null || true)"
   upstream="$(git_output_in_repo rev-parse "origin/${REPO_BRANCH}" 2>/dev/null || true)"
   if [[ -z "${head}" ]]; then printf unknown
@@ -574,7 +581,7 @@ install_or_update_caddy() {
 
 final_summary() {
   local commit="unknown" short_commit="unknown" subject="unknown" branch="unknown" sync_state="unknown" service_state="unknown" health_state="not checked" caddy_state="disabled"
-  if [[ -d "${APP_DIR}/.git" ]]; then
+  if git_repo_readable_in_repo; then
     branch="$(git_current_branch_in_repo)"
     commit="$(git_commit_sha_in_repo)"
     short_commit="$(git_short_commit_in_repo)"

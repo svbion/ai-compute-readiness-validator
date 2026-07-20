@@ -69,7 +69,7 @@ curl -fsS http://127.0.0.1:3000/healthz
 curl -fsS http://127.0.0.1:3000/login >/tmp/gpuvalidator-local-login.html
 ```
 
-Expected: service active, local health/login return HTTP 200, Git branch/commit are reported correctly, auth variables show only `SET length=N` or `EMPTY`.
+Expected: service active, local health/login return HTTP 200, Git branch/commit are reported correctly, auth variables show only `SET` or `EMPTY`.
 
 ## 8. Caddy health
 
@@ -110,5 +110,5 @@ sudo -E /opt/ai-factory-validator/deploy/rollback.sh <known-good-commit>
 
 - Never commit `.env.production`.
 - Never paste reviewer credentials, password hashes, session secrets, or bypass tokens into chat.
-- `deploy/status.sh`, `deploy/preflight.sh`, and `deploy/verify.sh` must report only secret presence/length, never values.
+- `deploy/status.sh` must report only auth variable presence (`SET`/`EMPTY`), never values or lengths. `deploy/preflight.sh` and `deploy/verify.sh` must never print secret values.
 - Treat `.env.production` as dotenv data, not shell script; keep `$`-containing values single-quoted.
