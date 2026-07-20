@@ -1,0 +1,870 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20",
+  "routes": [
+    {
+      "id": "homepage",
+      "title": "Homepage",
+      "route": "/",
+      "category": "public",
+      "reference_image": "design/references/brand/marketing-homepage.png",
+      "implementation_status": "redirects_to_login",
+      "existing_route": "/",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": "Current product is login-only public experience; marketing routes are future gated redesign work."
+    },
+    {
+      "id": "features",
+      "title": "Features",
+      "route": "/features",
+      "category": "public",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": "Current product is login-only public experience; marketing routes are future gated redesign work."
+    },
+    {
+      "id": "benchmarks-public",
+      "title": "Benchmarks",
+      "route": "/benchmarks",
+      "category": "public",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": "Current product is login-only public experience; marketing routes are future gated redesign work."
+    },
+    {
+      "id": "pricing",
+      "title": "Pricing",
+      "route": "/pricing",
+      "category": "public",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": "Current product is login-only public experience; marketing routes are future gated redesign work."
+    },
+    {
+      "id": "documentation",
+      "title": "Documentation",
+      "route": "/docs",
+      "category": "public",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": "Current product is login-only public experience; marketing routes are future gated redesign work."
+    },
+    {
+      "id": "company",
+      "title": "Company",
+      "route": "/company",
+      "category": "public",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P4",
+      "notes": "Current product is login-only public experience; marketing routes are future gated redesign work."
+    },
+    {
+      "id": "login",
+      "title": "Login",
+      "route": "/login",
+      "category": "authentication",
+      "reference_image": "design/references/authentication/login.png",
+      "implementation_status": "implemented",
+      "existing_route": "/login",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "forgot-password",
+      "title": "Forgot Password",
+      "route": "/forgot-password",
+      "category": "authentication",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "sso",
+      "title": "SSO",
+      "route": "/sso",
+      "category": "authentication",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "request-access",
+      "title": "Request Access",
+      "route": "/request-access",
+      "category": "authentication",
+      "reference_image": null,
+      "implementation_status": "redirects_to_login",
+      "existing_route": "/request-access",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "invite-acceptance",
+      "title": "Invite Acceptance",
+      "route": "/invite/:token",
+      "category": "authentication",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "dashboard",
+      "title": "Dashboard",
+      "route": "/dashboard",
+      "category": "application",
+      "reference_image": "design/references/application/dashboard.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "gpu-inventory",
+      "title": "GPUs",
+      "route": "/inventory/gpus",
+      "category": "application",
+      "reference_image": "design/references/application/gpu-inventory.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "nodes",
+      "title": "Nodes",
+      "route": "/inventory/nodes",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "systems",
+      "title": "Systems",
+      "route": "/inventory/systems",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "drivers",
+      "title": "Drivers",
+      "route": "/inventory/drivers",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "clusters",
+      "title": "Clusters",
+      "route": "/clusters",
+      "category": "application",
+      "reference_image": "design/references/application/clusters.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "cluster-overview",
+      "title": "Cluster Overview",
+      "route": "/clusters/:clusterId",
+      "category": "application",
+      "reference_image": "design/references/application/cluster-detail.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "fabric",
+      "title": "Fabric",
+      "route": "/clusters/:clusterId/fabric",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "storage",
+      "title": "Storage",
+      "route": "/clusters/:clusterId/storage",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "jobs",
+      "title": "Jobs",
+      "route": "/clusters/:clusterId/jobs",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "cluster-validation",
+      "title": "Cluster Validation",
+      "route": "/clusters/:clusterId/validation",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "validation-center",
+      "title": "Validation Center",
+      "route": "/validation",
+      "category": "application",
+      "reference_image": "design/references/application/validation-center.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "active-run",
+      "title": "Active Run",
+      "route": "/validation/runs/:runId",
+      "category": "application",
+      "reference_image": "design/references/application/validation-running.png",
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "validation-results",
+      "title": "Results",
+      "route": "/validation/results",
+      "category": "application",
+      "reference_image": "design/references/application/validation-results.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P1",
+      "notes": ""
+    },
+    {
+      "id": "profiles",
+      "title": "Profiles",
+      "route": "/validation/profiles",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "history",
+      "title": "History",
+      "route": "/validation/history",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "benchmark-center",
+      "title": "Benchmark Center",
+      "route": "/benchmarks",
+      "category": "application",
+      "reference_image": "design/references/application/benchmark-center.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "nccl",
+      "title": "NCCL",
+      "route": "/benchmarks/nccl",
+      "category": "application",
+      "reference_image": "design/references/application/nccl-configuration.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "hpl",
+      "title": "HPL",
+      "route": "/benchmarks/hpl",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "hpcg",
+      "title": "HPCG",
+      "route": "/benchmarks/hpcg",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "mlperf",
+      "title": "MLPerf",
+      "route": "/benchmarks/mlperf",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "roadmap",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P4",
+      "notes": ""
+    },
+    {
+      "id": "benchmark-results",
+      "title": "Benchmark Results",
+      "route": "/benchmarks/results",
+      "category": "application",
+      "reference_image": "design/references/application/nccl-results.png",
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "comparisons",
+      "title": "Comparisons",
+      "route": "/benchmarks/comparisons",
+      "category": "application",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/engagements/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "monitoring",
+      "title": "Monitoring",
+      "route": "/monitoring",
+      "category": "application",
+      "reference_image": "design/references/application/monitoring.png",
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "alerts",
+      "title": "Alerts",
+      "route": "/alerts",
+      "category": "application",
+      "reference_image": "design/references/application/alerts.png",
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "reports",
+      "title": "Reports",
+      "route": "/reports",
+      "category": "application",
+      "reference_image": "design/references/application/reports.png",
+      "implementation_status": "partial",
+      "existing_route": "/reports/:scenario/:format",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "ai-copilot",
+      "title": "AI Copilot",
+      "route": "/copilot",
+      "category": "application",
+      "reference_image": "design/references/application/ai-copilot.png",
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P4",
+      "notes": ""
+    },
+    {
+      "id": "settings",
+      "title": "Settings",
+      "route": "/settings",
+      "category": "application",
+      "reference_image": "design/references/application/settings.png",
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P3",
+      "notes": ""
+    },
+    {
+      "id": "users",
+      "title": "Users",
+      "route": "/admin/users",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "implemented",
+      "existing_route": "/portal/admin/users",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "roles",
+      "title": "Roles",
+      "route": "/admin/roles",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/admin/users",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "organizations",
+      "title": "Organizations",
+      "route": "/admin/organizations",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P4",
+      "notes": ""
+    },
+    {
+      "id": "integrations",
+      "title": "Integrations",
+      "route": "/admin/integrations",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/library",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "api-keys",
+      "title": "API Keys",
+      "route": "/admin/api-keys",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P4",
+      "notes": ""
+    },
+    {
+      "id": "agents",
+      "title": "Agents",
+      "route": "/admin/agents",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/admin/system",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "audit-logs",
+      "title": "Audit Logs",
+      "route": "/admin/audit-logs",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "partial",
+      "existing_route": "/portal/admin/users/:id",
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P2",
+      "notes": ""
+    },
+    {
+      "id": "licensing",
+      "title": "Licensing",
+      "route": "/admin/licensing",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P4",
+      "notes": ""
+    },
+    {
+      "id": "billing",
+      "title": "Billing",
+      "route": "/admin/billing",
+      "category": "administration",
+      "reference_image": null,
+      "implementation_status": "missing",
+      "existing_route": null,
+      "dependencies": [],
+      "shared_components_required": [
+        "application shell",
+        "page header",
+        "card",
+        "table/status tokens"
+      ],
+      "priority": "P4",
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,375 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20",
+  "source_directories": [
+    "/Users/svbion/Desktop/GPUValidator-Design-References",
+    "artifacts/rc1"
+  ],
+  "canonical": {
+    "application": "dashboard",
+    "marketing": "marketing-homepage",
+    "authentication": "login"
+  },
+  "images": [
+    {
+      "id": "marketing-homepage",
+      "title": "Marketing Homepage / Brand System",
+      "category": "brand",
+      "file": "design/references/brand/marketing-homepage.png",
+      "route": "/",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": true,
+      "status": "approved",
+      "probable_page": "Public homepage / marketing hero",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "canonical marketing reference",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/01-brand/ChatGPT Image Jul 20, 2026, 04_07_53 PM.png",
+      "sha256": "78ace33c2f8fe8093934c681057799728d39f142cf064bfff02c118b44c392c5",
+      "notes": "Strongest public/marketing-style reference found. No separate public directory homepage export was discovered, so this brand reference is canonical for public homepage direction."
+    },
+    {
+      "id": "login",
+      "title": "Login",
+      "category": "authentication",
+      "file": "design/references/authentication/login.png",
+      "route": "/login",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": true,
+      "status": "approved",
+      "probable_page": "Reviewer login",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "canonical authentication reference",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/03-authentication/01-login.png",
+      "sha256": "c94ecdd9cfc969416d93de6b16f2c313f89d7c346c8a2ed48b6bf70d7044ea13",
+      "notes": "Canonical authentication reference: split cinematic infrastructure image and secure sign-in card."
+    },
+    {
+      "id": "dashboard",
+      "title": "Dashboard",
+      "category": "application",
+      "file": "design/references/application/dashboard.png",
+      "route": "/portal",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": true,
+      "status": "approved",
+      "probable_page": "Dashboard",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/01-dashboard.png",
+      "sha256": "8326fb8a9182fc94343631d2a70e97290d002941ed709fb200e782cb2803140a",
+      "notes": "Canonical application shell and dashboard reference"
+    },
+    {
+      "id": "gpu-inventory",
+      "title": "GPU Inventory",
+      "category": "application",
+      "file": "design/references/application/gpu-inventory.png",
+      "route": "/inventory/gpus",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "GPU Inventory",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/02-gpu-inventory.png",
+      "sha256": "8307919678b7fa864954ba142f7f0853bd437a6f128b8484ec306332d3882ca1",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "clusters",
+      "title": "Clusters",
+      "category": "application",
+      "file": "design/references/application/clusters.png",
+      "route": "/clusters",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Clusters",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/03-clusters.png",
+      "sha256": "2b149625e4d88ae331ff07d1a2b9c851ddf38b3bec19a5aabf39f1e8afe17769",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "cluster-detail",
+      "title": "Cluster Detail",
+      "category": "application",
+      "file": "design/references/application/cluster-detail.png",
+      "route": "/clusters/:clusterId",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Cluster Detail",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/04-cluster-detail.png",
+      "sha256": "1140085d81d89db4211db74cc5ec3e7a89d5239da414bb03e5bf9cf34dd26d58",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "validation-center",
+      "title": "Validation Center",
+      "category": "application",
+      "file": "design/references/application/validation-center.png",
+      "route": "/validation",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Validation Center",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/05-validation-center.png",
+      "sha256": "63f4138a9961c69b01ebc034bfc6863d08c09263c3a1312b467b0aad3a696ed3",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "validation-running",
+      "title": "Active Validation Run",
+      "category": "application",
+      "file": "design/references/application/validation-running.png",
+      "route": "/validation/runs/:runId",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Active Validation Run",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/06-validation-running.png",
+      "sha256": "37cf1f5de7733eb6e07ec221b94555f01e61a269d594e4ca262cade74e9fdcc3",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "validation-results",
+      "title": "Validation Results",
+      "category": "application",
+      "file": "design/references/application/validation-results.png",
+      "route": "/validation/results",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Validation Results",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/07-validation-results.png",
+      "sha256": "ca41bb8351aa0b616ff598eb360e8e30e82a3e2c1de261b7a83d5f0583a34b72",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "benchmark-center",
+      "title": "Benchmark Center",
+      "category": "application",
+      "file": "design/references/application/benchmark-center.png",
+      "route": "/benchmarks",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Benchmark Center",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/08-benchmark-center.png",
+      "sha256": "e7cafa2a1a8a4d5cc5fffa2606eae424a6f21ebefc144f491f314be76121ef7d",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "nccl-configuration",
+      "title": "NCCL Configuration",
+      "category": "application",
+      "file": "design/references/application/nccl-configuration.png",
+      "route": "/benchmarks/nccl/configuration",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "NCCL Configuration",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/09-nccl-configuration.png",
+      "sha256": "98a4cea2c680ef0be0569e3d1c0fef77d24ba275bd85e6b0d0e1680059d6faf4",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "nccl-results",
+      "title": "NCCL Results",
+      "category": "application",
+      "file": "design/references/application/nccl-results.png",
+      "route": "/benchmarks/nccl/results",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "NCCL Results",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/10-nccl-results.png",
+      "sha256": "248a1026349079ed021c04034ce739dfb00e81ead32f0a7d29960ee398c4ff48",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "monitoring",
+      "title": "Monitoring",
+      "category": "application",
+      "file": "design/references/application/monitoring.png",
+      "route": "/monitoring",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Monitoring",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/11-monitoring.png",
+      "sha256": "679f9aaece52e305fbbc3a5e6c2fdc2d89fcd6cebe31eecb39b3b96d183af21e",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "alerts",
+      "title": "Alerts",
+      "category": "application",
+      "file": "design/references/application/alerts.png",
+      "route": "/alerts",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Alerts",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "mostly consistent; includes additional purple action accent for alert workflow",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/12-alerts.png",
+      "sha256": "a37529f51a40fc620ce64b7a9a8524b6c4b23cd18ddf5e20f752eceabdad3466",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "reports",
+      "title": "Reports",
+      "category": "application",
+      "file": "design/references/application/reports.png",
+      "route": "/reports",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Reports",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/13-reports.png",
+      "sha256": "33b2b087703b72367fda6d80a6e3ad61423f3d626f24f83575f1e98a6affd434",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "ai-copilot",
+      "title": "AI Copilot",
+      "category": "application",
+      "file": "design/references/application/ai-copilot.png",
+      "route": "/copilot",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "AI Copilot",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/14-ai-copilot.png",
+      "sha256": "6e1695418c243398ad47225bc61c7ceff47fd346ae2d5ae9cc27121fb7135f25",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "settings",
+      "title": "Settings",
+      "category": "application",
+      "file": "design/references/application/settings.png",
+      "route": "/settings",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "canonical": false,
+      "status": "candidate",
+      "probable_page": "Settings",
+      "complete": true,
+      "duplicate_of": null,
+      "style_consistency": "consistent canonical shell",
+      "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/15-settings.png",
+      "sha256": "5f1276c6363173273e86194d3ccfe122a3126bf8b3c0a97ac1719320130c68d7",
+      "notes": "Application page reference using the shared sidebar/topbar/card system."
+    },
+    {
+      "id": "implementation-login-rc1",
+      "title": "RC1 Implemented Login Screenshot",
+      "category": "archive",
+      "file": "design/references/archive/implementation-login-rc1.png",
+      "route": "/login",
+      "dimensions": {
+        "width": 1440,
+        "height": 1000
+      },
+      "canonical": false,
+      "status": "archive",
+      "probable_page": "Current implemented login",
+      "complete": true,
+      "duplicate_of": "login",
+      "style_consistency": "related current implementation; not generated canonical reference",
+      "original_source": "artifacts/rc1/login-username-desktop.png",
+      "sha256": "1891b6fd2c4b0f866f9fdf7a178b8501d812b897965d2654044c5ffa6df28255",
+      "notes": "Copied from existing repo artifact for comparison; original retained."
+    }
+  ]
+}

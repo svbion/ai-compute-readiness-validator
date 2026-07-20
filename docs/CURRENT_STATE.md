@@ -109,3 +109,12 @@ Real NVIDIA hardware readiness:
 ## Product branding note
 
 GPU Validator is the public product brand. AI Factory remains a validation profile and infrastructure-readiness concept, and the Git repository remains `ai-compute-readiness-validator` for compatibility. The canonical public URL is `https://gpuvalidator.com`.
+
+## Redesign preparation state
+
+- Visual references are organized under `design/references/` with machine-readable inventory in `design/manifests/reference-images.json`.
+- The canonical application-shell reference is `design/references/application/dashboard.png`.
+- The canonical authentication reference is `design/references/authentication/login.png`.
+- The canonical marketing/public direction is `design/references/brand/marketing-homepage.png` because no separate generated public homepage export was discovered.
+- Permanent visual rules live in `docs/DESIGN_SYSTEM.md`; intended routes live in `docs/PRODUCT_SITEMAP.md` and `design/manifests/routes.json`.
+- Redesign execution should follow `docs/REDESIGN_IMPLEMENTATION_PLAN.md` and preserve current authenticated behavior, API integrations, simulated-data warnings, and evidence/benchmark safety constraints.

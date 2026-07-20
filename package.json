@@ -14,7 +14,10 @@
     "test:e2e": "playwright test",
     "test:deploy": "bash tests-deploy/test-deployment-scripts.sh",
     "test:e2e:headed": "playwright test --headed",
-    "verify:production": "npm run build && npm run lint && npm run test:portal && npm run test:e2e && npm run test:deploy && bash -lc 'source .venv/bin/activate 2>/dev/null || true; pip install -e \".[dev]\"; pytest; ai-validator demo --scenario healthy --output-dir artifacts; ai-validator demo --scenario degraded --output-dir artifacts'"
+    "verify:production": "npm run build && npm run lint && npm run test:portal && npm run test:e2e && npm run test:deploy && bash -lc 'source .venv/bin/activate 2>/dev/null || true; pip install -e \".[dev]\"; pytest; ai-validator demo --scenario healthy --output-dir artifacts; ai-validator demo --scenario degraded --output-dir artifacts'",
+    "design:screenshot": "node scripts/design-screenshot.mjs",
+    "design:screenshot:all": "node scripts/design-screenshot.mjs --all=true",
+    "design:compare": "node scripts/compare-design-screenshots.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -36,6 +39,8 @@
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",

@@ -20,6 +20,8 @@ Delivered:
 ## Phase 1: Customer acceptance workflow maturation
 
 Potential next steps:
+- execute the prepared page-by-page redesign workflow using `docs/DESIGN_SYSTEM.md`, `docs/PRODUCT_SITEMAP.md`, `docs/REDESIGN_IMPLEMENTATION_PLAN.md`, and `design/README.md`
+- migrate the application shell first, then dashboard, GPU inventory, clusters, validation, benchmark, monitoring, alerting, report, AI Copilot, settings, login, and public pages in that order
 - explicit evidence bundles for signoff review
 - waiver tracking for non-blocking findings
 - baseline comparison between acceptance runs

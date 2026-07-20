@@ -264,6 +264,25 @@ ai-validator demo --scenario healthy --output-dir artifacts
 ai-validator demo --scenario degraded --output-dir artifacts
 ```
 
+## Design system and redesign workflow
+
+GPUValidator redesign preparation artifacts live in:
+- `docs/DESIGN_SYSTEM.md` — permanent visual-system rules and anti-patterns
+- `docs/PRODUCT_SITEMAP.md` — intended product hierarchy and route architecture
+- `docs/REDESIGN_IMPLEMENTATION_PLAN.md` — page-by-page redesign migration plan
+- `design/README.md` — reference-image library and screenshot workflow
+- `design/manifests/reference-images.json` — normalized reference image inventory
+- `design/manifests/routes.json` — machine-readable intended route map
+
+Screenshot commands:
+```bash
+npm run design:screenshot -- --route=/login --name=login
+npm run design:screenshot:all
+npm run design:compare -- --reference=design/references/authentication/login.png --current=design/implementation-screenshots/current/login-1536x1024.png
+```
+
+Generated reference images are visual guidance. The design-system document, tokens, current product behavior, accessibility, and operational usability take priority over literal generated-image text.
+
 ## Current limitations
 
 - Live validation is single-host only; it does not orchestrate remote multi-node collection.
