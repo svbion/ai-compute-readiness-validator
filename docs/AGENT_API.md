@@ -379,3 +379,13 @@ GPUVALIDATOR_SIMULATE=true python -m gpuvalidator_agent
 ```
 
 Simulation reports four GPUs, missing CUDA toolkit, missing PyTorch, malformed inventory rows, and timeout-capable fixtures for tests. Do not enable it in production.
+
+
+## RunPod installation workflow
+
+See `docs/RUNPOD_SETUP.md` for the Step 4 live pod workflow. Important points:
+
+- `GPUVALIDATOR_API_URL` is the origin, for example `https://gpuvalidator.com`, not an `/api` suffixed URL.
+- RunPod uses the same `Authorization: Bearer <GPUVALIDATOR_AGENT_TOKEN>` header documented above.
+- `scripts/run-runpod-smoke-test.sh` can verify registration, heartbeat, and polling from the pod when the environment variables are configured.
+- `scripts/start-runpod-agent.sh` uses `nohup` with PID and log files because RunPod images should not be assumed to have systemd.

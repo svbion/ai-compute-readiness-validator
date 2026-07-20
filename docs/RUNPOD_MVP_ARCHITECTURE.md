@@ -203,6 +203,18 @@ No CORS middleware exists. Same-origin browser calls avoid CORS. Agent calls are
 - `AI_FACTORY_COOKIE_SECURE=true` is expected in production behind HTTPS.
 - Agent communication must use HTTPS in production.
 
+## Step 4 RunPod installation workflow status
+
+Prepared but not externally verified from this session:
+
+- `docs/RUNPOD_SETUP.md` describes the exact RunPod terminal/SSH, GPU smoke-test, install, foreground run, durable `nohup`, log, stop, restart, troubleshooting, and first hardware-discovery validation workflow.
+- `scripts/install-runpod-agent.sh` installs the local standalone agent in `agent/.venv`.
+- `scripts/run-runpod-smoke-test.sh` checks safe host/GPU commands, optional PyTorch, DNS, HTTPS/TLS, `/healthz`, and optional agent registration/heartbeat/poll.
+- `scripts/start-runpod-agent.sh` starts the agent with `nohup` and PID/log tracking.
+- `scripts/stop-runpod-agent.sh` stops the tracked process without assuming systemd.
+
+The expected demo pod remains one node with four visible GPUs. The general agent does not hardcode four GPUs; only the smoke test defaults to `GPUVALIDATOR_EXPECTED_GPU_COUNT=4` for this demo workflow.
+
 ## Smallest viable RunPod architecture
 
 ### Principles

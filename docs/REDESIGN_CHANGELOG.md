@@ -337,3 +337,41 @@ Status: implemented and validated.
 ### Next step
 
 Run the agent in a real RunPod pod with outbound HTTPS to GPUValidator and a configured `GPUVALIDATOR_AGENT_TOKEN`, then create a hardware-discovery validation from the backend.
+
+
+## Deadline Sprint Step 4 — RunPod installation workflow
+
+Date: 2026-07-20
+Status: deployment material prepared and locally validated; live RunPod execution is not externally verified from this session.
+
+### Scope
+
+- Continued from Step 3 standalone agent commit.
+- Added RunPod installation, smoke-test, start, and stop scripts.
+- Added setup guide for the one-node/four-GPU RunPod demo environment.
+- Did not modify unrelated frontend pages.
+- Did not commit real agent tokens.
+
+### Files added
+
+- `docs/RUNPOD_SETUP.md`
+- `scripts/install-runpod-agent.sh`
+- `scripts/run-runpod-smoke-test.sh`
+- `scripts/start-runpod-agent.sh`
+- `scripts/stop-runpod-agent.sh`
+- `agent/.env.example`
+
+### Workflow
+
+- `scripts/run-runpod-smoke-test.sh` validates hostname, OS, Python, `nvidia-smi`, `nvidia-smi -L`, expected demo GPU count, topology, optional PyTorch count, DNS, HTTPS/TLS, `/healthz`, and optional agent registration/heartbeat/poll when environment variables and installation are present.
+- `scripts/install-runpod-agent.sh` creates `agent/.venv` and installs the local agent package.
+- `scripts/start-runpod-agent.sh` uses `nohup` plus PID/log files; it does not assume systemd.
+- `scripts/stop-runpod-agent.sh` sends SIGTERM, waits, and cleans stale PID files.
+
+### Verification status
+
+The scripts and documentation are prepared but not externally verified against the live RunPod pod in this session because no live RunPod terminal/SSH access or token was available to Hermes. The setup guide includes exact commands for the user to run in the authorized RunPod shell.
+
+### Next step
+
+Run `docs/RUNPOD_SETUP.md` on the existing RunPod pod, capture smoke-test output, start the agent, create the first hardware-discovery validation, and verify uploaded live GPU evidence in the backend.
