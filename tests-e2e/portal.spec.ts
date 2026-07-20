@@ -1,14 +1,59 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill("reviewer@example.invalid");
   await page.locator("#reviewer-password").fill("Reviewer Test Password 123!");
   await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/portal$/);
   await expect(page.getByRole("heading", { name: "GPU Validator" })).toBeVisible();
   await expect(page.getByText("Scenario controls")).toBeVisible();
   await expect(page.getByLabel("Evidence source")).toBeVisible();
 }
+
+async function expectProtectedRoutesUnauthenticated(request: APIRequestContext) {
+  for (const path of ["/api/results?scenario=healthy", "/api/evidence-sources", "/reports/degraded/html", "/reports/degraded/json"]) {
+    const response = await request.get(path);
+    expect(response.status(), `${path} should stay protected`).toBe(401);
+  }
+}
+
+test("public landing page presents GPU Validator product positioning", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page).toHaveTitle(/GPU Validator/);
+  await expect(page.getByRole("heading", { name: /AI Compute Infrastructure Validation and Customer Acceptance/i })).toBeVisible();
+  await expect(page.getByText("Validate GPU platforms, fabric, schedulers, storage, Kubernetes, and operational readiness before customer acceptance.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Request Early Access" }).first()).toHaveAttribute("href", "/request-access");
+  await expect(page.getByRole("link", { name: "Reviewer Login" }).first()).toHaveAttribute("href", "/login");
+  await expect(page.getByText("100 READY")).toBeVisible();
+  await expect(page.getByText("97.01 REMEDIATION REQUIRED")).toBeVisible();
+  await expect(page.getByText(/simulated evidence is used in the public demonstration/i)).toBeVisible();
+});
+
+test("public docs, security, and request-access pages are reachable", async ({ page }) => {
+  await page.goto("/docs");
+  await expect(page.getByRole("heading", { name: /Product overview/i })).toBeVisible();
+  await expect(page.getByText("collect or import evidence")).toBeVisible();
+
+  await page.goto("/security");
+  await expect(page.getByRole("heading", { name: /Security and evidence handling/i })).toBeVisible();
+  await expect(page.getByText(/read-only operating model/i)).toBeVisible();
+
+  await page.goto("/request-access");
+  await expect(page.getByRole("heading", { name: /Request early access/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Email access request/i })).toHaveAttribute("href", /mailto:.*subject=GPU%20Validator%20early%20access/);
+});
+
+test("responsive public navigation exposes primary routes on mobile", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "mobile viewport coverage runs in the mobile project");
+  await page.goto("/");
+
+  await expect(page.getByRole("navigation", { name: "Public navigation" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Docs" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Security" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Request Early Access" }).first()).toBeVisible();
+});
 
 test("login page loads with accessible private reviewer entry", async ({ page }) => {
   await page.goto("/login");
@@ -24,7 +69,7 @@ test("login page loads with accessible private reviewer entry", async ({ page })
 });
 
 test("authentication-required redirect, invalid credentials, account lockout, login, and logout", async ({ page }, testInfo) => {
-  await page.goto("/");
+  await page.goto("/portal");
   await expect(page).toHaveURL(/\/login\?reason=expired-session$/);
   await expect(page.getByText("Your session expired")).toBeVisible();
 
@@ -75,6 +120,10 @@ test("healthy and degraded scenarios render expected classifications without sta
   await expect(page.locator("section").filter({ hasText: "Source context" }).first()).toContainText("Simulated Healthy");
   await expect(page.getByText("100.00%").first()).toBeVisible();
   await expect(page.getByText("97.01%")).toHaveCount(0);
+});
+
+test("protected routes remain unavailable before authentication", async ({ request }) => {
+  await expectProtectedRoutesUnauthenticated(request);
 });
 
 test("report links and authenticated API routes work", async ({ page }) => {

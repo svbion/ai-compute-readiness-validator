@@ -10,12 +10,30 @@ test("public product branding uses GPU Validator while preserving AI Factory pro
   const app = read("src/App.tsx");
   const index = read("index.html");
 
-  assert.match(index, /<title>GPU Validator<\/title>/);
+  assert.match(index, /<title>GPU Validator — AI Compute Infrastructure Validation<\/title>/);
+  assert.match(index, /<link rel="canonical" href="https:\/\/gpuvalidator\.com\/"/);
+  assert.match(index, /application\/ld\+json/);
   assert.match(app, /GPU Validator/);
   assert.match(app, /AI Factory Readiness Portal/);
+  assert.match(app, /AI Compute Infrastructure Validation and Customer Acceptance/);
+  assert.match(app, /Request Early Access/);
   assert.match(app, /Private access to GPU infrastructure readiness, validation evidence, and\s+customer-acceptance workflows\./);
   assert.match(app, /AI Factory profile|AI Factory validation target|AI Factory/);
   assert.doesNotMatch(app, /AI Factory Validation Portal/);
+});
+
+test("public product routes, robots, and sitemap are declared", () => {
+  const app = read("src/App.tsx");
+  const server = read("server.ts");
+  const robots = read("public/robots.txt");
+  const sitemap = read("public/sitemap.xml");
+
+  for (const route of ["/", "/login", "/portal", "/docs", "/security", "/request-access"]) {
+    assert.match(app + server, new RegExp(route.replace("/", "\\/")));
+  }
+  assert.match(robots, /Disallow: \/api\//);
+  assert.match(robots, /Disallow: \/reports\//);
+  assert.match(sitemap, /https:\/\/gpuvalidator\.com\/request-access/);
 });
 
 test("deployment branding and canonical domain are gpuvalidator.com", () => {

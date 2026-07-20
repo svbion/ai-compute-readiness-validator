@@ -149,7 +149,7 @@ function LoginPage() {
       });
 
       if (response.ok) {
-        window.location.assign("/");
+        window.location.assign("/portal");
         return;
       }
 
@@ -294,7 +294,7 @@ function LoginPage() {
   );
 }
 
-export default function App() {
+function PortalApp() {
   const [activeTab, setActiveTab] = useState<"diagnostics" | "benchmarks">("diagnostics");
   const [selectedScenario, setSelectedScenario] = useState<"healthy" | "degraded">("degraded");
   const [selectedSourceId, setSelectedSourceId] = useState("simulated-degraded");
@@ -1165,4 +1165,277 @@ export default function App() {
       </footer>
     </div>
   );
+}
+
+const contactEmail = import.meta.env.VITE_GPU_VALIDATOR_CONTACT_EMAIL || "access@gpuvalidator.com";
+const earlyAccessMailto = `mailto:${contactEmail}?subject=${encodeURIComponent("GPU Validator early access")}&body=${encodeURIComponent("Hello GPU Validator team,\n\nI would like to request early access.\n\nOrganization:\nGPU platform profile:\nValidation timeline:\n\nPlease do not include passwords, tokens, or private evidence in this email.\n")}`;
+
+const validationDomains = [
+  "GPU health",
+  "InfiniBand / RDMA",
+  "Linux",
+  "Slurm",
+  "Kubernetes",
+  "storage",
+  "benchmark readiness",
+];
+
+const platformProfiles = [
+  "GPU workstation",
+  "single GPU node",
+  "DGX-class",
+  "HGX-based",
+  "OEM GPU platform",
+  "Slurm GPU cluster",
+  "Kubernetes GPU cluster",
+  "AI Factory",
+];
+
+function PublicNav() {
+  const links = [
+    { href: "/docs", label: "Docs" },
+    { href: "/security", label: "Security" },
+    { href: "/request-access", label: "Request Early Access" },
+    { href: "/login", label: "Reviewer Login" },
+  ];
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-slate-800/70 bg-[#030610]/85 backdrop-blur-xl">
+      <nav aria-label="Public navigation" className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
+        <a href="/" className="flex items-center gap-3 text-slate-50">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10 shadow-[0_0_30px_rgba(118,185,0,0.08)]">
+            <Activity className="h-5 w-5 text-emerald-300" />
+          </span>
+          <span>
+            <span className="block font-display text-lg font-semibold tracking-tight">GPU Validator</span>
+            <span className="block text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Customer acceptance</span>
+          </span>
+        </a>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          {links.map((link) => (
+            <a key={link.href} href={link.href} className={`rounded-full px-4 py-2 transition focus:outline-none focus:ring-2 focus:ring-emerald-500/40 ${link.href === "/request-access" ? "bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400" : "text-slate-300 hover:bg-slate-900 hover:text-slate-50"}`}>
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+    </header>
+  );
+}
+
+function PublicShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[#030610] text-slate-100 selection:bg-emerald-500/25 selection:text-emerald-200">
+      <div className="fixed inset-0 -z-10" aria-hidden="true">
+        <div className="login-grid absolute inset-0 opacity-70" />
+        <div className="absolute left-1/2 top-[-20rem] h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="absolute bottom-[-18rem] right-[-12rem] h-[36rem] w-[36rem] rounded-full bg-cyan-500/8 blur-3xl" />
+      </div>
+      <PublicNav />
+      {children}
+      <footer className="border-t border-slate-900 bg-slate-950/80">
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-10 text-sm text-slate-400 md:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <div className="font-display text-lg font-semibold text-slate-100">GPU Validator</div>
+            <p className="mt-2 max-w-2xl leading-7">AI Compute Infrastructure Validation and Customer Acceptance for GPU platforms, fabric, schedulers, storage, Kubernetes, and operational readiness.</p>
+          </div>
+          <div className="space-y-2 md:text-right">
+            <p>This project is independent and is not affiliated with, sponsored by, or endorsed by NVIDIA.</p>
+            <p>Public demo content uses simulated evidence unless real evidence is explicitly imported and labeled.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function Section({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
+  return (
+    <section className="mx-auto max-w-7xl px-6 py-16">
+      <div className="mb-8 max-w-3xl">
+        <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-emerald-300">{eyebrow}</div>
+        <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-slate-50 md:text-4xl">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function LandingPage() {
+  return (
+    <PublicShell>
+      <main>
+        <section className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:py-28">
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-emerald-300">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(118,185,0,0.8)]" />
+              Live at gpuvalidator.com
+            </div>
+            <div className="space-y-5">
+              <p className="text-sm font-mono uppercase tracking-[0.28em] text-slate-500">GPU Validator</p>
+              <h1 className="max-w-5xl font-display text-5xl font-bold tracking-tight text-slate-50 md:text-7xl">
+                AI Compute Infrastructure Validation and Customer Acceptance
+              </h1>
+              <p className="max-w-3xl text-lg leading-8 text-slate-300 md:text-xl">
+                Validate GPU platforms, fabric, schedulers, storage, Kubernetes, and operational readiness before customer acceptance.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <a href="/request-access" className="rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/25">Request Early Access</a>
+              <a href="/login" className="rounded-2xl border border-slate-700 px-5 py-3 font-semibold text-slate-100 transition hover:border-emerald-500/40 hover:text-emerald-300 focus:outline-none focus:ring-4 focus:ring-emerald-500/15">Reviewer Login</a>
+            </div>
+          </div>
+          <div className="cyber-panel rounded-[2rem] p-6 md:p-8">
+            <div className="grid gap-4">
+              <div className="rounded-3xl border border-emerald-500/25 bg-emerald-500/10 p-5">
+                <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-emerald-300">Healthy example</div>
+                <div className="mt-3 font-display text-5xl font-bold text-slate-50">100 READY</div>
+                <p className="mt-3 text-sm leading-6 text-slate-300">All validation domains pass; acceptance report is ready for customer handoff.</p>
+              </div>
+              <div className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-5">
+                <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-amber-300">Degraded example</div>
+                <div className="mt-3 font-display text-4xl font-bold text-slate-50">97.01 REMEDIATION REQUIRED</div>
+                <p className="mt-3 text-sm leading-6 text-slate-300">High aggregate score, but blocking GPU/fabric findings prevent acceptance until remediated.</p>
+              </div>
+              <p className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 text-xs leading-6 text-slate-400">
+                Simulated evidence is used in the public demonstration unless real evidence is imported and clearly labeled with provenance and sanitization status.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <Section eyebrow="Acceptance risk" title="Customer handoff should not depend on screenshots and tribal knowledge.">
+          <div className="grid gap-4 md:grid-cols-3">
+            {["GPU platforms arrive healthy, but acceptance fails when fabric, scheduler, or storage evidence is incomplete.", "Operators need a read-only way to prove readiness without exposing credentials or mutation controls.", "Customers need a concise acceptance report that separates warnings from release-blocking findings."].map((text) => (
+              <div key={text} className="cyber-panel cyber-panel-hover rounded-3xl p-5 text-sm leading-7 text-slate-300">{text}</div>
+            ))}
+          </div>
+        </Section>
+
+        <Section eyebrow="Validation domains" title="A practical acceptance surface for the full AI compute stack.">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {validationDomains.map((domain) => (
+              <div key={domain} className="rounded-2xl border border-slate-800 bg-slate-950/55 p-4 text-slate-200">
+                <CheckCircle2 className="mb-3 h-5 w-5 text-emerald-300" />
+                {domain}
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section eyebrow="Workflow" title="Collect evidence, validate it, and produce an acceptance report.">
+          <div className="grid gap-4 md:grid-cols-5">
+            {["collect or import evidence", "validate", "score", "identify blocking findings", "produce acceptance report"].map((step, index) => (
+              <div key={step} className="cyber-panel rounded-3xl p-5">
+                <div className="text-[11px] font-mono text-emerald-300">0{index + 1}</div>
+                <div className="mt-3 text-sm font-semibold text-slate-100">{step}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section eyebrow="Evidence model" title="Provenance and read-only operation are part of the product boundary.">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="cyber-panel rounded-3xl p-6">
+              <h3 className="font-display text-xl font-semibold text-slate-50">Evidence provenance</h3>
+              <p className="mt-3 leading-7 text-slate-300">Every result is labeled as simulated, live, or imported live evidence with source confidence, collection timestamp, hardware identity status, sanitization status, and limitations.</p>
+            </div>
+            <div className="cyber-panel rounded-3xl p-6">
+              <h3 className="font-display text-xl font-semibold text-slate-50">Read-only operating model</h3>
+              <p className="mt-3 leading-7 text-slate-300">The reviewer portal visualizes evidence and reports. It does not expose scenario execution, evidence import, package installation, privileged commands, or credential material.</p>
+            </div>
+          </div>
+        </Section>
+
+        <Section eyebrow="Profiles" title="Supported platform profiles for acceptance-oriented validation.">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {platformProfiles.map((profile) => (
+              <div key={profile} className="rounded-2xl border border-slate-800 bg-slate-950/55 px-4 py-3 text-sm text-slate-200">{profile}</div>
+            ))}
+          </div>
+        </Section>
+
+        <Section eyebrow="Architecture overview" title="Small operational footprint, clear trust boundary.">
+          <div className="cyber-panel rounded-[2rem] p-6 md:p-8">
+            <div className="grid gap-4 md:grid-cols-4">
+              {["Evidence collectors / imports", "Validation engine", "Read-only API", "Authenticated portal + reports"].map((item) => (
+                <div key={item} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-200">{item}</div>
+              ))}
+            </div>
+            <p className="mt-5 text-sm leading-7 text-slate-400">Current production deployment uses a Vite/React frontend, Express backend, systemd service, Caddy HTTPS proxy, local artifacts, and invite-only reviewer authentication.</p>
+          </div>
+        </Section>
+
+        <section className="mx-auto max-w-7xl px-6 py-16">
+          <div className="rounded-[2rem] border border-emerald-500/25 bg-emerald-500/10 p-8 md:p-10">
+            <h2 className="font-display text-3xl font-semibold text-slate-50">Validate before customer acceptance.</h2>
+            <p className="mt-3 max-w-3xl leading-7 text-slate-300">GPU Validator is available for early evaluation with simulated demo evidence and controlled live/imported evidence workflows.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a href="/request-access" className="rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400">Request Early Access</a>
+              <a href="/docs" className="rounded-2xl border border-slate-700 px-5 py-3 font-semibold text-slate-100 transition hover:border-emerald-500/40 hover:text-emerald-300">Read product overview</a>
+            </div>
+          </div>
+        </section>
+      </main>
+    </PublicShell>
+  );
+}
+
+function DocsPage() {
+  return (
+    <PublicShell>
+      <main className="mx-auto max-w-5xl px-6 py-16">
+        <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-emerald-300">Documentation</div>
+        <h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Product overview</h1>
+        <div className="mt-8 space-y-6 text-slate-300">
+          <p className="leading-8">GPU Validator helps infrastructure teams collect or import evidence, validate GPU compute readiness, score customer acceptance, identify blocking findings, and produce acceptance reports.</p>
+          <p className="leading-8">The current public product supports deterministic simulated healthy and degraded examples, authenticated review, protected report routes, and a read-only reviewer portal. Real evidence must be explicitly imported or collected under approved operating rules before it is treated as live validation evidence.</p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {validationDomains.map((domain) => <div key={domain} className="cyber-panel rounded-2xl p-4">{domain}</div>)}
+          </div>
+        </div>
+      </main>
+    </PublicShell>
+  );
+}
+
+function SecurityPage() {
+  return (
+    <PublicShell>
+      <main className="mx-auto max-w-5xl px-6 py-16">
+        <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-emerald-300">Security</div>
+        <h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Security and evidence handling</h1>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          {["Read-only operating model: the reviewer portal cannot run scans, import evidence, install packages, or mutate infrastructure.", "Protected reports and APIs require reviewer authentication and are not exposed through public product pages.", "Secrets, password hashes, session tokens, and private evidence must never be committed, pasted into chat, or sent through early-access email.", "Public demonstration data is simulated unless a result is clearly labeled as live or imported live evidence."].map((item) => (
+            <div key={item} className="cyber-panel rounded-3xl p-5 leading-7 text-slate-300">{item}</div>
+          ))}
+        </div>
+      </main>
+    </PublicShell>
+  );
+}
+
+function RequestAccessPage() {
+  return (
+    <PublicShell>
+      <main className="mx-auto max-w-4xl px-6 py-16">
+        <div className="rounded-[2rem] border border-emerald-500/25 bg-emerald-500/10 p-8 md:p-10">
+          <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-emerald-300">Early access</div>
+          <h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Request early access</h1>
+          <p className="mt-4 leading-8 text-slate-300">Share your organization, GPU platform profile, and target validation timeline. Do not include passwords, API keys, private logs, or raw customer evidence in the request.</p>
+          <a href={earlyAccessMailto} className="mt-8 inline-flex rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400">Email access request</a>
+        </div>
+      </main>
+    </PublicShell>
+  );
+}
+
+export default function App() {
+  const pathName = window.location.pathname;
+  if (pathName === "/login") return <LoginPage />;
+  if (pathName === "/portal") return <PortalApp />;
+  if (pathName === "/docs") return <DocsPage />;
+  if (pathName === "/security") return <SecurityPage />;
+  if (pathName === "/request-access") return <RequestAccessPage />;
+  return <LandingPage />;
 }

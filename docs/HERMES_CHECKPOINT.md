@@ -76,6 +76,17 @@
 - `docs/PRODUCTION_SMOKE_TEST.md` covers DNS, TLS, root/www, auth, protected APIs/reports, local service, Caddy, logs, rollback, and secret safety.
 - Next objective: public landing page.
 
+## Public product landing page
+
+- Added public GPU Validator product experience while preserving the authenticated validation portal.
+- Routes now separate public pages (`/`, `/docs`, `/security`, `/request-access`, `/login`) from the protected reviewer portal (`/portal`).
+- Successful login redirects to `/portal`; unauthenticated `/portal`, protected APIs, and protected report routes remain private.
+- Landing page positions GPU Validator as AI compute infrastructure validation and customer acceptance for GPU platforms, fabric, schedulers, storage, Kubernetes, and operational readiness.
+- Added public docs, security/evidence-handling, and mailto-based early-access request pages with configurable `VITE_GPU_VALIDATOR_CONTACT_EMAIL`.
+- Added SEO metadata, canonical URL, Open Graph metadata, structured data, favicon integration, `robots.txt`, and `sitemap.xml`.
+- Public demo copy states that simulated evidence is used unless real evidence is imported and labeled.
+- Commit target: `feat(web): add public GPU Validator product experience`.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.
@@ -89,7 +100,8 @@
 - Zero-mutation dry-run fixture with temporary `AI_FACTORY_APP_DIR`: passed; app directory was not created and secret-like output was not printed.
 - `npm run build`: passed.
 - `npm run lint`: passed.
-- `npm run test:portal`: passed, 14 tests.
+- `npm run test:portal`: passed, 15 tests.
+- `npm run test:e2e`: passed, 18 tests with 2 desktop-only skips for mobile-specific checks.
 - `pytest` using existing `.venv`: passed, 16 tests.
 - Focused literal parse for `scrypt$1234567890abcdef$abcdef1234567890`: passed.
 - Production status Git fixture tests: normal branch, detached HEAD, app-user Git, missing/inaccessible repo, runtime-only dirty paths, and source dirty paths passed.

@@ -50,6 +50,11 @@ function wantsHtml(req: express.Request): boolean {
   return req.method === "GET" && (req.accepts(["html", "json"]) === "html" || !req.path.startsWith("/api/"));
 }
 
+function isPublicRoute(pathname: string): boolean {
+  return ["/", "/login", "/docs", "/security", "/request-access", "/robots.txt", "/sitemap.xml", "/favicon.ico"].includes(pathname)
+    || pathname.startsWith("/assets/");
+}
+
 function firstExistingPath(candidates: string[]): string | null {
   return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
 }
@@ -236,7 +241,7 @@ async function startServer() {
 
   app.use((req, res, next) => {
     if (!authConfig.required) return next();
-    if (req.path === "/login" || req.path.startsWith("/assets/") || req.path === "/favicon.ico") return next();
+    if (isPublicRoute(req.path)) return next();
 
     const session = getSession(req);
     if (session) return next();
