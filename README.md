@@ -110,6 +110,7 @@ Open `http://localhost:3000`.
 Portal API behavior:
 - `GET /api/results?scenario=healthy|degraded` loads generated scenario artifacts from `artifacts/` when present and otherwise falls back to checked-in `sample-data/`
 - `GET /api/evidence-sources` lists simulated sources and only exposes live/imported choices when valid live artifacts exist
+- `GET /api/v1/engagements` and related authenticated `/api/v1/engagements/*` routes manage multi-node validation engagements using file-backed JSON persistence
 - `POST /api/run-scenario` intentionally returns `405`; the reviewer portal is read-only and scenario/live evidence generation remains an administrator-side CLI workflow
 - `GET /reports/:scenario/:format` serves safe report links for HTML, Markdown, and JSON evidence
 
@@ -127,8 +128,20 @@ npm run dev
 Then walk through:
 1. healthy scenario for acceptance approval
 2. degraded scenario for release-blocking behavior
-3. report links for HTML, Markdown, and JSON evidence
-4. benchmark readiness tab for supported ingestion vs roadmap-only orchestration
+3. `/portal/engagements` for the multi-node validation engagement foundation
+4. the NVIS simulated demo engagement fixture, clearly labeled `SIMULATED DEMO`
+5. report links for HTML, Markdown, and JSON evidence
+6. benchmark readiness tab for supported ingestion vs roadmap-only orchestration
+
+Engagement demo flow:
+
+```bash
+npm run dev
+# open http://localhost:3000/portal/engagements
+# click "Load NVIS demo fixture"
+```
+
+The fixture creates `NVIS Interview Demo / Two-Node H100 Cluster Acceptance` with two simulated H100 node placeholders awaiting evidence. It is idempotent and does not overwrite user-created data.
 
 ## Hosted deployment guidance
 
@@ -218,8 +231,9 @@ ai-validator demo --scenario degraded --output-dir artifacts
 
 - Live validation is single-host only; it does not orchestrate remote multi-node collection.
 - Evidence bundle collection is local-only and administrator-side; it does not upload bundles to the portal yet.
+- Engagement evidence upload is not implemented yet; engagement nodes remain placeholders until a future secure ingestion workflow attaches evidence bundles.
 - Scenario data is simulated interview evidence, not production telemetry.
 - Benchmark execution is not orchestrated by the portal; benchmark readiness currently focuses on ingestion scope and presentation.
 - Customer acceptance logic is derived from the existing readiness classification and structured findings; it is not a separate policy engine.
 
-See `docs/DEMO.md` for the two-minute walkthrough, `docs/EVIDENCE_COLLECTION.md` for read-only bundle collection, `docs/ARCHITECTURE.md` for component flow, `docs/FUNCTIONAL_TEST_MATRIX.md` for coverage, `docs/FINAL_READINESS.md` for the final public deployment readiness audit, and `docs/ROADMAP.md` for future integration scope.
+See `docs/DEMO.md` for the two-minute walkthrough, `docs/EVIDENCE_COLLECTION.md` for read-only bundle collection, `docs/ENGAGEMENTS.md` for multi-node validation engagements, `docs/ARCHITECTURE.md` for component flow, `docs/FUNCTIONAL_TEST_MATRIX.md` for coverage, `docs/FINAL_READINESS.md` for the final public deployment readiness audit, and `docs/ROADMAP.md` for future integration scope.

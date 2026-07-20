@@ -14,7 +14,9 @@ import {
   LogOut,
   Mail,
   Network,
+  Plus,
   RefreshCw,
+  Search,
   Server,
   ShieldAlert,
   ShieldCheck,
@@ -43,6 +45,16 @@ import {
   getStatusTone,
   isSimulatedScenario,
 } from "./portal/assessment";
+import {
+  acceptanceTone,
+  engagementStatusOptions,
+  engagementStatusTone,
+  filterEngagements,
+  formatEngagementLabel,
+  platformProfileOptions,
+  type Engagement,
+  type EngagementNode,
+} from "./portal/engagements";
 
 const scenarioMetadata = {
   healthy: {
@@ -292,6 +304,250 @@ function LoginPage() {
       </section>
     </main>
   );
+}
+
+const toneClasses: Record<"healthy" | "warning" | "critical" | "neutral", string> = {
+  healthy: "border-emerald-500/25 bg-emerald-500/12 text-emerald-300",
+  warning: "border-amber-500/25 bg-amber-500/12 text-amber-300",
+  critical: "border-red-500/25 bg-red-500/12 text-red-300",
+  neutral: "border-slate-700 bg-slate-900 text-slate-300",
+};
+
+function EngagementShell({ children }: { children: React.ReactNode }) {
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    window.location.assign("/login");
+  };
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans antialiased selection:bg-emerald-500/25 selection:text-emerald-200">
+      <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+          <a href="/portal/engagements" className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10">
+              <Activity className="h-5 w-5 text-emerald-300" />
+            </span>
+            <span>
+              <span className="block font-display text-xl font-semibold text-slate-50">GPU Validator</span>
+              <span className="block text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Validation engagements</span>
+            </span>
+          </a>
+          <nav aria-label="Portal navigation" className="flex flex-wrap items-center gap-2 text-sm">
+            <a href="/portal" className="rounded-full px-3 py-2 text-slate-300 hover:bg-slate-900 hover:text-emerald-300">Classic portal</a>
+            <a href="/portal/engagements" className="rounded-full px-3 py-2 text-slate-300 hover:bg-slate-900 hover:text-emerald-300">Engagements</a>
+            <a href="/portal/engagements/new" className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400">
+              <Plus className="h-4 w-4" /> New engagement
+            </a>
+            <button onClick={logout} className="rounded-full border border-slate-800 px-3 py-2 text-slate-300 hover:border-emerald-500/40 hover:text-emerald-300">Logout</button>
+          </nav>
+        </div>
+      </header>
+      <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+    </div>
+  );
+}
+
+function EngagementStatusPill({ value, kind = "status" }: { value: string; kind?: "status" | "acceptance" }) {
+  const tone = kind === "acceptance" ? acceptanceTone(value) : engagementStatusTone(value);
+  return <span className={`rounded-full border px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider ${toneClasses[tone]}`}>{formatEngagementLabel(value)}</span>;
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return "Not set";
+  return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function EngagementListPage() {
+  const [engagements, setEngagements] = useState<Engagement[]>([]);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("all");
+  const [platform, setPlatform] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/v1/engagements");
+      if (!response.ok) throw new Error("Failed to load engagements.");
+      const payload = await response.json();
+      setEngagements(Array.isArray(payload.engagements) ? payload.engagements : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load engagements.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+  const filtered = useMemo(() => filterEngagements(engagements, query, status, platform), [engagements, query, status, platform]);
+
+  const loadDemoFixture = async () => {
+    const response = await fetch("/api/v1/engagement-fixtures/nvis-interview-demo", { method: "POST" });
+    if (response.ok) await load();
+  };
+
+  return (
+    <EngagementShell>
+      <section className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-emerald-300">Customer validation</div>
+          <h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Validation engagements</h1>
+          <p className="mt-3 max-w-3xl leading-7 text-slate-400">Multi-node customer acceptance projects. Evidence upload is intentionally not implemented in this milestone.</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <button onClick={loadDemoFixture} className="rounded-2xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 hover:border-emerald-500/40 hover:text-emerald-300">Load NVIS demo fixture</button>
+          <a href="/portal/engagements/new" className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-emerald-400"><Plus className="h-4 w-4" />Create engagement</a>
+        </div>
+      </section>
+
+      <section className="cyber-panel mb-6 rounded-2xl border border-slate-800 p-4">
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px_240px]">
+          <label className="relative block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input aria-label="Search engagements" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by customer, engagement, profile, or tag" className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-3 text-slate-100 outline-none focus:border-emerald-500/60" />
+          </label>
+          <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60">
+            <option value="all">All statuses</option>
+            {engagementStatusOptions.map((item) => <option key={item} value={item}>{formatEngagementLabel(item)}</option>)}
+          </select>
+          <select aria-label="Filter by platform" value={platform} onChange={(e) => setPlatform(e.target.value)} className="rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60">
+            <option value="all">All platforms</option>
+            {platformProfileOptions.map((item) => <option key={item} value={item}>{formatEngagementLabel(item)}</option>)}
+          </select>
+        </div>
+      </section>
+
+      {loading && <div className="cyber-panel rounded-2xl border border-slate-800 p-6 text-slate-300">Loading engagements...</div>}
+      {error && <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-100">{error}</div>}
+      {!loading && !error && (
+        <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/45">
+          <div className="hidden grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.7fr_0.8fr_0.9fr_0.9fr] gap-4 border-b border-slate-800 px-5 py-3 text-[11px] font-mono uppercase tracking-[0.18em] text-slate-500 lg:grid">
+            <span>Name</span><span>Customer</span><span>Platform</span><span>Status</span><span>Nodes</span><span>Score</span><span>Acceptance</span><span>Updated</span>
+          </div>
+          {filtered.length === 0 ? (
+            <div className="p-10 text-center text-slate-400">No engagements match the current filters.</div>
+          ) : filtered.map((engagement) => (
+            <a key={engagement.id} href={`/portal/engagements/${encodeURIComponent(engagement.id)}`} className="grid gap-4 border-b border-slate-900 px-5 py-5 transition hover:bg-slate-900/45 lg:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.7fr_0.8fr_0.9fr_0.9fr] lg:items-center">
+              <div><div className="font-semibold text-slate-50">{engagement.name}</div>{engagement.simulated && <div className="mt-2 inline-flex rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-amber-300">SIMULATED DEMO</div>}</div>
+              <div className="text-slate-300">{engagement.customer_name}</div>
+              <div className="text-sm text-slate-300">{formatEngagementLabel(engagement.platform_profile)}</div>
+              <EngagementStatusPill value={engagement.status} />
+              <div className="text-sm text-slate-300">{engagement.received_node_count}/{engagement.expected_node_count}</div>
+              <div className="text-sm text-slate-300">{engagement.readiness_score === null ? "Not evaluated" : `${engagement.readiness_score}%`}</div>
+              <EngagementStatusPill value={engagement.acceptance_status} kind="acceptance" />
+              <div className="text-xs text-slate-400">{formatDate(engagement.updated_at)}</div>
+            </a>
+          ))}
+        </section>
+      )}
+    </EngagementShell>
+  );
+}
+
+function NewEngagementPage() {
+  const [form, setForm] = useState({ name: "", customer_name: "", description: "", platform_profile: "hgx-h100", expected_node_count: "2", collection_deadline: "", tags: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const setField = (field: keyof typeof form, value: string) => setForm((current) => ({ ...current, [field]: value }));
+
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    if (!form.name.trim()) return setError("Engagement name is required.");
+    if (!form.customer_name.trim()) return setError("Customer name is required.");
+    const expected = Number(form.expected_node_count);
+    if (!Number.isInteger(expected) || expected < 1 || expected > 1024) return setError("Expected node count must be between 1 and 1024.");
+    setSaving(true);
+    try {
+      const response = await fetch("/api/v1/engagements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, expected_node_count: expected, collection_deadline: form.collection_deadline || null, tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean) }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Failed to create engagement.");
+      window.location.assign(`/portal/engagements/${encodeURIComponent(payload.engagement.id)}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create engagement.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <EngagementShell>
+      <section className="mx-auto max-w-3xl">
+        <div className="mb-8"><div className="text-[11px] font-mono uppercase tracking-[0.24em] text-emerald-300">New validation engagement</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Create engagement</h1></div>
+        <form onSubmit={submit} className="cyber-panel space-y-5 rounded-3xl border border-slate-800 p-6">
+          {error && <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">{error}</div>}
+          <label className="block"><span className="mb-2 block text-sm text-slate-200">Engagement name</span><input required value={form.name} onChange={(e) => setField("name", e.target.value)} className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60" /></label>
+          <label className="block"><span className="mb-2 block text-sm text-slate-200">Customer name</span><input required value={form.customer_name} onChange={(e) => setField("customer_name", e.target.value)} className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60" /></label>
+          <label className="block"><span className="mb-2 block text-sm text-slate-200">Description</span><textarea value={form.description} onChange={(e) => setField("description", e.target.value)} rows={4} className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60" /></label>
+          <div className="grid gap-5 md:grid-cols-2">
+            <label><span className="mb-2 block text-sm text-slate-200">Platform profile</span><select value={form.platform_profile} onChange={(e) => setField("platform_profile", e.target.value)} className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60">{platformProfileOptions.map((profile) => <option key={profile} value={profile}>{formatEngagementLabel(profile)}</option>)}</select></label>
+            <label><span className="mb-2 block text-sm text-slate-200">Expected node count</span><input type="number" min={1} max={1024} required value={form.expected_node_count} onChange={(e) => setField("expected_node_count", e.target.value)} className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60" /></label>
+          </div>
+          <label className="block"><span className="mb-2 block text-sm text-slate-200">Collection deadline</span><input type="datetime-local" value={form.collection_deadline} onChange={(e) => setField("collection_deadline", e.target.value)} className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60" /></label>
+          <label className="block"><span className="mb-2 block text-sm text-slate-200">Tags</span><input placeholder="h100, acceptance, customer-a" value={form.tags} onChange={(e) => setField("tags", e.target.value)} className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-slate-100 outline-none focus:border-emerald-500/60" /></label>
+          <button disabled={saving} className="rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950 hover:bg-emerald-400 disabled:bg-emerald-800">{saving ? "Creating..." : "Create engagement"}</button>
+        </form>
+      </section>
+    </EngagementShell>
+  );
+}
+
+function EngagementDetailPage({ engagementId }: { engagementId: string }) {
+  const [engagement, setEngagement] = useState<Engagement | null>(null);
+  const [nodes, setNodes] = useState<EngagementNode[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}`).then((res) => res.ok ? res.json() : Promise.reject(new Error("Engagement not found."))),
+      fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}/nodes`).then((res) => res.ok ? res.json() : Promise.reject(new Error("Nodes not found."))),
+    ]).then(([engagementPayload, nodesPayload]) => {
+      setEngagement(engagementPayload.engagement);
+      setNodes(Array.isArray(nodesPayload.nodes) ? nodesPayload.nodes : []);
+    }).catch((err) => setError(err instanceof Error ? err.message : "Failed to load engagement."));
+  }, [engagementId]);
+
+  if (error) return <EngagementShell><div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-100">{error}</div></EngagementShell>;
+  if (!engagement) return <EngagementShell><div className="cyber-panel rounded-2xl border border-slate-800 p-6">Loading engagement...</div></EngagementShell>;
+  const cards = [
+    ["Expected nodes", engagement.expected_node_count], ["Received nodes", engagement.received_node_count], ["Ready nodes", engagement.ready_node_count], ["Nodes requiring remediation", engagement.remediation_node_count], ["Readiness score", engagement.readiness_score === null ? "Not evaluated" : `${engagement.readiness_score}%`], ["Acceptance decision", formatEngagementLabel(engagement.acceptance_status)],
+  ];
+  return (
+    <EngagementShell>
+      <section className="mb-8 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-6">
+        {engagement.simulated && <div className="mb-4 inline-flex rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-amber-300">SIMULATED DEMO — not real hardware evidence</div>}
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div><div className="text-sm text-slate-400">{engagement.customer_name}</div><h1 className="mt-2 font-display text-4xl font-semibold text-slate-50">{engagement.name}</h1><p className="mt-3 max-w-3xl leading-7 text-slate-300">{engagement.description || "No description provided."}</p></div>
+          <div className="flex flex-wrap gap-2"><EngagementStatusPill value={engagement.status} /><EngagementStatusPill value={engagement.acceptance_status} kind="acceptance" /></div>
+        </div>
+        <div className="mt-5 grid gap-3 text-sm text-slate-300 md:grid-cols-3"><div>Platform: {formatEngagementLabel(engagement.platform_profile)}</div><div>Created: {formatDate(engagement.created_at)}</div><div>Collection deadline: {formatDate(engagement.collection_deadline)}</div></div>
+      </section>
+      <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-6">{cards.map(([label, value]) => <div key={label} className="cyber-panel rounded-2xl border border-slate-800 p-4"><div className="text-[11px] font-mono uppercase tracking-[0.18em] text-slate-500">{label}</div><div className="mt-2 text-2xl font-display font-semibold text-slate-50">{value}</div></div>)}</section>
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="space-y-6">
+          <Panel title="Nodes">{nodes.length ? <div className="space-y-3">{nodes.map((node) => <div key={node.id} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="font-semibold text-slate-50">{node.display_name}</div><div className="mt-1 text-sm text-slate-400">{node.gpu_model ?? "GPU model awaiting evidence"} • {node.gpu_count ?? 0} GPUs</div></div><EngagementStatusPill value={node.collection_status} /></div></div>)}</div> : <EmptyState text="No node records have been created for this engagement yet." />}</Panel>
+          <Panel title="Findings"><EmptyState text="No evidence evaluated." /></Panel>
+          <Panel title="Benchmarks"><div className="grid gap-3 md:grid-cols-3">{["NCCL", "HPL", "Inference"].map((name) => <div key={name} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"><div className="font-semibold text-slate-100">{name}</div><div className="mt-2 text-xs font-mono uppercase tracking-wider text-amber-300">Awaiting Evidence</div></div>)}</div></Panel>
+        </div>
+        <div className="space-y-6">
+          <Panel title="Evidence"><EmptyState text="No bundles uploaded." /></Panel>
+          <Panel title="Acceptance Report"><EmptyState text="Available after validation." /></Panel>
+          <Panel title="Activity"><div className="text-sm text-slate-300">Engagement created: {formatDate(engagement.created_at)}</div></Panel>
+        </div>
+      </section>
+    </EngagementShell>
+  );
+}
+
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="cyber-panel rounded-2xl border border-slate-800 p-5"><h2 className="mb-4 font-display text-lg font-semibold text-slate-50">{title}</h2>{children}</section>;
+}
+
+function EmptyState({ text }: { text: string }) {
+  return <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-950/30 p-6 text-sm text-slate-400">{text}</div>;
 }
 
 function PortalApp() {
@@ -1433,6 +1689,11 @@ function RequestAccessPage() {
 export default function App() {
   const pathName = window.location.pathname;
   if (pathName === "/login") return <LoginPage />;
+  if (pathName === "/portal/engagements") return <EngagementListPage />;
+  if (pathName === "/portal/engagements/new") return <NewEngagementPage />;
+  if (pathName.startsWith("/portal/engagements/")) {
+    return <EngagementDetailPage engagementId={decodeURIComponent(pathName.replace("/portal/engagements/", ""))} />;
+  }
   if (pathName === "/portal") return <PortalApp />;
   if (pathName === "/docs") return <DocsPage />;
   if (pathName === "/security") return <SecurityPage />;

@@ -133,6 +133,43 @@
 
 - Add InfiniBand, Slurm, Kubernetes, and storage collectors with the same read-only allowlist, metadata, manifest, checksum, sanitization, and missing-command semantics.
 
+## Phase 3B.1 multi-node validation engagement foundation
+
+- Added versioned validation engagement and engagement-node domain models for customer infrastructure validation projects.
+- Added file-backed JSON persistence at `artifacts/engagements/store.json` by default with `AI_VALIDATOR_ENGAGEMENT_STORE` override, schema versioning, missing-file handling, validation before persistence, and atomic temporary-file rename writes.
+- Added authenticated administrative engagement APIs: list, create, read, patch, nodes, archive, and an idempotent NVIS simulated fixture loader.
+- Enforced server-generated IDs, required names/customer names, platform profile validation, expected node count bounds, valid status transitions, and rejection of client-supplied calculated counters/readiness fields.
+- Added derived engagement counts from nodes: received, ready, remediation, failed, and average readiness score when node scores exist.
+- Added `/portal/engagements`, `/portal/engagements/new`, and `/portal/engagements/:engagementId` pages with search, status/platform filters, accessible form validation, detail dashboard sections, benchmark/evidence placeholders, and responsive authenticated navigation.
+- Added NVIS Interview Demo fixture: `Two-Node H100 Cluster Acceptance`, `hgx-h100`, expected nodes `2`, status `collecting`, simulated `true`, with `node01` and `node02` simulated H100 placeholders awaiting evidence.
+- The UI labels fixture data as `SIMULATED DEMO — not real hardware evidence`; no benchmark execution, evidence upload endpoint, PDF generation, or production credential handling was added.
+
+### Phase 3B.1 files changed
+
+- `README.md`
+- `docs/ENGAGEMENTS.md`
+- `docs/HERMES_CHECKPOINT.md`
+- `server.ts`
+- `src/App.tsx`
+- `src/portal/engagements.ts`
+- `src/server/engagements.ts`
+- `tests-portal/engagements-api.test.ts`
+- `tests-portal/engagements-portal.test.ts`
+
+### Phase 3B.1 tests and smoke checks
+
+- `python -m pytest`: passed, 30 tests.
+- `npm run build`: passed.
+- `npm run lint`: passed.
+- `npm run test:portal`: passed, 26 tests, including engagement API and portal coverage.
+- `npm run test:deploy`: passed.
+- `git diff --check`: passed.
+- `.env.production`: untouched and unstaged.
+
+### Phase 3B.1 next milestone
+
+- Secure evidence bundle ingestion and upload tokens.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.

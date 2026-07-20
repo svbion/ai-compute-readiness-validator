@@ -9,6 +9,7 @@ import {
   timingSafeVerifyPassword,
   verifySignedSessionId,
 } from "./src/server/auth";
+import { registerEngagementRoutes } from "./src/server/engagements";
 
 const repoRoot = process.cwd();
 const artifactsDir = path.join(repoRoot, "artifacts");
@@ -135,10 +136,10 @@ function getReportArtifactPath(scenario: string, format: string): { filePath: st
   };
 }
 
-async function startServer() {
+export async function createPortalServerApp(options: { mountFrontend?: boolean } = {}) {
   const app = express();
-  const PORT = Number.parseInt(process.env.PORT ?? "3000", 10);
   const authConfig = buildAuthConfig(process.env);
+  const mountFrontend = options.mountFrontend ?? true;
 
   app.use(express.json());
 
@@ -256,6 +257,8 @@ async function startServer() {
 
     return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
   });
+
+  registerEngagementRoutes(app);
 
   // 1. API: Get validation results by scenario or live source
   app.get("/api/results", (req, res) => {
@@ -407,6 +410,10 @@ async function startServer() {
   });
 
   // 3. Mount Vite middleware for SPA and dev mode assets
+  if (!mountFrontend) {
+    return app;
+  }
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -421,11 +428,20 @@ async function startServer() {
     });
   }
 
+  return app;
+}
+
+async function startServer() {
+  const app = await createPortalServerApp();
+  const PORT = Number.parseInt(process.env.PORT ?? "3000", 10);
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[Server] Full-stack diagnostic portal listening at http://0.0.0.0:${PORT}`);
   });
 }
 
-startServer().catch((err) => {
-  console.error("Failed to boot full-stack portal:", err);
-});
+const entryPoint = process.argv[1] ? ["server.ts", "server.cjs"].includes(path.basename(process.argv[1])) : false;
+if (entryPoint) {
+  startServer().catch((err) => {
+    console.error("Failed to boot full-stack portal:", err);
+  });
+}
