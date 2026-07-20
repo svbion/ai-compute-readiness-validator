@@ -58,6 +58,17 @@ test("benchmark parsers tolerate whitespace, ANSI colors, missing metrics, and u
   assert.equal(malformed.warnings.some((warning) => warning.includes("No NCCL")), true);
 });
 
+test("NCCL parser supports redacted real-format A100 output without hard-coded thresholds", () => {
+  const fixture = fs.readFileSync(path.join(process.cwd(), "sample-data", "benchmarks", "redacted-real-nccl-all-reduce.txt"), "utf8");
+  const parsed = parseBenchmarkText("nccl", fixture, "redacted-real-nccl-all-reduce.txt");
+  assert.equal(parsed.metrics.nccl_version, "2.25.1+cuda12.8");
+  assert.equal(parsed.metrics.gpu_count, 4);
+  assert.equal(parsed.metrics.wrong_result_count, 0);
+  assert.equal(parsed.metrics.out_of_bounds_count, 0);
+  assert.equal(parsed.metrics.bus_bandwidth, 185.67);
+  assert.equal(parsed.metrics.average_bus_bandwidth, 37.3098);
+});
+
 test("benchmark threshold findings are configurable and do not invent defaults", () => {
   const run: any = { id: "bmk1", engagement_id: "eng", node_id: "node1", benchmark_type: "nccl", status: "accepted", simulated: true, collected_at: new Date().toISOString(), metrics: { average_bus_bandwidth: 20, wrong_result_count: 0 }, provenance: { input_file: "x", parser_version: "1", source_lines: [1], parser: "nccl", simulated: true } };
   assert.equal(deriveBenchmarkFindings("eng", ["node1"], [run]).some((finding) => finding.rule_id === "nccl-bandwidth-below-threshold"), false);

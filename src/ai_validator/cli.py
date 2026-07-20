@@ -1,5 +1,9 @@
 import os
 import sys
+import json
+import getpass
+import hashlib
+import secrets
 from typing import Optional
 from datetime import datetime
 from pathlib import Path
@@ -39,6 +43,47 @@ from ai_validator.benchmarks.intelligence import parse_benchmark_file, write_imp
 
 app = typer.Typer(help="GPU Validator - Assessment CLI")
 console = Console()
+runner_app = typer.Typer(help="Outbound node runner commands")
+app.add_typer(runner_app, name="runner")
+users_app = typer.Typer(help="Production user administration commands")
+app.add_typer(users_app, name="users")
+
+
+def _user_store_path() -> Path:
+    return Path(os.environ.get("AI_VALIDATOR_USER_STORE", "artifacts/users/store.json"))
+
+
+def _normalize_username(username: str) -> str:
+    import re
+    normalized = username.strip().lower()
+    if not re.match(r"^[a-z0-9][a-z0-9._-]{2,62}$", normalized):
+        raise ValueError("Username must be 3-63 characters using letters, numbers, dot, dash, or underscore.")
+    return normalized
+
+
+def _validate_admin_password(password: str) -> None:
+    if len(password) < 14 or not any(c.islower() for c in password) or not any(c.isupper() for c in password) or not any(c.isdigit() for c in password) or not any(not c.isalnum() for c in password):
+        raise ValueError("Password must be at least 14 characters and include uppercase, lowercase, number, and symbol characters.")
+
+
+def _create_scrypt_hash(password: str) -> str:
+    salt = secrets.token_hex(16)
+    derived = hashlib.scrypt(password.encode("utf-8"), salt=salt.encode("utf-8"), n=16384, r=8, p=1, dklen=64).hex()
+    return f"scrypt${salt}${derived}"
+
+
+def _read_user_store(path: Path) -> dict:
+    if not path.exists():
+        return {"schema_version": "1.0.0", "users": [], "audit_entries": []}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_user_store(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    tmp.chmod(0o600)
+    tmp.replace(path)
 
 
 def normalize_text_artifact(path: str) -> None:
@@ -448,6 +493,150 @@ def version():
     """
     from ai_validator.config import APP_NAME, VERSION
     console.print(f"[bold cyan]{APP_NAME}[/bold cyan] version [green]v{VERSION}[/green]")
+
+
+@runner_app.command("capabilities")
+def runner_capabilities():
+    """Print local runner capability discovery without running benchmarks."""
+    from ai_validator.runner_client import detect_capabilities
+    console.print_json(data=detect_capabilities())
+
+
+@users_app.command("bootstrap-admin")
+def users_bootstrap_admin(
+    username: str = typer.Option(..., "--username", help="Administrator username"),
+    display_name: str = typer.Option(..., "--display-name", help="Administrator display name"),
+    password_file: Optional[str] = typer.Option(None, "--password-file", help="File containing the administrator password"),
+    recovery: bool = typer.Option(False, "--recovery", help="Allow bootstrap when an administrator already exists"),
+):
+    """Create the initial administrator without printing or storing plaintext passwords."""
+    try:
+        store_path = _user_store_path()
+        data = _read_user_store(store_path)
+        active_admins = [user for user in data.get("users", []) if user.get("role") == "administrator" and user.get("status") == "active" and not user.get("disabled_at")]
+        if active_admins and not recovery:
+            raise ValueError("An active administrator already exists; refusing bootstrap without --recovery.")
+        if password_file:
+            password = Path(password_file).read_text(encoding="utf-8").strip()
+        else:
+            if not sys.stdin.isatty():
+                raise ValueError("Use --password-file when no interactive TTY is available.")
+            first = getpass.getpass("Administrator password: ")
+            second = getpass.getpass("Confirm administrator password: ")
+            if first != second:
+                raise ValueError("Passwords did not match.")
+            password = first
+        _validate_admin_password(password)
+        normalized = _normalize_username(username)
+        if any(user.get("username", "").lower() == normalized for user in data.get("users", [])):
+            raise ValueError("Username is already in use.")
+        now = datetime.utcnow().isoformat() + "Z"
+        user_id = f"usr_{secrets.token_hex(16)}"
+        user = {
+            "id": user_id,
+            "schema_version": "1.0.0",
+            "username": normalized,
+            "display_name": display_name.strip(),
+            "email": None,
+            "role": "administrator",
+            "password_hash": _create_scrypt_hash(password),
+            "status": "active",
+            "created_at": now,
+            "created_by": "cli-bootstrap",
+            "updated_at": now,
+            "last_login_at": None,
+            "password_changed_at": now,
+            "expires_at": None,
+            "disabled_at": None,
+            "failed_login_count": 0,
+            "locked_until": None,
+            "must_change_password": False,
+            "session_version": 1,
+            "notes": "Initial administrator bootstrap",
+            "tags": ["bootstrap"],
+        }
+        data.setdefault("users", []).append(user)
+        data.setdefault("audit_entries", []).append({"id": f"aud_{secrets.token_hex(16)}", "created_at": now, "actor": "cli-bootstrap", "action": "user.bootstrap_admin", "user_id": user_id, "metadata": {"username": normalized}})
+        _write_user_store(store_path, data)
+    except Exception as exc:
+        console.print(f"[bold red]{exc}[/bold red]")
+        sys.exit(1)
+    console.print("[bold green]Administrator created.[/bold green]")
+    console.print(f"Username: [cyan]{normalized}[/cyan]")
+    console.print(f"User ID: [cyan]{user_id}[/cyan]")
+    console.print("Password: [green]stored as hash only; plaintext was not printed[/green]")
+
+
+@runner_app.command("register")
+def runner_register(
+    url: str = typer.Option(..., "--url", help="GPU Validator base URL"),
+    node_id: str = typer.Option(..., "--node-id", help="Registered node ID"),
+    token_file: str = typer.Option(..., "--token-file", help="File containing one-time runner registration token"),
+    credential_file: str = typer.Option("runner-credential.json", "--credential-file", help="Output credential file"),
+    allow_insecure_http: bool = typer.Option(False, "--allow-insecure-http", help="Allow HTTP only for local development"),
+):
+    """Register this node runner using a token file. Secrets are not printed."""
+    from ai_validator.runner_client import detect_capabilities, post_json, read_token_file, require_safe_url, write_credential_file
+    try:
+        safe_url = require_safe_url(url, allow_insecure_http)
+        token = read_token_file(Path(token_file))
+        caps = detect_capabilities()
+        payload = post_json(f"{safe_url}", "/api/v1/runners/register", {"node_id": node_id, "token": token, "runner_version": "0.1.0", "supported_benchmark_ids": ["nccl-all-reduce", "nccl-all-gather", "nccl-reduce-scatter", "nccl-broadcast"], "capabilities": caps, **caps})
+        write_credential_file(Path(credential_file), payload["credential"], safe_url)
+    except Exception as exc:
+        secret = Path(token_file).read_text(encoding="utf-8").strip() if Path(token_file).exists() else "__never_match__"
+        console.print(f"[bold red]{str(exc).replace(secret, '[redacted]')}[/bold red]")
+        sys.exit(1)
+    console.print(f"[bold green]Runner registered.[/bold green] Credential file: [cyan]{credential_file}[/cyan]")
+
+
+@runner_app.command("status")
+def runner_status(credential_file: str = typer.Option(..., "--credential-file", help="Runner credential JSON")):
+    """Show safe local runner credential status without printing secrets."""
+    from ai_validator.runner_client import read_credential_file
+    try:
+        cred = read_credential_file(Path(credential_file))
+    except Exception as exc:
+        console.print(f"[bold red]{exc}[/bold red]")
+        sys.exit(1)
+    console.print(f"Runner ID: [cyan]{cred['runner_id']}[/cyan]")
+    console.print(f"URL: [cyan]{cred.get('url', 'unknown')}[/cyan]")
+    console.print("Credential: [green]present (redacted)[/green]")
+
+
+@runner_app.command("once")
+def runner_once(
+    url: str = typer.Option(..., "--url", help="GPU Validator base URL"),
+    credential_file: str = typer.Option(..., "--credential-file", help="Runner credential JSON"),
+    allow_insecure_http: bool = typer.Option(False, "--allow-insecure-http", help="Allow HTTP only for local development"),
+):
+    """Poll once. This safe scaffold does not execute arbitrary commands."""
+    from ai_validator.runner_client import read_credential_file, require_safe_url
+    try:
+        require_safe_url(url, allow_insecure_http)
+        cred = read_credential_file(Path(credential_file))
+    except Exception as exc:
+        console.print(f"[bold red]{exc}[/bold red]")
+        sys.exit(1)
+    console.print(f"Runner {cred['runner_id']} ready for one-shot claim polling. No arbitrary shell access is available.")
+
+
+@runner_app.command("run")
+def runner_run(
+    url: str = typer.Option(..., "--url", help="GPU Validator base URL"),
+    credential_file: str = typer.Option(..., "--credential-file", help="Runner credential JSON"),
+    poll_interval: int = typer.Option(10, "--poll-interval", min=1, help="Polling interval seconds"),
+    allow_insecure_http: bool = typer.Option(False, "--allow-insecure-http", help="Allow HTTP only for local development"),
+):
+    """Long-running runner scaffold with outbound polling only."""
+    from ai_validator.runner_client import read_credential_file, require_safe_url
+    try:
+        require_safe_url(url, allow_insecure_http)
+        cred = read_credential_file(Path(credential_file))
+    except Exception as exc:
+        console.print(f"[bold red]{exc}[/bold red]")
+        sys.exit(1)
+    console.print(f"Runner {cred['runner_id']} configured for outbound polling every {poll_interval}s. Use Ctrl-C to stop; no interactive shell is exposed.")
 
 
 @app.command()

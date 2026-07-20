@@ -67,8 +67,6 @@ export function buildAuthConfig(env: AuthEnvironment): AuthConfig {
   if (required) {
     const missing = [
       !sessionSecret ? "AI_FACTORY_SESSION_SECRET" : null,
-      !reviewerEmail ? "AI_FACTORY_REVIEWER_EMAIL" : null,
-      !passwordHash ? "AI_FACTORY_REVIEWER_PASSWORD_HASH" : null,
     ].filter(Boolean);
 
     if (missing.length > 0) {

@@ -66,20 +66,23 @@ def parse_nccl(text: str, input_file: str) -> dict[str, Any]:
         rows.append({"line": idx, "size": int(numeric[0]), "time": numeric[-4], "algbw": numeric[-3], "busbw": numeric[-2], "wrong": int(numeric[-1])})
     bus = [row["busbw"] for row in rows if row.get("busbw") is not None]
     alg = [row["algbw"] for row in rows if row.get("algbw") is not None]
+    reported_avg_bus = num((re.search(r"Avg bus bandwidth\s*:?\s*([0-9.]+)", clean, re.I) or [None, None])[1])
+    out_of_bounds = num((re.search(r"out of bounds values\s*:?\s*(\d+)", clean, re.I) or [None, None])[1])
     metrics = {
         "benchmark": (re.search(r"\b(all_reduce_perf|all_gather_perf|reduce_scatter_perf|broadcast_perf)\b", clean, re.I) or [None, "nccl_tests"])[1],
         "message_size": rows[-1]["size"] if rows else None,
         "algorithm_bandwidth": max(alg) if alg else None,
         "bus_bandwidth": max(bus) if bus else None,
-        "average_bus_bandwidth": mean(bus) if bus else None,
+        "average_bus_bandwidth": reported_avg_bus if reported_avg_bus is not None else (mean(bus) if bus else None),
         "average_algorithm_bandwidth": mean(alg) if alg else None,
         "time": rows[-1]["time"] if rows else None,
         "errors": sum(row.get("wrong", 0) for row in rows),
         "wrong_result_count": sum(row.get("wrong", 0) for row in rows),
-        "gpu_count": int(re.search(r"\b(?:nranks|ranks)\s*[:=]?\s*(\d+)", clean, re.I).group(1)) if re.search(r"\b(?:nranks|ranks)\s*[:=]?\s*(\d+)", clean, re.I) else None,
+        "out_of_bounds_count": int(out_of_bounds) if out_of_bounds is not None else None,
+        "gpu_count": int((re.search(r"\b(?:nranks|ranks)\s*[:=]?\s*(\d+)", clean, re.I) or re.search(r"\b(\d+)\s+GPU", clean, re.I) or re.search(r"\bGPUs\s*:?\s*(\d+)\s*x", clean, re.I) or [None, 0])[1]) or None,
         "node_count": int(re.search(r"\b(?:nodes|nnodes)\s*[:=]?\s*(\d+)", clean, re.I).group(1)) if re.search(r"\b(?:nodes|nnodes)\s*[:=]?\s*(\d+)", clean, re.I) else None,
         "cuda_version": (re.search(r"CUDA(?: Version)?\s*[:=]?\s*([0-9][\w.-]+)", clean, re.I) or [None, None])[1],
-        "nccl_version": (re.search(r"NCCL(?: version)?\s*[:=]?\s*([0-9][\w.-]+)", clean, re.I) or [None, None])[1],
+        "nccl_version": (re.search(r"NCCL(?: version)?\s*[:=]?\s*([0-9][\w.+-]+)", clean, re.I) or [None, None])[1],
         "transport": (re.search(r"\b(NVLink|NVL|InfiniBand|IB|RoCE|TCP|Socket)\b", clean, re.I) or [None, None])[1],
     }
     return {"metrics": metrics, "warnings": [] if rows else ["No NCCL data rows were parsed."], "tool_version": metrics["nccl_version"], "benchmark_version": metrics["nccl_version"], "lines": [row["line"] for row in rows]}

@@ -236,6 +236,21 @@
 
 - Container-aware collector improvements and real benchmark execution, with explicit safety gates and lab approval before any execution support is introduced.
 
+## Phase 3B.5 controlled benchmark execution plane and Operations Library
+
+- Added a versioned benchmark-definition registry for NCCL AllReduce/AllGather/ReduceScatter/Broadcast, NVIDIA HPL, Triton Performance Analyzer, GenAI-Perf, and DCGM Level 1 Diagnostics.
+- Added authenticated benchmark-job APIs with typed parameter validation, generated command previews, explicit approval for disruptive jobs, cancellation, expiration, claim locking, and file-backed persistence.
+- Added node-runner registration tokens with secure random plaintext shown once, persisted hashes only, revocation, and runner bearer credentials that are never returned in list/read APIs.
+- Added runner-authenticated outbound APIs for registration, heartbeat, job claim, status, bounded/redacted logs, complete, and fail. No SSH, remote shell, arbitrary commands, arbitrary env vars, or query-string secrets were added.
+- Added Python `ai-validator runner` commands for capabilities, register, status, once, and run scaffolding plus safe NCCL adapter argv generation/redaction/checksum primitives.
+- Extended NCCL parsing with a redacted real-format A100 fixture (`source_kind: redacted_real_format_fixture`) covering NCCL `2.25.1+cuda12.8`, four GPUs, zero wrong/out-of-bounds values, peak bus bandwidth `185.67 GB/s`, and reported average bus bandwidth `37.3098 GB/s` without hard-coded thresholds.
+- Added authenticated Operations Library routes for Slurm, Lustre, NVIDIA Base Command Manager, and benchmarking cheat sheets with search, category filters, safety labels, copy controls, and no command execution.
+- Added docs: `docs/BENCHMARK_EXECUTION_PLANE.md`, `docs/NODE_RUNNER.md`, and `docs/OPERATIONS_LIBRARY.md`.
+
+### Phase 3B.5 next milestone
+
+- Real Runpod runner registration, real NCCL job execution, production deployment, and executive report generation.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.

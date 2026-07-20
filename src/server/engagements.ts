@@ -170,6 +170,9 @@ interface StoreDocument {
   evidence_records: EvidenceRecord[];
   benchmark_runs: BenchmarkRun[];
   activity_entries: EngagementActivityEntry[];
+  benchmark_jobs?: any[];
+  runner_tokens?: any[];
+  node_runners?: any[];
 }
 
 export interface EngagementStoreOptions {
@@ -268,6 +271,9 @@ function validateDocument(document: StoreDocument): StoreDocument {
   const evidenceRecords = Array.isArray(document.evidence_records) ? document.evidence_records : [];
   const benchmarkRuns = Array.isArray(document.benchmark_runs) ? document.benchmark_runs : [];
   const activityEntries = Array.isArray(document.activity_entries) ? document.activity_entries : [];
+  const benchmarkJobs = Array.isArray((document as any).benchmark_jobs) ? (document as any).benchmark_jobs : [];
+  const runnerTokens = Array.isArray((document as any).runner_tokens) ? (document as any).runner_tokens : [];
+  const nodeRunners = Array.isArray((document as any).node_runners) ? (document as any).node_runners : [];
   return {
     schema_version: ENGAGEMENT_SCHEMA_VERSION,
     engagements: engagements.map((engagement) => deriveCounts({ ...engagement, schema_version: engagement.schema_version ?? ENGAGEMENT_SCHEMA_VERSION }, nodes)),
@@ -276,6 +282,9 @@ function validateDocument(document: StoreDocument): StoreDocument {
     evidence_records: evidenceRecords,
     benchmark_runs: benchmarkRuns,
     activity_entries: activityEntries,
+    benchmark_jobs: benchmarkJobs,
+    runner_tokens: runnerTokens,
+    node_runners: nodeRunners,
   };
 }
 
@@ -300,13 +309,13 @@ export class EngagementStore {
 
   read(): StoreDocument {
     if (!fs.existsSync(this.filePath)) {
-      return { schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: [], nodes: [], upload_tokens: [], evidence_records: [], benchmark_runs: [], activity_entries: [] };
+      return { schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: [], nodes: [], upload_tokens: [], evidence_records: [], benchmark_runs: [], activity_entries: [], benchmark_jobs: [], runner_tokens: [], node_runners: [] };
     }
     const parsed = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
     if (parsed.schema_version && parsed.schema_version !== ENGAGEMENT_SCHEMA_VERSION) {
       throw new Error(`Unsupported engagement store schema_version ${parsed.schema_version}`);
     }
-    return validateDocument({ schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: parsed.engagements ?? [], nodes: parsed.nodes ?? [], upload_tokens: parsed.upload_tokens ?? [], evidence_records: parsed.evidence_records ?? [], benchmark_runs: parsed.benchmark_runs ?? [], activity_entries: parsed.activity_entries ?? [] });
+    return validateDocument({ schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: parsed.engagements ?? [], nodes: parsed.nodes ?? [], upload_tokens: parsed.upload_tokens ?? [], evidence_records: parsed.evidence_records ?? [], benchmark_runs: parsed.benchmark_runs ?? [], activity_entries: parsed.activity_entries ?? [], benchmark_jobs: parsed.benchmark_jobs ?? [], runner_tokens: parsed.runner_tokens ?? [], node_runners: parsed.node_runners ?? [] });
   }
 
   write(document: StoreDocument): void {
@@ -676,6 +685,40 @@ export function registerEngagementRoutes(app: express.Express, store = new Engag
   app.get("/api/v1/engagements/:engagementId/nodes", (req, res) => {
     if (!store.getEngagement(req.params.engagementId)) return errorResponse(res, 404, "Engagement not found.");
     return res.json({ nodes: store.getNodes(req.params.engagementId) });
+  });
+
+  app.get("/api/v1/engagements/:engagementId/nodes/:nodeId/live", (req, res) => {
+    if (!store.getNode(req.params.engagementId, req.params.nodeId)) return errorResponse(res, 404, "Engagement node not found.");
+    const document: any = store.read();
+    const runners = Array.isArray(document.node_runners) ? document.node_runners : [];
+    const runner = runners.filter((item: any) => item.engagement_id === req.params.engagementId && item.node_id === req.params.nodeId).sort((left: any, right: any) => String(right.last_seen_at).localeCompare(String(left.last_seen_at)))[0];
+    const now = Date.now();
+    const onlineSeconds = Number(process.env.AI_VALIDATOR_RUNNER_ONLINE_SECONDS ?? 30);
+    const offlineSeconds = Number(process.env.AI_VALIDATOR_RUNNER_OFFLINE_SECONDS ?? 120);
+    const lastHeartbeat = runner?.last_seen_at ? new Date(runner.last_seen_at).getTime() : 0;
+    const ageSeconds = lastHeartbeat ? Math.max(0, Math.round((now - lastHeartbeat) / 1000)) : null;
+    const status = !runner ? "offline" : runner.status === "revoked" ? "revoked" : runner.status === "incompatible" ? "incompatible" : ageSeconds !== null && ageSeconds <= onlineSeconds ? "online" : ageSeconds !== null && ageSeconds <= offlineSeconds ? "stale" : "offline";
+    const caps = runner?.capabilities ?? {};
+    return res.json({ live: {
+      runner_status: status,
+      last_heartbeat: runner?.last_seen_at ?? null,
+      current_utc_timestamp: new Date(now).toISOString(),
+      configured_thresholds: { online_seconds: onlineSeconds, stale_after_seconds: onlineSeconds, offline_after_seconds: offlineSeconds },
+      gpu_count: caps.gpu_count ?? runner?.gpu_count ?? null,
+      gpu_model: caps.gpu_model ?? null,
+      driver: caps.nvidia_driver ?? caps.driver_version ?? null,
+      cuda: caps.cuda_runtime ?? caps.cuda_version ?? null,
+      gpu_utilization_percentages: caps.gpu_utilization_percentages ?? null,
+      memory_used_total: caps.memory_used_total ?? null,
+      gpu_temperature_celsius: caps.gpu_temperature_celsius ?? null,
+      gpu_power_watts: caps.gpu_power_watts ?? null,
+      ecc_summary: caps.ecc_summary ?? null,
+      nvlink_state: caps.nvlink_state ?? caps.nvlink_available ?? null,
+      active_benchmark_job: caps.active_job_id ?? null,
+      current_job_phase: caps.current_job_phase ?? null,
+      data_freshness_seconds: ageSeconds,
+      warnings: status === "online" ? [] : ["Runner telemetry is not current; nullable metrics must not be interpreted as zero."],
+    } });
   });
 
   app.post("/api/v1/engagements/:engagementId/archive", (req, res) => {

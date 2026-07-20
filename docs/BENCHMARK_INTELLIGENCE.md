@@ -1,6 +1,6 @@
 # Benchmark intelligence
 
-GPU Validator imports benchmark output files that already exist. It does not perform remote execution, SSH, package installation, benchmark launch, GPU stress testing, or MLPerf compliance certification.
+GPU Validator imports benchmark output files that already exist. Phase 3B.5 also adds a controlled execution plane for allowlisted benchmark jobs and outbound node runners; runner-completed output is still imported through this benchmark intelligence layer. The system does not perform SSH orchestration, arbitrary remote execution, package installation, or MLPerf compliance certification. See `docs/BENCHMARK_EXECUTION_PLANE.md` and `docs/NODE_RUNNER.md` for execution boundaries.
 
 ## Architecture
 
@@ -202,10 +202,12 @@ Simulated fixtures live in `sample-data/benchmarks/`:
 
 All are marked `simulated=true` and are demonstration-only.
 
+`redacted-real-nccl-all-reduce.txt` is marked `source_kind: redacted_real_format_fixture`. It preserves real NCCL output structure for parser regression coverage while redacting hostnames/UUIDs. It is not itself a live execution artifact and must not be claimed as customer evidence.
+
 ## Current limitations
 
 - File-backed persistence remains the current store.
-- No benchmark execution or scheduling is implemented.
+- Controlled benchmark job creation, runner registration, claim/status/log/complete APIs, and mocked single-node lifecycle are implemented in the execution plane. Full real runner execution remains the next milestone.
 - No SSH or remote orchestration is implemented.
 - No official MLPerf compliance claim is made.
 - Parser coverage is conservative and should be expanded with customer-approved real benchmark artifacts.

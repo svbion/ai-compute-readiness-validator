@@ -67,6 +67,8 @@ Node fields:
 
 Raw sensitive hardware identifiers are not shown in the portal. The node fingerprint field is reserved for future sanitized correlation.
 
+Benchmark jobs, runner tokens, and node runners are persisted in the same file-backed store with server-owned lifecycle fields. Clients cannot directly write runner claim times, result IDs, approval fields, or calculated job lifecycle fields. See `docs/BENCHMARK_EXECUTION_PLANE.md` for the BenchmarkJob and node-runner models.
+
 ## Platform profiles
 
 Initial supported platform profiles:
@@ -158,6 +160,18 @@ The current application uses lightweight file-backed persistence rather than a d
 Future schema changes should add explicit migration logic keyed by `schema_version` before accepting or rewriting older stores.
 
 ## API endpoints
+
+Phase 3B.5 adds engagement-scoped benchmark-job and runner-token endpoints:
+
+- `POST /api/v1/engagements/{engagement_id}/benchmark-jobs`
+- `GET /api/v1/engagements/{engagement_id}/benchmark-jobs`
+- `GET /api/v1/engagements/{engagement_id}/benchmark-jobs/{job_id}`
+- `POST /api/v1/engagements/{engagement_id}/benchmark-jobs/{job_id}/approve`
+- `POST /api/v1/engagements/{engagement_id}/benchmark-jobs/{job_id}/cancel`
+- `POST /api/v1/engagements/{engagement_id}/nodes/{node_id}/runner-tokens`
+- `POST /api/v1/engagements/{engagement_id}/nodes/{node_id}/runner-tokens/{token_id}/revoke`
+
+All administrative endpoints require reviewer/admin authentication.
 
 All engagement APIs are authenticated by the existing reviewer/admin access middleware. There is no public unauthenticated engagement enumeration.
 

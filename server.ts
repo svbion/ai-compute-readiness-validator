@@ -13,6 +13,8 @@ import { EngagementStore, registerEngagementRoutes } from "./src/server/engageme
 import { registerEvidenceRoutes } from "./src/server/evidence";
 import { registerIntelligenceRoutes } from "./src/server/intelligence";
 import { registerBenchmarkRoutes } from "./src/server/benchmarks";
+import { registerExecutionRoutes } from "./src/server/execution";
+import { registerUserRoutes, UserStore, type PublicUser } from "./src/server/users";
 
 const repoRoot = process.cwd();
 const artifactsDir = path.join(repoRoot, "artifacts");
@@ -21,6 +23,11 @@ const sessionCookieName = "ai_factory_session";
 
 type SessionRecord = {
   email: string;
+  username: string;
+  role: "administrator" | "reviewer" | "temporary_reviewer";
+  displayName: string;
+  userId: string;
+  sessionVersion: number;
   createdAt: number;
   lastSeenAt: number;
 };
@@ -61,6 +68,10 @@ function isPublicRoute(pathname: string): boolean {
 
 function isUploadTokenRoute(pathname: string): boolean {
   return pathname === "/api/v1/evidence/uploads" || pathname === "/api/v1/benchmarks/upload";
+}
+
+function isRunnerRoute(pathname: string): boolean {
+  return pathname.startsWith("/api/v1/runners/");
 }
 
 function firstExistingPath(candidates: string[]): string | null {
@@ -148,6 +159,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
   const authConfig = buildAuthConfig(process.env);
   const mountFrontend = options.mountFrontend ?? true;
   const engagementStore = new EngagementStore();
+  const userStore = new UserStore();
 
   app.use(express.json());
 
@@ -161,12 +173,12 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
 
   const getSession = (req: express.Request): SessionRecord | null => {
     if (!authConfig.required) {
-      return { email: "local-development", createdAt: Date.now(), lastSeenAt: Date.now() };
+      return { email: "local-development", username: "local-development", role: "administrator", displayName: "Local Development", userId: "local-development", sessionVersion: 1, createdAt: Date.now(), lastSeenAt: Date.now() };
     }
     if (!authConfig.sessionSecret) return null;
 
     if (authConfig.testBypassToken && req.get("x-ai-factory-test-auth") === authConfig.testBypassToken) {
-      return { email: "deployment-test-reviewer", createdAt: Date.now(), lastSeenAt: Date.now() };
+      return { email: "deployment-test-reviewer", username: "deployment-test-admin", role: "administrator", displayName: "Deployment Test Admin", userId: "deployment-test-admin", sessionVersion: 1, createdAt: Date.now(), lastSeenAt: Date.now() };
     }
 
     const cookies = parseCookies(req.headers.cookie);
@@ -182,9 +194,29 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
       return null;
     }
 
+    if (userStore.hasUsers()) {
+      const user = userStore.getUser(session.userId);
+      if (!user || user.status !== "active" || user.session_version !== session.sessionVersion) {
+        sessions.delete(sessionId);
+        return null;
+      }
+    }
+
     session.lastSeenAt = now;
     sessions.set(sessionId, session);
     return session;
+  };
+
+  const attachSessionUser = (req: express.Request, session: SessionRecord) => {
+    (req as any).authUser = {
+      id: session.userId,
+      username: session.username,
+      display_name: session.displayName,
+      email: session.email,
+      role: session.role,
+      status: "active",
+      session_version: session.sessionVersion,
+    } satisfies Partial<PublicUser>;
   };
 
   app.get("/api/auth/session", (req, res) => {
@@ -192,7 +224,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
     if (!session) {
       return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
     }
-    return res.json({ authenticated: true, email: session.email });
+    return res.json({ authenticated: true, user: { id: session.userId, username: session.username, display_name: session.displayName, email: session.email, role: session.role } });
   });
 
   app.post("/api/auth/login", (req, res) => {
@@ -200,7 +232,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
       return res.json({ authenticated: true, localDevelopment: true });
     }
 
-    const email = String(req.body?.email ?? "").trim().toLowerCase();
+    const email = String(req.body?.email ?? req.body?.username ?? "").trim().toLowerCase();
     const password = String(req.body?.password ?? "");
     const attemptKey = `${req.ip}:${email}`;
     const now = Date.now();
@@ -214,6 +246,27 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
       attempt.count = 0;
       attempt.windowStartedAt = now;
       attempt.lockedUntil = 0;
+    }
+
+    if (userStore.hasUsers()) {
+      const auth = userStore.authenticate(email, password);
+      if (!auth.ok) {
+        attempt.count += 1;
+        if (attempt.count >= 5) attempt.lockedUntil = now + 15 * 60 * 1000;
+        loginAttempts.set(attemptKey, attempt);
+        const failedReason = (auth as { ok: false; reason: "invalid" | "disabled" | "expired" | "locked" }).reason;
+        const reason = failedReason === "locked" ? "account-locked" : failedReason === "disabled" ? "account-disabled" : failedReason === "expired" ? "account-expired" : "invalid-credentials";
+        return res.status(reason === "account-locked" ? 423 : 401).json({ error: "Invalid email or password", reason });
+      }
+
+      loginAttempts.delete(attemptKey);
+      const sessionId = createSessionId();
+      sessions.set(sessionId, { email: auth.user.email ?? auth.user.username, username: auth.user.username, role: auth.user.role, displayName: auth.user.display_name, userId: auth.user.id, sessionVersion: auth.session_version, createdAt: now, lastSeenAt: now });
+      res.setHeader("Set-Cookie", buildCookie(sessionCookieName, signSessionId(sessionId, authConfig.sessionSecret), {
+        maxAge: authConfig.sessionTtlSeconds,
+        secure: authConfig.cookieSecure,
+      }));
+      return res.json({ authenticated: true, user: { id: auth.user.id, username: auth.user.username, display_name: auth.user.display_name, email: auth.user.email, role: auth.user.role } });
     }
 
     const validEmail = email === authConfig.reviewerEmail;
@@ -230,7 +283,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
 
     loginAttempts.delete(attemptKey);
     const sessionId = createSessionId();
-    sessions.set(sessionId, { email, createdAt: now, lastSeenAt: now });
+    sessions.set(sessionId, { email, username: email, role: "reviewer", displayName: "Reviewer", userId: "env-reviewer", sessionVersion: 1, createdAt: now, lastSeenAt: now });
     res.setHeader("Set-Cookie", buildCookie(sessionCookieName, signSessionId(sessionId, authConfig.sessionSecret), {
       maxAge: authConfig.sessionTtlSeconds,
       secure: authConfig.cookieSecure,
@@ -252,9 +305,13 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
     if (!authConfig.required) return next();
     if (isPublicRoute(req.path)) return next();
     if (isUploadTokenRoute(req.path)) return next();
+    if (isRunnerRoute(req.path)) return next();
 
     const session = getSession(req);
-    if (session) return next();
+    if (session) {
+      attachSessionUser(req, session);
+      return next();
+    }
 
     if (req.path.startsWith("/api/") || req.path.startsWith("/reports/")) {
       return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
@@ -268,8 +325,10 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
   });
 
   registerEngagementRoutes(app, engagementStore);
+  registerUserRoutes(app, userStore);
   registerEvidenceRoutes(app, engagementStore);
   registerBenchmarkRoutes(app, engagementStore);
+  registerExecutionRoutes(app, engagementStore);
   registerIntelligenceRoutes(app, engagementStore);
 
   // 1. API: Get validation results by scenario or live source

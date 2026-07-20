@@ -127,20 +127,23 @@ export function parseNcclText(text: string, inputFile = "uploaded benchmark"): P
   const busValues = dataRows.map((row) => row.busbw).filter((value): value is number => value !== null);
   const algValues = dataRows.map((row) => row.algbw).filter((value): value is number => value !== null);
   const wrong = dataRows.reduce((sum, row) => sum + (row.wrong ?? 0), 0);
+  const reportedAverageBusBandwidth = numberOrNull(clean.match(/Avg bus bandwidth\s*:?\s*([0-9.]+)/i)?.[1]);
+  const outOfBounds = numberOrNull(clean.match(/out of bounds values\s*:?\s*(\d+)/i)?.[1]);
   const metrics: Record<string, unknown> = {
     benchmark: detectNcclOp(clean) ?? "nccl_tests",
     message_size: dataRows.at(-1)?.size ?? null,
     algorithm_bandwidth: algValues.length ? Math.max(...algValues) : null,
     bus_bandwidth: busValues.length ? Math.max(...busValues) : null,
-    average_bus_bandwidth: busValues.length ? busValues.reduce((sum, value) => sum + value, 0) / busValues.length : null,
+    average_bus_bandwidth: reportedAverageBusBandwidth ?? (busValues.length ? busValues.reduce((sum, value) => sum + value, 0) / busValues.length : null),
     average_algorithm_bandwidth: algValues.length ? algValues.reduce((sum, value) => sum + value, 0) / algValues.length : null,
     time: dataRows.at(-1)?.time ?? null,
     errors: wrong,
     wrong_result_count: wrong,
-    gpu_count: numberOrNull(clean.match(/\b(?:nranks|nRanks|ranks)\s*[:=]?\s*(\d+)/i)?.[1]) ?? numberOrNull(clean.match(/\b(\d+)\s+GPU(?:s)?\b/i)?.[1]),
+    out_of_bounds_count: outOfBounds,
+    gpu_count: numberOrNull(clean.match(/\b(?:nranks|nRanks|ranks)\s*[:=]?\s*(\d+)/i)?.[1]) ?? numberOrNull(clean.match(/\b(\d+)\s+GPU(?:s)?\b/i)?.[1]) ?? numberOrNull(clean.match(/\bGPUs\s*:?\s*(\d+)\s*x/i)?.[1]),
     node_count: numberOrNull(clean.match(/\b(?:nodes|nnodes)\s*[:=]?\s*(\d+)/i)?.[1]),
     cuda_version: clean.match(/CUDA(?: Version)?\s*[:=]?\s*([0-9][\w.\-]+)/i)?.[1] ?? null,
-    nccl_version: clean.match(/NCCL(?: version)?\s*[:=]?\s*([0-9][\w.\-]+)/i)?.[1] ?? null,
+    nccl_version: clean.match(/NCCL(?: version)?\s*[:=]?\s*([0-9][\w.+\-]+)/i)?.[1] ?? null,
     transport: clean.match(/\b(NVLink|NVL|InfiniBand|IB|RoCE|TCP|Socket)\b/i)?.[1] ?? null,
   };
   return { benchmark_type: "nccl", benchmark_version: metrics.nccl_version as string | null, tool_version: metrics.nccl_version as string | null, collected_at: isoFromMaybe(clean.match(/(?:collected_at|date)\s*[:=]\s*(.+)/i)?.[1]), warnings, metrics, provenance: lineProv(inputFile, "nccl", resultLineNumbers, false) };

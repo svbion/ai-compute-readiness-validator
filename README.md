@@ -89,6 +89,9 @@ ai-validator upload --bundle node01-evidence.tar.gz --url https://gpuvalidator.c
 ai-validator benchmark import --type nccl --input all_reduce.txt
 ai-validator benchmark import --type hpl --input hpl.txt
 ai-validator benchmark import --type triton --input perf.csv
+ai-validator runner capabilities
+ai-validator runner register --url https://gpuvalidator.com --node-id <node-id> --token-file /secure/path/runner-token.txt --credential-file /secure/path/runner-credential.json
+ai-validator runner once --url https://gpuvalidator.com --credential-file /secure/path/runner-credential.json
 ai-validator demo --scenario healthy --output-dir artifacts
 ai-validator demo --scenario degraded --output-dir artifacts
 ai-validator report --input artifacts/degraded-results.json --output-dir artifacts/regenerated
@@ -99,6 +102,8 @@ ai-validator report --input artifacts/degraded-results.json --output-dir artifac
 `ai-validator bundle` packages a validated collector directory into a deterministic `.tar.gz` archive. `ai-validator upload` sends that archive outbound over HTTPS using a scoped upload bearer token from `--token-file` or `GPU_VALIDATOR_UPLOAD_TOKEN`; it never accepts plaintext tokens on the command line. See `docs/EVIDENCE_INGESTION.md` for token lifecycle, archive validation, storage layout, duplicate behavior, and portal workflow.
 
 `ai-validator benchmark import` parses existing NCCL Tests, NVIDIA HPL, Triton Performance Analyzer, and GenAI-Perf output files into versioned benchmark records. It imports files only; it does not run benchmarks, install benchmark software, use SSH, or claim MLPerf compliance. See `docs/BENCHMARK_INTELLIGENCE.md` for supported formats, metrics, configurable thresholds, findings, readiness, provenance, and demo fixtures.
+
+`ai-validator runner` provides outbound node-runner registration/capability/status scaffolding for the controlled benchmark execution plane. Runner tokens and credentials come from files, HTTPS is required by default, and the runner exposes no interactive shell. See `docs/NODE_RUNNER.md` and `docs/BENCHMARK_EXECUTION_PLANE.md`.
 
 Demo runs emit both rolling and scenario-specific artifacts:
 - `latest-results.json`, `latest-report.html`, `latest-report.md`
@@ -124,6 +129,10 @@ Portal API behavior:
 - `POST /api/v1/evidence/uploads` accepts token-authenticated outbound collector `.tar.gz` uploads and rejects unsafe, expired, duplicate, or malformed uploads
 - `POST /api/v1/benchmarks/upload` accepts token-authenticated existing benchmark output files and stores them separately from infrastructure evidence
 - `GET /api/v1/engagements/:engagementId/benchmarks` lists imported benchmark runs and benchmark findings
+- `GET /api/v1/benchmark-definitions` lists the allowlisted benchmark catalog
+- authenticated `/api/v1/engagements/:engagementId/benchmark-jobs*` routes create, approve, cancel, and inspect controlled benchmark jobs
+- authenticated `/api/v1/engagements/:engagementId/nodes/:nodeId/runner-tokens*` routes create/revoke node-scoped runner registration tokens
+- runner bearer-authenticated `/api/v1/runners/*` routes register, heartbeat, claim jobs, stream bounded logs, and complete/fail jobs
 - `GET /api/v1/engagements/:engagementId/comparison|findings|readiness` evaluates accepted evidence into parsed facts, cluster comparison, rule-based findings, readiness score, and acceptance decision
 - `GET /api/v1/engagements/:engagementId/evidence/:evidenceId/provenance` returns scoped parsed-value provenance without raw storage paths or raw file contents
 - `POST /api/run-scenario` intentionally returns `405`; the reviewer portal is read-only and scenario/live evidence generation remains an administrator-side CLI workflow
@@ -147,6 +156,7 @@ Then walk through:
 4. the NVIS simulated demo engagement fixture, clearly labeled `SIMULATED DEMO`
 5. report links for HTML, Markdown, and JSON evidence
 6. benchmark cards for NCCL, HPL, and inference imports with provenance links
+7. `/portal/library` for Slurm, Lustre, NVIDIA Base Command Manager, and benchmarking cheat sheets
 
 Engagement demo flow:
 

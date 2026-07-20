@@ -43,6 +43,17 @@ def test_malformed_and_missing_metrics_are_rejected(tmp_path: Path) -> None:
     assert run.warnings
 
 
+def test_redacted_real_format_nccl_fixture_parses_without_thresholds() -> None:
+    fixture = Path("sample-data/benchmarks/redacted-real-nccl-all-reduce.txt")
+    run = parse_benchmark_file("nccl", fixture, simulated=False)
+    assert run.metrics["nccl_version"] == "2.25.1+cuda12.8"
+    assert run.metrics["gpu_count"] == 4
+    assert run.metrics["wrong_result_count"] == 0
+    assert run.metrics["out_of_bounds_count"] == 0
+    assert run.metrics["bus_bandwidth"] == 185.67
+    assert run.metrics["average_bus_bandwidth"] == 37.3098
+
+
 def test_cli_benchmark_import_persists_versioned_record(tmp_path: Path) -> None:
     input_file = tmp_path / "hpl.txt"
     input_file.write_text("WR11R2C4      143360   288     4     4            1543.20          1.2754e+06\nPASSED\n", encoding="utf-8")
