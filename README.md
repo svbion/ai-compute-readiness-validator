@@ -270,6 +270,8 @@ GPUValidator redesign preparation artifacts live in:
 - `docs/DESIGN_SYSTEM.md` — permanent visual-system rules and anti-patterns
 - `docs/PRODUCT_SITEMAP.md` — intended product hierarchy and route architecture
 - `docs/REDESIGN_IMPLEMENTATION_PLAN.md` — page-by-page redesign migration plan
+- `docs/REDESIGN_CURRENT_STATE.md` — current implementation audit before visual changes
+- `docs/REDESIGN_CHANGELOG.md` — phase-by-phase redesign implementation record
 - `design/README.md` — reference-image library and screenshot workflow
 - `design/manifests/reference-images.json` — normalized reference image inventory
 - `design/manifests/routes.json` — machine-readable intended route map

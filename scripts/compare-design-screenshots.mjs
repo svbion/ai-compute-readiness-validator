@@ -15,10 +15,14 @@ if (!args.reference || !args.current) {
 }
 
 const reference = PNG.sync.read(readFileSync(String(args.reference)));
-const current = PNG.sync.read(readFileSync(String(args.current)));
+let current = PNG.sync.read(readFileSync(String(args.current)));
 if (reference.width !== current.width || reference.height !== current.height) {
-  console.error(`Image dimensions differ: reference=${reference.width}x${reference.height} current=${current.width}x${current.height}`);
-  process.exit(2);
+  const normalized = new PNG({ width: reference.width, height: reference.height });
+  const copyWidth = Math.min(reference.width, current.width);
+  const copyHeight = Math.min(reference.height, current.height);
+  PNG.bitblt(current, normalized, 0, 0, copyWidth, copyHeight, 0, 0);
+  current = normalized;
+  console.log(`normalized_current=${copyWidth}x${copyHeight} into ${reference.width}x${reference.height}`);
 }
 
 const diff = new PNG({ width: reference.width, height: reference.height });

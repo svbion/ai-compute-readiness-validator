@@ -397,39 +397,148 @@ const toneClasses: Record<"healthy" | "warning" | "critical" | "neutral", string
   neutral: "border-slate-700 bg-slate-900 text-slate-300",
 };
 
+type ShellNavItem = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  match?: (path: string) => boolean;
+};
+
+type ShellNavGroup = {
+  title: string;
+  items: ShellNavItem[];
+};
+
+function AppLogo() {
+  return (
+    <a href="/portal" className="flex items-center gap-3" aria-label="GPU Validator dashboard">
+      <span className="gv-logo-mark" aria-hidden="true">
+        <Activity className="h-5 w-5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block font-display text-[1.05rem] font-bold tracking-tight text-[var(--gv-text-primary)]">GPU<span className="text-[var(--gv-accent-hover)]">VALIDATOR</span></span>
+        <span className="block truncate text-[10px] font-mono uppercase tracking-[0.22em] text-[var(--gv-text-faint)]">AI infrastructure ops</span>
+      </span>
+    </a>
+  );
+}
+
+const shellNavGroups: ShellNavGroup[] = [
+  {
+    title: "Overview",
+    items: [
+      { label: "Dashboard", href: "/portal", icon: Activity, match: (path) => path === "/portal" },
+    ],
+  },
+  {
+    title: "Infrastructure",
+    items: [
+      { label: "Clusters", href: "/portal/engagements", icon: Server, match: (path) => path.startsWith("/portal/engagements") },
+      { label: "GPUs", href: "/portal/engagements", icon: Cpu, match: () => false },
+      { label: "Fabric", href: "/portal", icon: Network, match: () => false },
+      { label: "Library", href: "/portal/library", icon: Layers, match: (path) => path.startsWith("/portal/library") },
+    ],
+  },
+  {
+    title: "Operations",
+    items: [
+      { label: "Validation", href: "/portal", icon: ShieldCheck, match: () => false },
+      { label: "Benchmarks", href: "/portal", icon: Gauge, match: () => false },
+      { label: "Monitoring", href: "/portal/admin/system", icon: Waypoints, match: (path) => path === "/portal/admin/system" },
+      { label: "Alerts", href: "/portal", icon: AlertTriangle, match: () => false },
+    ],
+  },
+  {
+    title: "Insights",
+    items: [
+      { label: "Reports", href: "/portal", icon: FileText, match: () => false },
+      { label: "Runbooks", href: "/portal/library", icon: FileJson, match: () => false },
+    ],
+  },
+  {
+    title: "Administration",
+    items: [
+      { label: "Users", href: "/portal/admin/users", icon: User, match: (path) => path.startsWith("/portal/admin/users") },
+      { label: "Interview Demo", href: "/portal/admin/demo", icon: Sparkles, match: (path) => path === "/portal/admin/demo" },
+      { label: "System Health", href: "/portal/admin/system", icon: ShieldAlert, match: (path) => path === "/portal/admin/system" },
+    ],
+  },
+];
+
 function EngagementShell({ children }: { children: React.ReactNode }) {
+  const pathName = window.location.pathname;
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     window.location.assign("/login");
   };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans antialiased selection:bg-emerald-500/25 selection:text-emerald-200">
-      <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
-          <a href="/portal/engagements" className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10">
-              <Activity className="h-5 w-5 text-emerald-300" />
-            </span>
-            <span>
-              <span className="block font-display text-xl font-semibold text-slate-50">GPU Validator</span>
-              <span className="block text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Validation engagements</span>
-            </span>
-          </a>
-          <nav aria-label="Portal navigation" className="flex flex-wrap items-center gap-2 text-sm">
-            <a href="/portal" className="rounded-full px-3 py-2 text-slate-300 hover:bg-slate-900 hover:text-emerald-300">Classic portal</a>
-            <a href="/portal/engagements" className="rounded-full px-3 py-2 text-slate-300 hover:bg-slate-900 hover:text-emerald-300">Engagements</a>
-            <a href="/portal/library" className="rounded-full px-3 py-2 text-slate-300 hover:bg-slate-900 hover:text-emerald-300">Operations Library</a>
-            <a href="/portal/admin/users" className="rounded-full px-3 py-2 text-slate-300 hover:bg-slate-900 hover:text-emerald-300">User administration</a>
-            <a href="/portal/admin/demo" className="rounded-full px-3 py-2 text-slate-300 hover:bg-slate-900 hover:text-emerald-300">Interview demo</a>
-            <a href="/portal/admin/system" className="rounded-full px-3 py-2 text-slate-300 hover:bg-slate-900 hover:text-emerald-300">System health</a>
-            <a href="/portal/engagements/new" className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400">
-              <Plus className="h-4 w-4" /> New engagement
-            </a>
-            <button onClick={logout} className="rounded-full border border-slate-800 px-3 py-2 text-slate-300 hover:border-emerald-500/40 hover:text-emerald-300">Logout</button>
-          </nav>
+    <div className="gv-app-shell min-h-screen text-[var(--gv-text-secondary)] font-sans antialiased selection:bg-emerald-500/25 selection:text-emerald-200">
+      <aside className="gv-sidebar" aria-label="Primary navigation">
+        <div className="gv-sidebar-brand">
+          <AppLogo />
         </div>
-      </header>
-      <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+        <nav className="gv-sidebar-nav">
+          {shellNavGroups.map((group) => (
+            <section key={group.title} className="gv-nav-section" aria-labelledby={`nav-${group.title.toLowerCase().replace(/\s+/g, "-")}`}>
+              <h2 id={`nav-${group.title.toLowerCase().replace(/\s+/g, "-")}`} className="gv-nav-section-title">{group.title}</h2>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const active = item.match?.(pathName) ?? pathName === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <a key={`${group.title}-${item.label}`} href={item.href} aria-current={active ? "page" : undefined} className={`gv-nav-item ${active ? "gv-nav-item-active" : ""}`}>
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                      {item.label === "Alerts" && <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">6</span>}
+                    </a>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </nav>
+        <div className="gv-sidebar-status">
+          <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--gv-text-faint)]">Platform Status</div>
+          {["API", "Storage", "Agents"].map((item) => (
+            <div key={item} className="mt-3 flex items-center justify-between gap-3 text-xs">
+              <span className="text-[var(--gv-text-muted)]">{item}</span>
+              <span className="text-[var(--gv-accent-hover)]">Operational</span>
+            </div>
+          ))}
+          <a href="/portal/admin/system" className="mt-4 inline-flex w-full justify-center rounded-xl border border-[var(--gv-border-highlight)] px-3 py-2 text-xs font-semibold text-[var(--gv-accent-hover)] hover:bg-[var(--gv-accent-muted)]">System status</a>
+        </div>
+      </aside>
+
+      <div className="gv-shell-main">
+        <header className="gv-topbar">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="hidden lg:block">
+              <label htmlFor="global-cluster" className="mb-1 block text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--gv-text-faint)]">Global Cluster</label>
+              <select id="global-cluster" className="gv-select h-9 min-w-[190px] text-xs" defaultValue="all">
+                <option value="all">All validation scopes</option>
+                <option value="demo">Simulated demo data</option>
+              </select>
+            </div>
+          </div>
+          <label className="gv-global-search hidden md:flex">
+            <Search className="h-4 w-4 text-[var(--gv-text-muted)]" />
+            <span className="sr-only">Global search</span>
+            <input aria-label="Global search" placeholder="Search systems, GPUs, benchmarks..." className="min-w-0 flex-1 bg-transparent text-sm text-[var(--gv-text-secondary)] outline-none placeholder:text-[var(--gv-text-faint)]" />
+            <span className="rounded-md border border-[var(--gv-border-default)] px-1.5 py-0.5 text-[10px] text-[var(--gv-text-faint)]">⌘K</span>
+          </label>
+          <div className="ml-auto flex items-center gap-2">
+            <a href="/portal/admin/system" className="gv-topbar-icon" aria-label="View notifications and system health"><AlertTriangle className="h-4 w-4" /><span className="gv-notification-dot">6</span></a>
+            <a href="/portal/admin/system" className="gv-topbar-icon" aria-label="Security and platform health"><ShieldCheck className="h-4 w-4" /></a>
+            <a href="/portal/admin/users" className="hidden items-center gap-2 rounded-full border border-[var(--gv-border-default)] bg-[var(--gv-bg-card)] px-2 py-1.5 sm:flex">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-xs font-semibold text-white">GV</span>
+              <span className="hidden text-left text-xs leading-tight lg:block"><span className="block text-[var(--gv-text-primary)]">Reviewer</span><span className="block text-[var(--gv-text-faint)]">Session</span></span>
+            </a>
+            <button onClick={logout} className="gv-button-secondary py-2 text-xs"><LogOut className="h-3.5 w-3.5" /> Logout</button>
+          </div>
+        </header>
+        <main className="gv-content">{children}</main>
+      </div>
     </div>
   );
 }
@@ -925,144 +1034,74 @@ function PortalApp() {
     }));
   };
 
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-    window.location.assign("/login");
-  };
-
   if (window.location.pathname === "/login") {
     return <LoginPage />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans antialiased selection:bg-emerald-500/25 selection:text-emerald-200">
-      <header className="border-b border-slate-800/80 bg-slate-950/85 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col gap-5">
-          <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5">
-            <div className="space-y-3 max-w-3xl">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-emerald-500/12 border border-emerald-500/25 flex items-center justify-center shadow-[0_0_25px_rgba(118,185,0,0.08)]">
-                  <Activity className="h-6 w-6 text-emerald-400" />
-                </div>
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-slate-50">
-                      GPU Validator
-                    </h1>
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/25 text-emerald-300">
-                      AI Factory Readiness Portal
-                    </span>
-                    {simulated && (
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-slate-900 border border-slate-700 text-slate-300">
-                        Simulated scenario
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-2 text-sm md:text-base text-slate-300 leading-relaxed">
-                    AI Compute Infrastructure Validation and Customer Acceptance.
-                  </p>
-                </div>
+    <EngagementShell>
+      <section className="gv-page-header">
+        <div className="min-w-0">
+          <div className="gv-eyebrow">Overview</div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--gv-text-primary)] md:text-4xl">GPU Validator</h1>
+            <span className="gv-badge gv-badge-success">AI Factory Readiness Portal</span>
+            {simulated && <span className="gv-badge gv-badge-neutral">Simulated scenario</span>}
+          </div>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--gv-text-muted)] md:text-base">AI Compute Infrastructure Validation and Customer Acceptance.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {scopeBadges.map((item) => <span key={item} className="gv-badge gv-badge-neutral">{item}</span>)}
+          </div>
+          <p className="mt-4 text-sm text-[var(--gv-text-faint)]">Target profiles: DGX-class systems • HGX-based systems • OEM GPU platforms</p>
+        </div>
+        <div className="grid gap-3 lg:min-w-[380px]">
+          <div className="gv-card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="gv-eyebrow text-[var(--gv-text-faint)]">Scenario controls</div>
+                <div className="mt-1 text-sm text-[var(--gv-text-secondary)]">Current scenario: {scenarioMetadata[selectedScenario].label}</div>
               </div>
-
-              <div className="flex flex-wrap gap-2">
-                {scopeBadges.map((item) => (
-                  <span
-                    key={item}
-                    className="px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-slate-900/80 border border-slate-800 text-slate-300"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap gap-3 text-sm text-slate-400">
-                <span>Target profiles: DGX-class systems • HGX-based systems • OEM GPU platforms</span>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="inline-flex items-center gap-1 rounded-full border border-slate-800 px-3 py-1 text-xs text-slate-300 transition hover:border-emerald-500/40 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  Logout
-                </button>
+              <div className="flex gap-2 rounded-xl border border-[var(--gv-border-default)] bg-[var(--gv-bg-canvas)] p-1">
+                {(["healthy", "degraded"] as const).map((scenario) => {
+                  const active = scenario === selectedScenario;
+                  return (
+                    <button
+                      key={scenario}
+                      onClick={() => selectSimulatedScenario(scenario)}
+                      disabled={loading}
+                      className={`rounded-lg border px-3.5 py-2 text-xs font-mono uppercase tracking-wider transition ${active ? scenario === "healthy" ? "border-emerald-500/25 bg-emerald-500/12 text-emerald-300" : "border-red-500/25 bg-red-500/12 text-red-300" : "border-transparent text-slate-400 hover:text-slate-200"}`}
+                    >
+                      {scenarioMetadata[scenario].shortLabel}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-
-            <div className="xl:min-w-[360px] space-y-3">
-              <div className="cyber-panel rounded-2xl border border-slate-800/80 p-3.5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">Scenario controls</div>
-                    <div className="mt-1 text-sm text-slate-300">Current scenario: {scenarioMetadata[selectedScenario].label}</div>
-                  </div>
-                  <div className="flex gap-2 rounded-xl border border-slate-800 bg-slate-950/70 p-1">
-                    {(["healthy", "degraded"] as const).map((scenario) => {
-                      const active = scenario === selectedScenario;
-                      return (
-                        <button
-                          key={scenario}
-                          onClick={() => selectSimulatedScenario(scenario)}
-                          disabled={loading}
-                          className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition cursor-pointer ${
-                            active
-                              ? scenario === "healthy"
-                                ? "bg-emerald-500/12 border border-emerald-500/25 text-emerald-300"
-                                : "bg-red-500/12 border border-red-500/25 text-red-300"
-                              : "text-slate-400 border border-transparent hover:text-slate-200"
-                          }`}
-                        >
-                          {scenarioMetadata[scenario].shortLabel}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="mt-3 grid gap-3">
-                  <div className="text-xs text-slate-400 leading-relaxed">
-                    {scenarioMetadata[selectedScenario].description}
-                  </div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/55 px-3 py-2 text-xs leading-relaxed text-slate-400">
-                    Reviewer portal is read-only. Scenario artifacts are generated by administrator-side CLI workflows, not from the public reviewer surface.
-                  </div>
-                </div>
-              </div>
-
-              <div className="cyber-panel rounded-2xl border border-slate-800/80 p-3.5">
-                <label htmlFor="evidence-source" className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
-                  Evidence source
-                </label>
-                <select
-                  id="evidence-source"
-                  value={selectedSourceId}
-                  disabled={loading}
-                  onChange={(event) => {
-                    const nextSource = evidenceSources.find((source) => source.id === event.target.value);
-                    setSelectedSourceId(event.target.value);
-                    if (nextSource?.id === "simulated-healthy") setSelectedScenario("healthy");
-                    if (nextSource?.id === "simulated-degraded") setSelectedScenario("degraded");
-                  }}
-                  className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10"
-                >
-                  {evidenceSources.map((source) => (
-                    <option key={source.id} value={source.id}>{source.label}</option>
-                  ))}
-                </select>
-                <p className="mt-2 text-xs leading-relaxed text-slate-400">
-                  {selectedSource.description ?? "Only valid live artifacts are listed; simulated scenarios remain available for demonstration."}
-                </p>
-              </div>
-
-              <div className="text-[11px] text-slate-500 leading-relaxed">
-                Simulated sources are deterministic interview demonstrations. Live and imported choices appear only when valid live artifacts exist and must not be treated as DGX/HGX proof without supporting identity evidence.
-              </div>
-            </div>
+            <p className="mt-3 text-xs leading-relaxed text-[var(--gv-text-muted)]">{scenarioMetadata[selectedScenario].description}</p>
+            <p className="mt-3 rounded-xl border border-[var(--gv-border-default)] bg-[var(--gv-bg-canvas)] px-3 py-2 text-xs leading-relaxed text-[var(--gv-text-muted)]">Reviewer portal is read-only. Scenario artifacts are generated by administrator-side CLI workflows, not from the public reviewer surface.</p>
+          </div>
+          <div className="gv-card p-4">
+            <label htmlFor="evidence-source" className="gv-eyebrow text-[var(--gv-text-faint)]">Evidence source</label>
+            <select
+              id="evidence-source"
+              value={selectedSourceId}
+              disabled={loading}
+              onChange={(event) => {
+                const nextSource = evidenceSources.find((source) => source.id === event.target.value);
+                setSelectedSourceId(event.target.value);
+                if (nextSource?.id === "simulated-healthy") setSelectedScenario("healthy");
+                if (nextSource?.id === "simulated-degraded") setSelectedScenario("degraded");
+              }}
+              className="gv-select mt-2 w-full"
+            >
+              {evidenceSources.map((source) => <option key={source.id} value={source.id}>{source.label}</option>)}
+            </select>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--gv-text-muted)]">{selectedSource.description ?? "Only valid live artifacts are listed; simulated scenarios remain available for demonstration."}</p>
           </div>
         </div>
-      </header>
+      </section>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex max-w-md rounded-xl border border-slate-800 bg-slate-950/50 p-1">
+              <div className="flex max-w-md rounded-xl border border-slate-800 bg-slate-950/50 p-1">
           <button
             onClick={() => setActiveTab("diagnostics")}
             className={`flex-1 rounded-lg px-4 py-2.5 text-xs font-display font-semibold uppercase tracking-[0.18em] transition cursor-pointer ${
@@ -1693,15 +1732,7 @@ function PortalApp() {
             </section>
           </section>
         )}
-      </main>
-
-      <footer className="mt-16 border-t border-slate-900 bg-slate-950">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col lg:flex-row justify-between gap-3 text-xs text-slate-500">
-          <div>GPU Validator • AI Factory Readiness Portal • Customer-acceptance evidence for GPU-accelerated infrastructure</div>
-          <div>This project is an independent portfolio project and is not affiliated with, sponsored by, or endorsed by NVIDIA.</div>
-        </div>
-      </footer>
-    </div>
+    </EngagementShell>
   );
 }
 

@@ -65,3 +65,7 @@ The screenshot script builds the app, starts the production server with determin
 
 ## Design drift reporting
 Use `design/prompts/audit-design-drift.md`. Report drift with file path, component/page, token violation, screenshot evidence if available, severity, and proposed code change. Favor code fixes over written-only feedback.
+
+## Phase status
+- Phase 1 foundation and authenticated shell: see `docs/REDESIGN_CHANGELOG.md`.
+- Current-state audit before code changes: see `docs/REDESIGN_CURRENT_STATE.md`.

@@ -10,6 +10,8 @@ Purpose: prepare a page-by-page redesign without breaking current authentication
 - Maintain login-only public access unless a separate product decision changes it.
 - Run lint/build and relevant tests after each phase.
 
+Current implementation audit lives in `docs/REDESIGN_CURRENT_STATE.md`. Phase completion details live in `docs/REDESIGN_CHANGELOG.md`.
+
 ## Phase plan
 
 ### 1. Design tokens
