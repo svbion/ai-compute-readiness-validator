@@ -81,10 +81,15 @@ Common commands:
 ai-validator --help
 ai-validator version
 ai-validator validate --name local-cluster --output-dir artifacts/live
+ai-validator collect --profile linux-host --output evidence-bundle
+ai-validator collect --profile dgx-class --output evidence-bundle --sanitize
+ai-validator collect --profile linux-host --output evidence-bundle --dry-run
 ai-validator demo --scenario healthy --output-dir artifacts
 ai-validator demo --scenario degraded --output-dir artifacts
 ai-validator report --input artifacts/degraded-results.json --output-dir artifacts/regenerated
 ```
+
+`ai-validator collect` creates administrator-side local evidence bundles for Linux and NVIDIA GPU hosts. It is read-only, uses an internal command allowlist with argv-list subprocess execution, records per-command metadata and SHA-256 checksums, handles missing optional NVIDIA/DCGM utilities without failing the whole run, and can sanitize host-identifying fields with deterministic replacements. Optional DCGM diagnostics are skipped unless `--include-diagnostics` is explicitly passed. See `docs/EVIDENCE_COLLECTION.md` for supported profiles, exact commands, bundle layout, manifest schema, and safety exclusions.
 
 Demo runs emit both rolling and scenario-specific artifacts:
 - `latest-results.json`, `latest-report.html`, `latest-report.md`
@@ -212,8 +217,9 @@ ai-validator demo --scenario degraded --output-dir artifacts
 ## Current limitations
 
 - Live validation is single-host only; it does not orchestrate remote multi-node collection.
+- Evidence bundle collection is local-only and administrator-side; it does not upload bundles to the portal yet.
 - Scenario data is simulated interview evidence, not production telemetry.
 - Benchmark execution is not orchestrated by the portal; benchmark readiness currently focuses on ingestion scope and presentation.
 - Customer acceptance logic is derived from the existing readiness classification and structured findings; it is not a separate policy engine.
 
-See `docs/DEMO.md` for the two-minute walkthrough, `docs/ARCHITECTURE.md` for component flow, `docs/FUNCTIONAL_TEST_MATRIX.md` for coverage, `docs/FINAL_READINESS.md` for the final public deployment readiness audit, and `docs/ROADMAP.md` for future integration scope.
+See `docs/DEMO.md` for the two-minute walkthrough, `docs/EVIDENCE_COLLECTION.md` for read-only bundle collection, `docs/ARCHITECTURE.md` for component flow, `docs/FUNCTIONAL_TEST_MATRIX.md` for coverage, `docs/FINAL_READINESS.md` for the final public deployment readiness audit, and `docs/ROADMAP.md` for future integration scope.

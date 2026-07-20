@@ -15,6 +15,7 @@ from ai_validator.reporting.json_report import JsonReporter
 from ai_validator.reporting.html import HtmlReporter
 from ai_validator.reporting.markdown import MarkdownReporter
 from ai_validator.profiles import get_profile
+from ai_validator.evidence.collector import collect_evidence, dry_run_commands
 
 # Import collectors
 from ai_validator.collectors.linux import LinuxCollector
@@ -325,6 +326,73 @@ def report(
     console.print(f"[bold green]Reports successfully regenerated:[/bold green]")
     console.print(f" - HTML: [cyan]{html_path}[/cyan]")
     console.print(f" - Markdown: [cyan]{md_path}[/cyan]\n")
+
+
+@app.command()
+def collect(
+    profile: str = typer.Option(
+        ...,
+        "--profile",
+        help="Collection profile: linux-host, gpu-workstation, single-gpu-node, dgx-class",
+    ),
+    output: str = typer.Option(..., "--output", help="Evidence bundle output directory"),
+    sanitize: bool = typer.Option(
+        False,
+        "--sanitize",
+        help="Sanitize host-identifying fields in captured output",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Print commands without running them or writing files",
+    ),
+    timeout: int = typer.Option(30, "--timeout", min=1, help="Per-command timeout in seconds"),
+    include_diagnostics: bool = typer.Option(
+        False,
+        "--include-diagnostics",
+        help="Run optional lightweight DCGM diagnostics when explicitly approved",
+    ),
+):
+    """
+    Collects a local read-only evidence bundle from an administrator-side Linux/GPU host.
+    """
+    try:
+        commands = dry_run_commands(profile, include_diagnostics=include_diagnostics)
+    except ValueError as exc:
+        console.print(f"[bold red]{exc}[/bold red]")
+        sys.exit(1)
+
+    if dry_run:
+        console.print(
+            f"[bold green]Dry run for collection profile [cyan]{profile}[/cyan]. "
+            "No commands executed and no files written.[/bold green]"
+        )
+        for command in commands:
+            if command.diagnostics and not include_diagnostics:
+                console.print(f"[yellow]SKIP[/yellow] {command.id}: {' '.join(command.argv)}")
+            else:
+                console.print(f"[cyan]{command.category}[/cyan] {command.id}: {' '.join(command.argv)}")
+        return
+
+    try:
+        summary = collect_evidence(
+            profile=profile,
+            output_path=output,
+            timeout=timeout,
+            sanitize=sanitize,
+            include_diagnostics=include_diagnostics,
+        )
+    except Exception as exc:
+        console.print(f"[bold red]Evidence collection failed: {exc}[/bold red]")
+        sys.exit(1)
+
+    console.print(f"[bold green]Evidence bundle written to [cyan]{summary.output_path}[/cyan][/bold green]")
+    console.print(
+        "Commands: "
+        f"{summary.command_count}; collected: {summary.collected_count}; "
+        f"missing: {summary.missing_count}; failed: {summary.failed_count}; "
+        f"skipped: {summary.skipped_count}; warnings: {summary.warning_count}"
+    )
 
 
 @app.command()

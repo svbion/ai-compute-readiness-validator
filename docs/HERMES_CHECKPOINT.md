@@ -87,6 +87,52 @@
 - Public demo copy states that simulated evidence is used unless real evidence is imported and labeled.
 - Commit target: `feat(web): add public GPU Validator product experience`.
 
+## Phase 3A read-only evidence collector foundation
+
+- Added `ai-validator collect` for administrator-side, local, read-only Linux and NVIDIA GPU evidence bundle collection.
+- Supported initial collection profiles: `linux-host`, `gpu-workstation`, `single-gpu-node`, and `dgx-class`.
+- Implemented an internal allowlisted command registry; user-supplied arbitrary commands are not accepted.
+- Implemented argv-list subprocess execution with `shell=False`, per-command timeout, command metadata, missing-command handling, nonzero-exit recording, timeout recording, and optional diagnostics skip state.
+- Kept default collection lightweight and read-only; `dcgmi diag -r 1` is skipped unless `--include-diagnostics` is explicitly provided.
+- Implemented deterministic bundle layout with `manifest.json`, `metadata/commands.json`, category output directories, optional stderr captures, and deterministic `checksums.sha256`.
+- Implemented manifest schema version `1.0.0` with timezone-aware UTC timestamps, collector version, profile, sanitized flag, command counts, categories, evidence files, checksum algorithm, and warnings.
+- Implemented optional `--sanitize` mode for deterministic hostname, IPv4, IPv6, username path, and email replacement in captured output only.
+- Implemented `--dry-run` to print the profile command plan without running commands or creating files.
+- No portal upload, remote execution, benchmark execution, package installation, service mutation, sudo usage, or arbitrary home-directory collection was added.
+- Final implementation commit SHA is reported after commit creation; Git cannot embed a commit object's final hash inside the content that defines that same object.
+
+### Phase 3A files changed
+
+- `README.md`
+- `docs/EVIDENCE_COLLECTION.md`
+- `docs/HERMES_CHECKPOINT.md`
+- `src/ai_compute_readiness_validator.egg-info/PKG-INFO`
+- `src/ai_compute_readiness_validator.egg-info/SOURCES.txt`
+- `src/ai_validator/cli.py`
+- `src/ai_validator/evidence/__init__.py`
+- `src/ai_validator/evidence/collector.py`
+- `src/ai_validator/evidence/models.py`
+- `src/ai_validator/evidence/registry.py`
+- `src/ai_validator/evidence/sanitizer.py`
+- `tests/test_evidence_collector.py`
+
+### Phase 3A tests and smoke checks
+
+- `python -m pytest`: passed, 30 tests.
+- `npm run build`: passed.
+- `npm run lint`: passed.
+- `npm run test:portal`: passed, 15 tests.
+- `npm run test:deploy`: passed.
+- `ai-validator collect --profile linux-host --output /tmp/gpu-validator-evidence-test --dry-run`: passed; zero-mutation command plan and no output directory created.
+- `ai-validator collect --profile linux-host --output <tempdir>`: passed; manifest and checksums generated; missing Linux utilities on the non-Linux development host were recorded, not fatal.
+- `git diff --check`: passed.
+- `git status --short`: only intended tracked/untracked project changes before commit; clean expected after commit.
+- `.env.production` must remain untouched and unstaged.
+
+### Phase 3A next milestone
+
+- Add InfiniBand, Slurm, Kubernetes, and storage collectors with the same read-only allowlist, metadata, manifest, checksum, sanitization, and missing-command semantics.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.

@@ -29,8 +29,14 @@ src/ai_validator/collectors/slurm.py
 src/ai_validator/collectors/storage.py
 src/ai_validator/demo/generator.py
 src/ai_validator/demo/scenarios.py
+src/ai_validator/evidence/__init__.py
+src/ai_validator/evidence/collector.py
+src/ai_validator/evidence/models.py
+src/ai_validator/evidence/registry.py
+src/ai_validator/evidence/sanitizer.py
 src/ai_validator/reporting/html.py
 src/ai_validator/reporting/json_report.py
 src/ai_validator/reporting/markdown.py
+tests/test_evidence_collector.py
 tests/test_evidence_tools.py
 tests/test_validation.py
