@@ -43,7 +43,7 @@ Expected: protected API/report routes return `401` without credentials.
 Use a browser:
 
 1. Open `https://gpuvalidator.com/login`.
-2. Submit the configured reviewer email and password.
+2. Submit the configured reviewer username and password.
 3. Confirm the reviewer portal loads.
 4. Submit an invalid password in a private/incognito session and confirm login is rejected.
 5. Log out and confirm protected routes require login again.

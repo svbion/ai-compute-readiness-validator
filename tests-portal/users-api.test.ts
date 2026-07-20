@@ -65,14 +65,14 @@ test("temporary interviewer credentials are shown once and account expiration bl
     assert.equal(created.payload.user.role, "temporary_reviewer");
     assert.equal(created.payload.user.password_hash, undefined);
     assert.equal(typeof created.payload.temporary_password, "string");
-    const login = await jsonRequest(baseUrl, "POST", "/api/auth/login", { email: created.payload.user.username, password: created.payload.temporary_password }, false);
+    const login = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: created.payload.user.username, password: created.payload.temporary_password }, false);
     assert.equal(login.response.status, 200, JSON.stringify(login.payload));
     assert.equal(login.payload.user.role, "temporary_reviewer");
     const store = JSON.parse(fs.readFileSync(userStorePath, "utf8"));
     const user = store.users.find((item: any) => item.id === created.payload.user.id);
     user.expires_at = "2000-01-01T00:00:00.000Z";
     fs.writeFileSync(userStorePath, `${JSON.stringify(store, null, 2)}\n`);
-    const expired = await jsonRequest(baseUrl, "POST", "/api/auth/login", { email: created.payload.user.username, password: created.payload.temporary_password }, false);
+    const expired = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: created.payload.user.username, password: created.payload.temporary_password }, false);
     assert.equal(expired.response.status, 401);
     assert.equal(expired.payload.reason, "account-expired");
   });
@@ -85,11 +85,31 @@ test("last administrator protection and session revocation are enforced", async 
     const denied = await jsonRequest(baseUrl, "POST", `/api/v1/admin/users/${admin.id}/disable`);
     assert.equal(denied.response.status, 400);
     const reviewer = await jsonRequest(baseUrl, "POST", "/api/v1/admin/users", { username: "reviewer2", display_name: "Reviewer Two", role: "reviewer" });
-    const login = await jsonRequest(baseUrl, "POST", "/api/auth/login", { email: "reviewer2", password: reviewer.payload.temporary_password }, false);
+    const login = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: "reviewer2", password: reviewer.payload.temporary_password }, false);
     assert.equal(login.response.status, 200);
     const revoke = await jsonRequest(baseUrl, "POST", `/api/v1/admin/users/${reviewer.payload.user.id}/revoke-sessions`);
     assert.equal(revoke.response.status, 200);
     const sessionAfterRevoke = await jsonRequest(baseUrl, "GET", "/api/auth/session", undefined, false, login.cookie);
     assert.equal(sessionAfterRevoke.response.status, 401);
+  });
+});
+
+test("login authenticates only by normalized username and ignores email metadata", async () => {
+  await withServer(async (baseUrl) => {
+    const reviewer = await jsonRequest(baseUrl, "POST", "/api/v1/admin/users", {
+      username: "Reviewer.Mixed",
+      display_name: "Reviewer Mixed",
+      email: "reviewer.mixed@example.invalid",
+      role: "reviewer",
+    });
+    assert.equal(reviewer.response.status, 201, JSON.stringify(reviewer.payload));
+
+    const usernameLogin = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: "  REVIEWER.MIXED  ", password: reviewer.payload.temporary_password }, false);
+    assert.equal(usernameLogin.response.status, 200, JSON.stringify(usernameLogin.payload));
+    assert.equal(usernameLogin.payload.user.username, "reviewer.mixed");
+
+    const emailLogin = await jsonRequest(baseUrl, "POST", "/api/auth/login", { email: "reviewer.mixed@example.invalid", password: reviewer.payload.temporary_password }, false);
+    assert.equal(emailLogin.response.status, 401);
+    assert.equal(emailLogin.payload.reason, "invalid-credentials");
   });
 });

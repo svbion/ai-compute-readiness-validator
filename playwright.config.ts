@@ -19,7 +19,7 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: `npm run build && NODE_ENV=production PORT=${PORT} AI_FACTORY_AUTH_REQUIRED=true AI_FACTORY_SESSION_SECRET=0123456789abcdef0123456789abcdef AI_FACTORY_REVIEWER_EMAIL=reviewer@example.invalid AI_FACTORY_REVIEWER_PASSWORD_HASH='${reviewerPasswordHash}' AI_FACTORY_COOKIE_SECURE=false npm run start`,
+    command: `npm run build && NODE_ENV=production PORT=${PORT} AI_FACTORY_AUTH_REQUIRED=true AI_FACTORY_SESSION_SECRET=0123456789abcdef0123456789abcdef AI_FACTORY_REVIEWER_USERNAME=reviewer AI_FACTORY_REVIEWER_PASSWORD_HASH='${reviewerPasswordHash}' AI_FACTORY_COOKIE_SECURE=false npm run start`,
     url: `${baseURL}/healthz`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

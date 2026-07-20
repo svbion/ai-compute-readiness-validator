@@ -197,10 +197,12 @@ Dry run performs zero mutations: it does not run apt, create users, touch Git, c
 Production `.env.production` is dotenv data, not an arbitrary shell script. Deployment tooling safely parses selected `KEY=VALUE` records without shell evaluation, so password hashes containing `$` are supported without Bash expansion. Keep shell-sensitive values single-quoted for human clarity and Node `dotenv` compatibility, for example:
 
 ```dotenv
-AI_FACTORY_REVIEWER_EMAIL=reviewer@example.invalid
+AI_FACTORY_REVIEWER_USERNAME=reviewer
 AI_FACTORY_REVIEWER_PASSWORD_HASH='scrypt$exampleSalt$exampleDerivedKey'
 AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='token$with$dollar-signs'
 ```
+
+Authentication uses username as the only login identifier. Email remains optional user profile metadata and is ignored during authentication.
 
 Never use command substitutions or backticks in production env files, and never commit real `.env.production` secrets.
 

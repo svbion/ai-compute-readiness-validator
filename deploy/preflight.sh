@@ -78,7 +78,7 @@ if [[ -f "${APP_DIR}/.env.production" ]]; then
   ok ".env.production present with mode ${perm}"
   source_env_file_if_present
   secret_state AI_FACTORY_SESSION_SECRET "${AI_FACTORY_SESSION_SECRET:-}"
-  secret_state AI_FACTORY_REVIEWER_EMAIL "${AI_FACTORY_REVIEWER_EMAIL:-}"
+  secret_state AI_FACTORY_REVIEWER_USERNAME "${AI_FACTORY_REVIEWER_USERNAME:-}"
   secret_state AI_FACTORY_REVIEWER_PASSWORD_HASH "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}"
   secret_state AI_FACTORY_AUTH_TEST_BYPASS_TOKEN "${AI_FACTORY_AUTH_TEST_BYPASS_TOKEN:-}"
 else

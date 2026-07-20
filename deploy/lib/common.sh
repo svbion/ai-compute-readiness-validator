@@ -391,7 +391,7 @@ source_env_file_if_present() {
     dotenv_load_selected "${env_file}" \
       PORT NODE_ENV BASE_URL DOMAIN AUTH_REQUIRED VERIFY_CADDY VERIFY_TLS \
       AI_FACTORY_DOMAIN AI_FACTORY_AUTH_REQUIRED AI_FACTORY_SESSION_SECRET \
-      AI_FACTORY_REVIEWER_EMAIL AI_FACTORY_REVIEWER_PASSWORD_HASH \
+      AI_FACTORY_REVIEWER_USERNAME AI_FACTORY_REVIEWER_PASSWORD_HASH \
       AI_FACTORY_AUTH_TEST_BYPASS_TOKEN AI_FACTORY_BASE_URL \
       AI_FACTORY_VERIFY_CADDY AI_FACTORY_VERIFY_TLS
     PORT="${PORT:-${PORT_DEFAULT}}"
@@ -423,14 +423,14 @@ validate_auth_config() {
   source_env_file_if_present
   deploy_log "Authentication configuration state:"
   secret_state AI_FACTORY_SESSION_SECRET "${AI_FACTORY_SESSION_SECRET:-}"
-  secret_state AI_FACTORY_REVIEWER_EMAIL "${AI_FACTORY_REVIEWER_EMAIL:-}"
+  secret_state AI_FACTORY_REVIEWER_USERNAME "${AI_FACTORY_REVIEWER_USERNAME:-}"
   secret_state AI_FACTORY_REVIEWER_PASSWORD_HASH "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}"
   secret_state AI_FACTORY_AUTH_TEST_BYPASS_TOKEN "${AI_FACTORY_AUTH_TEST_BYPASS_TOKEN:-}"
   if bool_is_true "${AI_FACTORY_AUTH_REQUIRED:-${AUTH_REQUIRED:-}}" || [[ "${NODE_ENV:-}" == production && -z "${AI_FACTORY_AUTH_REQUIRED:-${AUTH_REQUIRED:-}}" ]]; then
     [[ -n "${AI_FACTORY_SESSION_SECRET:-}" && "${AI_FACTORY_SESSION_SECRET:-}" != "replace-with-at-least-32-random-characters" ]] \
       || deploy_fail "AI_FACTORY_SESSION_SECRET is required before production activation."
-    [[ -n "${AI_FACTORY_REVIEWER_EMAIL:-}" && "${AI_FACTORY_REVIEWER_EMAIL:-}" != "reviewer@example.invalid" ]] \
-      || deploy_fail "AI_FACTORY_REVIEWER_EMAIL must be set to the real reviewer email before public activation."
+    [[ -n "${AI_FACTORY_REVIEWER_USERNAME:-}" && "${AI_FACTORY_REVIEWER_USERNAME:-}" != "reviewer" ]] \
+      || deploy_fail "AI_FACTORY_REVIEWER_USERNAME must be set to the issued reviewer username before public activation."
     [[ -n "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}" && "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}" != *replace-with* ]] \
       || deploy_fail "AI_FACTORY_REVIEWER_PASSWORD_HASH must be set before public activation. Generate it with src/server/auth.ts."
   fi

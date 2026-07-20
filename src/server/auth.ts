@@ -4,7 +4,7 @@ export interface AuthEnvironment {
   NODE_ENV?: string;
   AI_FACTORY_AUTH_REQUIRED?: string;
   AI_FACTORY_SESSION_SECRET?: string;
-  AI_FACTORY_REVIEWER_EMAIL?: string;
+  AI_FACTORY_REVIEWER_USERNAME?: string;
   AI_FACTORY_REVIEWER_PASSWORD_HASH?: string;
   AI_FACTORY_SESSION_TTL_SECONDS?: string;
   AI_FACTORY_COOKIE_SECURE?: string;
@@ -13,7 +13,7 @@ export interface AuthEnvironment {
 
 export interface AuthConfig {
   required: boolean;
-  reviewerEmail: string | null;
+  reviewerUsername: string | null;
   passwordHash: string | null;
   sessionSecret: string | null;
   sessionTtlSeconds: number;
@@ -60,7 +60,7 @@ export function timingSafeVerifyPassword(password: string, passwordHash: string)
 
 export function buildAuthConfig(env: AuthEnvironment): AuthConfig {
   const required = shouldRequireAuth(env);
-  const reviewerEmail = env.AI_FACTORY_REVIEWER_EMAIL?.trim().toLowerCase() || null;
+  const reviewerUsername = env.AI_FACTORY_REVIEWER_USERNAME?.trim().toLowerCase() || null;
   const passwordHash = env.AI_FACTORY_REVIEWER_PASSWORD_HASH?.trim() || null;
   const sessionSecret = env.AI_FACTORY_SESSION_SECRET?.trim() || null;
 
@@ -76,7 +76,7 @@ export function buildAuthConfig(env: AuthEnvironment): AuthConfig {
 
   return {
     required,
-    reviewerEmail,
+    reviewerUsername,
     passwordHash,
     sessionSecret,
     sessionTtlSeconds: parsePositiveInteger(env.AI_FACTORY_SESSION_TTL_SECONDS, 60 * 60),

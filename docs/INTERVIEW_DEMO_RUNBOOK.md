@@ -7,7 +7,7 @@
 3. Open `/portal/admin/users`.
 4. Create an NVIDIA interviewer account and copy the one-time credentials.
 5. Log out.
-6. Log in as the temporary reviewer and confirm reviewer-only access.
+6. Log in with the temporary reviewer username and password, then confirm reviewer-only access.
 7. Open `/portal/engagements` and load the NVIS simulated fixture.
 8. Open the demo engagement and point out the `SIMULATED DEMO` and `DEMONSTRATION ONLY` labels.
 9. Review acceptance, findings, readiness, evidence, benchmarks, and provenance.
@@ -39,6 +39,8 @@ AI_VALIDATOR_USER_STORE=artifacts/users/store.json \
   --display-name "GPU Validator Admin" \
   --password-file /tmp/gpu-validator-admin-password.txt
 ```
+
+The sign-in page uses Username and Password only. Temporary reviewer credentials should be read back as Login URL, Username, Temporary Password, Role, and Expiration; do not display or request an email address for interview login.
 
 ## Data labeling
 

@@ -165,14 +165,14 @@ The real install script performs, in order:
 - installs/configures Caddy only when `AI_FACTORY_ENABLE_CADDY=true`
 - prints a secret-safe deployment summary
 
-The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Generated shell-sensitive values are single-quoted. Replace the placeholder reviewer email and password hash out-of-band before sharing the portal.
+The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Generated shell-sensitive values are single-quoted. Replace the placeholder reviewer username and password hash out-of-band before sharing the portal.
 
 Do not add `NODE_ENV=production` to `.env.production`. `deploy/systemd/ai-factory-validator.service` sets it for the running Express server, and `npm run build` sets it for the build command. Keeping `NODE_ENV` out of `.env.production` avoids Vite's unsupported-`NODE_ENV` warning while preserving production runtime behavior and authentication requirements.
 
 `.env.production` is dotenv data, not an arbitrary shell script. The Node application reads it through `dotenv`, and the deployment scripts safely parse only selected `KEY=VALUE` records without `eval`, shell expansion, command substitution, or backtick execution. Values containing `$`, including `scrypt$...` password hashes, are supported safely and should remain single-quoted for human clarity:
 
 ```dotenv
-AI_FACTORY_REVIEWER_EMAIL=reviewer@example.invalid
+AI_FACTORY_REVIEWER_USERNAME=reviewer
 AI_FACTORY_REVIEWER_PASSWORD_HASH='scrypt$exampleSalt$exampleDerivedKey'
 AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='token$with$dollar-signs'
 ```
@@ -186,7 +186,7 @@ cd /opt/ai-factory-validator
 node --import tsx -e "import { createPasswordHash } from './src/server/auth.ts'; console.log(createPasswordHash(process.argv[1]))" 'temporary-password-to-rotate'
 ```
 
-Then edit `/opt/ai-factory-validator/.env.production` and set the real reviewer email, the generated single-quoted `scrypt$...` hash, a server-generated session secret, and a local-only `AI_FACTORY_AUTH_TEST_BYPASS_TOKEN` for deployment verification. Do not commit these values and do not send them over chat.
+Then edit `/opt/ai-factory-validator/.env.production` and set the issued reviewer username, the generated single-quoted `scrypt$...` hash, a server-generated session secret, and a local-only `AI_FACTORY_AUTH_TEST_BYPASS_TOKEN` for deployment verification. Do not commit these values and do not send them over chat.
 
 ## 5. Verify the service
 

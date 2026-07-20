@@ -10,6 +10,8 @@ Statuses: `active`, `disabled`, `expired`, `locked`.
 
 User records include id, schema version, normalized unique username, display name, optional email, server-controlled role/status, scrypt password hash, timestamps, expiration, failed-login count, lockout, must-change-password flag, session version, notes, and tags. API responses never return `password_hash`.
 
+Authentication uses the normalized username only. Email is optional profile metadata and is not accepted as a login identifier.
+
 ## Bootstrap initial administrator
 
 Create a password file outside the repository:
@@ -32,6 +34,8 @@ AI_VALIDATOR_USER_STORE=/opt/ai-factory-validator/shared/users/store.json \
 The command refuses to run when an active administrator already exists unless `--recovery` is explicitly supplied. It prints only the created username and user ID, never the password.
 
 ## Portal workflow
+
+The login workflow displays `Username`, `Password`, and `Sign In`. Login requests send `{ "username": "...", "password": "..." }`; clients must not send an email field for authentication.
 
 Administrator routes:
 

@@ -2,9 +2,9 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 async function login(page: Page) {
   await page.goto("/login");
-  await page.getByLabel("Email").fill("reviewer@example.invalid");
+  await page.getByLabel("Username").fill("reviewer");
   await page.locator("#reviewer-password").fill("Reviewer Test Password 123!");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign In" }).click();
   await expect(page).toHaveURL(/\/portal$/);
   await expect(page.getByRole("heading", { name: "GPU Validator" })).toBeVisible();
   await expect(page.getByText("Scenario controls")).toBeVisible();
@@ -61,7 +61,9 @@ test("login page loads with accessible private reviewer entry", async ({ page })
   await expect(page.getByRole("heading", { name: "GPU Validator" })).toBeVisible();
   await expect(page.getByText("Private access to GPU infrastructure readiness")).toBeVisible();
   await expect(page.getByText("InfiniBand / RDMA")).toBeVisible();
-  await expect(page.getByLabel("Email")).toHaveAttribute("autocomplete", "email");
+  await expect(page.getByLabel("Username")).toHaveAttribute("autocomplete", "username");
+  await expect(page.getByLabel("Username")).toHaveAttribute("type", "text");
+  await expect(page.getByLabel("Username")).toHaveAttribute("name", "username");
   await expect(page.locator("#reviewer-password")).toHaveAttribute("autocomplete", "current-password");
   await expect(page.getByRole("button", { name: "Show password" })).toBeVisible();
   await expect(page.getByText("Built by Sabion P. Frazier")).toBeVisible();
@@ -73,14 +75,14 @@ test("authentication-required redirect, invalid credentials, account lockout, lo
   await expect(page).toHaveURL(/\/login\?reason=expired-session$/);
   await expect(page.getByText("Your session expired")).toBeVisible();
 
-  const invalidEmail = `unknown-reviewer-${testInfo.project.name}-${testInfo.workerIndex}@example.invalid`;
-  await page.getByLabel("Email").fill(invalidEmail);
+  const invalidUsername = `unknown-reviewer-${testInfo.project.name}-${testInfo.workerIndex}`.toLowerCase();
+  await page.getByLabel("Username").fill(invalidUsername);
   await page.locator("#reviewer-password").fill("wrong password");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("alert")).toContainText("Invalid email or password");
+  await page.getByRole("button", { name: "Sign In" }).click();
+  await expect(page.getByRole("alert")).toContainText("Invalid username or password");
 
   for (let i = 0; i < 4; i += 1) {
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign In" }).click();
   }
   await expect(page.getByRole("alert")).toContainText(/locked|Invalid/);
 
@@ -168,7 +170,7 @@ test("controlled backend API error renders a visible error state", async ({ page
 test("mobile viewport keeps login and portal controls usable", async ({ page, isMobile }) => {
   test.skip(!isMobile, "mobile viewport coverage runs in the mobile project");
   await page.goto("/login");
-  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
   await login(page);
   await expect(page.getByRole("button", { name: "Healthy", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Degraded", exact: true })).toBeVisible();

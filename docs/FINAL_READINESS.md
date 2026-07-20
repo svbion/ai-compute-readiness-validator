@@ -36,9 +36,9 @@ The login page is implemented in `src/App.tsx` as an invite-only reviewer entry:
 
 - modern dark enterprise layout
 - responsive two-column desktop layout and stacked mobile layout
-- labeled email and password fields
+- labeled username and password fields
 - password show/hide control
-- `autocomplete="email"` and `autocomplete="current-password"`
+- `autocomplete="username"` and `autocomplete="current-password"`
 - generic invalid-credential and lockout messages
 - invitation-required copy
 - attribution and no-endorsement disclaimer
@@ -167,7 +167,7 @@ Defects found during the hardening/documentation pass:
 4. Sanitizer did not reject symlink traversal attempts.
 5. Importer accepted traversal-like import names.
 6. Importer accepted live-labeled NVIDIA evidence without successful `nvidia-smi` proof.
-7. Playwright auth lockout test could collide between desktop and mobile projects because they reused the same invalid email.
+7. Playwright auth lockout test could collide between desktop and mobile projects because they reused the same invalid username.
 8. Some documentation still described reviewer-triggered scenario execution or implied no authentication in production.
 9. Functional matrix did not fully enumerate newer source selector, source context, imported banner, sanitizer, importer, and read-only reviewer behavior.
 

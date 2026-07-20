@@ -12,7 +12,6 @@ import {
   Layers,
   Lock,
   LogOut,
-  Mail,
   Network,
   Plus,
   RefreshCw,
@@ -24,6 +23,7 @@ import {
   Waypoints,
   Eye,
   EyeOff,
+  User,
 } from "lucide-react";
 import {
   type CheckStatus,
@@ -151,7 +151,7 @@ function countChecks(cluster: Cluster | null, predicate: (check: ValidationCheck
 
 function LoginPage() {
   const queryReason = new URLSearchParams(window.location.search).get("reason");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -170,7 +170,7 @@ function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (response.ok) {
@@ -183,7 +183,7 @@ function LoginPage() {
         setLocked(true);
         setMessage("This reviewer entry is temporarily locked. Wait before trying again.");
       } else {
-        setMessage("Invalid email or password.");
+        setMessage("Invalid username or password.");
       }
     } catch {
       setMessage("Authentication service is unavailable. Try again after the portal is healthy.");
@@ -249,17 +249,20 @@ function LoginPage() {
 
           <form onSubmit={submitLogin} className="space-y-5">
             <div>
-              <label htmlFor="reviewer-email" className="mb-2 block text-sm font-medium text-slate-200">Email</label>
+              <label htmlFor="reviewer-username" className="mb-2 block text-sm font-medium text-slate-200">Username</label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <input
-                  id="reviewer-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
+                  id="reviewer-username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  spellCheck={false}
+                  autoCapitalize="none"
+                  placeholder="Username"
                   required
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
                   className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-3 text-slate-100 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10"
                 />
               </div>
@@ -306,7 +309,7 @@ function LoginPage() {
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/25 disabled:cursor-not-allowed disabled:bg-emerald-700"
             >
               {loading && <RefreshCw className="h-4 w-4 animate-spin" />}
-              {loading ? "Checking reviewer access" : "Sign in"}
+              {loading ? "Checking reviewer access" : "Sign In"}
             </button>
           </form>
 
@@ -720,16 +723,25 @@ function AdminUsersPage() {
 }
 
 function AdminNewUserPage() {
-  const [form, setForm] = useState({ username: "", display_name: "", email: "", role: "reviewer", notes: "" });
+  const [form, setForm] = useState({ username: "", display_name: "", email: "", role: "reviewer", expires_at: "", tags: "", notes: "" });
   const [message, setMessage] = useState<string | null>(null);
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const response = await fetch("/api/v1/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, email: form.email || null }) });
+    const response = await fetch("/api/v1/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...form,
+        email: form.email || null,
+        expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+        tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+      }),
+    });
     const payload = await response.json();
     if (!response.ok) return setMessage(payload.error ?? "User creation failed.");
     setMessage(`Created ${payload.user.username}. Temporary password shown once: ${payload.temporary_password}`);
   };
-  return <EngagementShell><section className="mx-auto max-w-3xl"><h1 className="font-display text-4xl text-slate-50">Create user</h1>{message && <div role="alert" className="my-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-amber-100">{message}</div>}<form onSubmit={submit} className="cyber-panel mt-6 space-y-4 rounded-3xl border border-slate-800 p-6"><input required placeholder="username" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /><input required placeholder="display name" value={form.display_name} onChange={(event) => setForm({ ...form, display_name: event.target.value })} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /><input placeholder="email (optional)" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3"><option value="reviewer">Reviewer</option><option value="administrator">Administrator</option><option value="temporary_reviewer">Temporary reviewer</option></select><textarea placeholder="notes" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /><button className="rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950">Create user</button></form></section></EngagementShell>;
+  return <EngagementShell><section className="mx-auto max-w-3xl"><h1 className="font-display text-4xl text-slate-50">Create user</h1>{message && <div role="alert" className="my-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-amber-100">{message}</div>}<form onSubmit={submit} className="cyber-panel mt-6 space-y-4 rounded-3xl border border-slate-800 p-6"><label className="block text-sm text-slate-300">Username<span className="text-emerald-300"> *</span><input required name="username" autoComplete="username" spellCheck={false} autoCapitalize="none" placeholder="Username" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /></label><label className="block text-sm text-slate-300">Display Name<span className="text-emerald-300"> *</span><input required placeholder="Display Name" value={form.display_name} onChange={(event) => setForm({ ...form, display_name: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /></label><label className="block text-sm text-slate-300">Role<span className="text-emerald-300"> *</span><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3"><option value="reviewer">Reviewer</option><option value="administrator">Administrator</option><option value="temporary_reviewer">Temporary reviewer</option></select></label><label className="block text-sm text-slate-300">Email (optional)<input type="email" placeholder="Email (optional)" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /></label><label className="block text-sm text-slate-300">Expiration (optional)<input type="datetime-local" value={form.expires_at} onChange={(event) => setForm({ ...form, expires_at: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /></label><label className="block text-sm text-slate-300">Tags (optional)<input placeholder="nvidia, interview" value={form.tags} onChange={(event) => setForm({ ...form, tags: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /></label><label className="block text-sm text-slate-300">Notes (optional)<textarea placeholder="Notes" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /></label><button className="rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950">Create user</button></form></section></EngagementShell>;
 }
 
 function AdminUserDetailPage({ userId }: { userId: string }) {

@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "generated_for": "GPU Validator RC1",
+  "routes": {
+    "public": ["/", "/login", "/docs", "/security", "/request-access"],
+    "portal": ["/portal", "/portal/engagements", "/portal/engagements/new", "/portal/engagements/:engagementId", "/portal/library", "/portal/library/slurm", "/portal/library/lustre", "/portal/library/base-command-manager", "/portal/library/benchmarks"],
+    "admin": ["/portal/admin/users", "/portal/admin/users/new", "/portal/admin/users/:userId", "/portal/admin/demo", "/portal/admin/system"],
+    "not_found": ["/portal/*"]
+  },
+  "api_endpoints": [
+    {"method":"GET","path":"/healthz","auth":"public","status":"functional"},
+    {"method":"POST","path":"/api/auth/login","auth":"public","status":"functional"},
+    {"method":"GET","path":"/api/auth/session","auth":"session","status":"functional"},
+    {"method":"POST","path":"/api/auth/logout","auth":"session","status":"functional"},
+    {"method":"GET","path":"/api/v1/admin/users","auth":"administrator","status":"functional"},
+    {"method":"POST","path":"/api/v1/admin/users","auth":"administrator","status":"functional"},
+    {"method":"GET","path":"/api/v1/admin/users/{user_id}","auth":"administrator","status":"functional"},
+    {"method":"PATCH","path":"/api/v1/admin/users/{user_id}","auth":"administrator","status":"disabled_by_design","failure_behavior":"501 with explanation; no silent no-op"},
+    {"method":"POST","path":"/api/v1/admin/users/{user_id}/disable","auth":"administrator","status":"functional"},
+    {"method":"POST","path":"/api/v1/admin/users/{user_id}/enable","auth":"administrator","status":"functional"},
+    {"method":"POST","path":"/api/v1/admin/users/{user_id}/reset-password","auth":"administrator","status":"functional"},
+    {"method":"POST","path":"/api/v1/admin/users/{user_id}/revoke-sessions","auth":"administrator","status":"functional"},
+    {"method":"POST","path":"/api/v1/admin/users/interviewer","auth":"administrator","status":"functional"},
+    {"method":"GET","path":"/api/v1/engagements","auth":"session","status":"functional"},
+    {"method":"POST","path":"/api/v1/engagements","auth":"session","status":"functional"},
+    {"method":"GET","path":"/api/v1/engagements/{engagement_id}/nodes/{node_id}/live","auth":"session","status":"functional"},
+    {"method":"POST","path":"/api/v1/runners/register","auth":"runner-registration-token","status":"functional"},
+    {"method":"POST","path":"/api/v1/runners/heartbeat","auth":"runner-bearer","status":"functional"},
+    {"method":"POST","path":"/api/v1/runners/jobs/claim","auth":"runner-bearer","status":"functional"},
+    {"method":"POST","path":"/api/v1/runners/jobs/{job_id}/complete","auth":"runner-bearer","status":"functional"}
+  ],
+  "controls": [
+    {"page":"/login","component":"LoginPage","visible_label":"Sign In","action":"POST /api/auth/login","expected_result":"session cookie and redirect to /portal","authentication_requirement":"none","authorization_requirement":"valid active username/password","implemented_status":"functional","automated_test_status":"covered","manual_test_status":"pending browser RC audit","accessibility_status":"labeled Username and Password form controls, alert region, focus styles","failure_behavior":"generic invalid credentials, locked/expired/disabled reason without enumeration"},
+    {"page":"portal shell","component":"EngagementShell","visible_label":"Logout","action":"POST /api/auth/logout","expected_result":"session invalidated and redirect to /login","authentication_requirement":"session","authorization_requirement":"any active user","implemented_status":"functional","automated_test_status":"covered by auth/session tests","manual_test_status":"pending browser RC audit","accessibility_status":"button focus styles","failure_behavior":"best-effort logout still redirects"},
+    {"page":"/portal/admin/users","component":"AdminUsersPage","visible_label":"Create Interviewer Account","action":"POST /api/v1/admin/users/interviewer","expected_result":"one-time credential modal","authentication_requirement":"session","authorization_requirement":"administrator","implemented_status":"functional","automated_test_status":"covered","manual_test_status":"pending browser RC audit","accessibility_status":"button plus modal role=dialog","failure_behavior":"visible status/error message"},
+    {"page":"/portal/admin/users","component":"AdminUsersPage","visible_label":"Disable","action":"POST /api/v1/admin/users/{id}/disable","expected_result":"disable user, revoke sessions, last-admin protected","authentication_requirement":"session","authorization_requirement":"administrator","implemented_status":"functional","automated_test_status":"covered","manual_test_status":"pending browser RC audit","accessibility_status":"native button, confirmation","failure_behavior":"visible API error"},
+    {"page":"/portal/admin/users","component":"AdminUsersPage","visible_label":"Reset password","action":"POST /api/v1/admin/users/{id}/reset-password","expected_result":"one-time temporary password modal","authentication_requirement":"session","authorization_requirement":"administrator","implemented_status":"functional","automated_test_status":"covered","manual_test_status":"pending browser RC audit","accessibility_status":"native button, confirmation","failure_behavior":"visible API error"},
+    {"page":"/portal/engagements","component":"EngagementListPage","visible_label":"Load NVIS demo fixture","action":"POST /api/v1/engagement-fixtures/nvis-interview-demo","expected_result":"simulated fixture loaded with SIMULATED DEMO label","authentication_requirement":"session","authorization_requirement":"authenticated reviewer/admin","implemented_status":"functional","automated_test_status":"existing portal coverage","manual_test_status":"pending browser RC audit","accessibility_status":"button focus styles","failure_behavior":"list remains unchanged; API errors visible through future hardening"},
+    {"page":"/portal/engagements/:engagementId","component":"EngagementDetailPage","visible_label":"Generate upload token","action":"POST upload-token API","expected_result":"copy-once token modal","authentication_requirement":"session","authorization_requirement":"authenticated reviewer/admin","implemented_status":"functional","automated_test_status":"existing API coverage","manual_test_status":"pending browser RC audit","accessibility_status":"dialog and native controls","failure_behavior":"visible error"},
+    {"page":"/portal/library/*","component":"OperationsLibraryPage","visible_label":"Copy command","action":"clipboard write only","expected_result":"command copied; no execution","authentication_requirement":"session","authorization_requirement":"authenticated reviewer/admin","implemented_status":"functional","automated_test_status":"existing library tests","manual_test_status":"pending browser RC audit","accessibility_status":"native button","failure_behavior":"copy feedback absent if browser denies clipboard"}
+  ],
+  "classifications_summary": {"functional": 8, "disabled_by_design": 1, "unavailable_due_to_capability": 0, "coming_soon": 0, "broken": 0},
+  "notes": ["Generated artifacts are intentionally uncommitted.", "Manual browser audit remains pending until Playwright suite is run against the finished RC1 build.", "Real Runpod end-to-end is not marked passed unless run against the actual node."]
+}

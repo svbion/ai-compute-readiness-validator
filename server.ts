@@ -22,7 +22,7 @@ const sampleDataDir = path.join(repoRoot, "sample-data");
 const sessionCookieName = "ai_factory_session";
 
 type SessionRecord = {
-  email: string;
+  email: string | null;
   username: string;
   role: "administrator" | "reviewer" | "temporary_reviewer";
   displayName: string;
@@ -173,12 +173,12 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
 
   const getSession = (req: express.Request): SessionRecord | null => {
     if (!authConfig.required) {
-      return { email: "local-development", username: "local-development", role: "administrator", displayName: "Local Development", userId: "local-development", sessionVersion: 1, createdAt: Date.now(), lastSeenAt: Date.now() };
+      return { email: null, username: "local-development", role: "administrator", displayName: "Local Development", userId: "local-development", sessionVersion: 1, createdAt: Date.now(), lastSeenAt: Date.now() };
     }
     if (!authConfig.sessionSecret) return null;
 
     if (authConfig.testBypassToken && req.get("x-ai-factory-test-auth") === authConfig.testBypassToken) {
-      return { email: "deployment-test-reviewer", username: "deployment-test-admin", role: "administrator", displayName: "Deployment Test Admin", userId: "deployment-test-admin", sessionVersion: 1, createdAt: Date.now(), lastSeenAt: Date.now() };
+      return { email: null, username: "deployment-test-admin", role: "administrator", displayName: "Deployment Test Admin", userId: "deployment-test-admin", sessionVersion: 1, createdAt: Date.now(), lastSeenAt: Date.now() };
     }
 
     const cookies = parseCookies(req.headers.cookie);
@@ -232,9 +232,9 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
       return res.json({ authenticated: true, localDevelopment: true });
     }
 
-    const email = String(req.body?.email ?? req.body?.username ?? "").trim().toLowerCase();
+    const username = String(req.body?.username ?? "").trim().toLowerCase();
     const password = String(req.body?.password ?? "");
-    const attemptKey = `${req.ip}:${email}`;
+    const attemptKey = `${req.ip}:${username}`;
     const now = Date.now();
     const attempt = loginAttempts.get(attemptKey) ?? { count: 0, lockedUntil: 0, windowStartedAt: now };
 
@@ -249,19 +249,19 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
     }
 
     if (userStore.hasUsers()) {
-      const auth = userStore.authenticate(email, password);
+      const auth = userStore.authenticate(username, password);
       if (!auth.ok) {
         attempt.count += 1;
         if (attempt.count >= 5) attempt.lockedUntil = now + 15 * 60 * 1000;
         loginAttempts.set(attemptKey, attempt);
         const failedReason = (auth as { ok: false; reason: "invalid" | "disabled" | "expired" | "locked" }).reason;
         const reason = failedReason === "locked" ? "account-locked" : failedReason === "disabled" ? "account-disabled" : failedReason === "expired" ? "account-expired" : "invalid-credentials";
-        return res.status(reason === "account-locked" ? 423 : 401).json({ error: "Invalid email or password", reason });
+        return res.status(reason === "account-locked" ? 423 : 401).json({ error: "Invalid username or password", reason });
       }
 
       loginAttempts.delete(attemptKey);
       const sessionId = createSessionId();
-      sessions.set(sessionId, { email: auth.user.email ?? auth.user.username, username: auth.user.username, role: auth.user.role, displayName: auth.user.display_name, userId: auth.user.id, sessionVersion: auth.session_version, createdAt: now, lastSeenAt: now });
+      sessions.set(sessionId, { email: auth.user.email, username: auth.user.username, role: auth.user.role, displayName: auth.user.display_name, userId: auth.user.id, sessionVersion: auth.session_version, createdAt: now, lastSeenAt: now });
       res.setHeader("Set-Cookie", buildCookie(sessionCookieName, signSessionId(sessionId, authConfig.sessionSecret), {
         maxAge: authConfig.sessionTtlSeconds,
         secure: authConfig.cookieSecure,
@@ -269,26 +269,26 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
       return res.json({ authenticated: true, user: { id: auth.user.id, username: auth.user.username, display_name: auth.user.display_name, email: auth.user.email, role: auth.user.role } });
     }
 
-    const validEmail = email === authConfig.reviewerEmail;
+    const validUsername = username === authConfig.reviewerUsername;
     const validPassword = Boolean(authConfig.passwordHash && timingSafeVerifyPassword(password, authConfig.passwordHash));
 
-    if (!validEmail || !validPassword || !authConfig.sessionSecret) {
+    if (!validUsername || !validPassword || !authConfig.sessionSecret) {
       attempt.count += 1;
       if (attempt.count >= 5) {
         attempt.lockedUntil = now + 15 * 60 * 1000;
       }
       loginAttempts.set(attemptKey, attempt);
-      return res.status(401).json({ error: "Invalid email or password", reason: "invalid-credentials" });
+      return res.status(401).json({ error: "Invalid username or password", reason: "invalid-credentials" });
     }
 
     loginAttempts.delete(attemptKey);
     const sessionId = createSessionId();
-    sessions.set(sessionId, { email, username: email, role: "reviewer", displayName: "Reviewer", userId: "env-reviewer", sessionVersion: 1, createdAt: now, lastSeenAt: now });
+    sessions.set(sessionId, { email: null, username, role: "reviewer", displayName: "Reviewer", userId: "env-reviewer", sessionVersion: 1, createdAt: now, lastSeenAt: now });
     res.setHeader("Set-Cookie", buildCookie(sessionCookieName, signSessionId(sessionId, authConfig.sessionSecret), {
       maxAge: authConfig.sessionTtlSeconds,
       secure: authConfig.cookieSecure,
     }));
-    return res.json({ authenticated: true });
+    return res.json({ authenticated: true, user: { id: "env-reviewer", username, display_name: "Reviewer", email: null, role: "reviewer" } });
   });
 
   app.post("/api/auth/logout", (req, res) => {

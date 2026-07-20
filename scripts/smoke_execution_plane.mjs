@@ -10,7 +10,7 @@ Object.assign(process.env, {
   NODE_ENV: 'production',
   AI_FACTORY_AUTH_REQUIRED: 'true',
   AI_FACTORY_SESSION_SECRET: '0123456789abcdef0123456789abcdef',
-  AI_FACTORY_REVIEWER_EMAIL: 'reviewer@example.invalid',
+  AI_FACTORY_REVIEWER_USERNAME: 'reviewer',
   AI_FACTORY_REVIEWER_PASSWORD_HASH: 'scrypt$abc$def',
   AI_FACTORY_AUTH_TEST_BYPASS_TOKEN: 'test-bypass-token',
   AI_VALIDATOR_ENGAGEMENT_STORE: path.join(dir, 'store.json'),

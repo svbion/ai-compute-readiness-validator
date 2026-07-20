@@ -12,7 +12,7 @@ const baseEnv: AuthEnvironment = {
   NODE_ENV: "production",
   AI_FACTORY_AUTH_REQUIRED: undefined,
   AI_FACTORY_SESSION_SECRET: "0123456789abcdef0123456789abcdef",
-  AI_FACTORY_REVIEWER_EMAIL: "reviewer@example.invalid",
+  AI_FACTORY_REVIEWER_USERNAME: "NVIDIA-Reviewer",
   AI_FACTORY_REVIEWER_PASSWORD_HASH: createPasswordHash("correct horse battery staple"),
 };
 
@@ -28,15 +28,15 @@ test("development can explicitly require authentication", () => {
 test("auth config rejects required auth without credentials and session secret", () => {
   assert.throws(
     () => buildAuthConfig({ NODE_ENV: "production" }),
-    /AI_FACTORY_SESSION_SECRET|AI_FACTORY_REVIEWER_EMAIL|AI_FACTORY_REVIEWER_PASSWORD_HASH/,
+    /AI_FACTORY_SESSION_SECRET|AI_FACTORY_REVIEWER_USERNAME|AI_FACTORY_REVIEWER_PASSWORD_HASH/,
   );
 });
 
-test("auth config accepts hashed reviewer credential only", () => {
+test("auth config accepts normalized reviewer username credential only", () => {
   const config = buildAuthConfig(baseEnv);
 
   assert.equal(config.required, true);
-  assert.equal(config.reviewerEmail, "reviewer@example.invalid");
+  assert.equal(config.reviewerUsername, "nvidia-reviewer");
   assert.equal(config.passwordHash.includes("correct horse"), false);
 });
 

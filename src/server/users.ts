@@ -158,7 +158,7 @@ export class UserStore {
   authenticate(login: string, password: string): { ok: true; user: PublicUser; session_version: number } | { ok: false; reason: "invalid" | "disabled" | "expired" | "locked" } {
     const document = this.read();
     const normalizedLogin = login.trim().toLowerCase();
-    const index = document.users.findIndex((user) => user.username === normalizedLogin || (user.email && user.email.toLowerCase() === normalizedLogin));
+    const index = document.users.findIndex((user) => user.username === normalizedLogin);
     const dummyHash = createPasswordHash("DummyPassword-For-Timing-Only-123!", "00000000000000000000000000000000");
     const user = index >= 0 ? document.users[index] : null;
     const hash = user?.password_hash ?? dummyHash;

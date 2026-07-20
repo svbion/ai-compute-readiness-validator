@@ -91,7 +91,7 @@ for file in "${APP_DIR}"/artifacts/healthy-results.json "${APP_DIR}"/artifacts/d
 done
 line disk_usage "$(df -h "${APP_DIR}" 2>/dev/null | awk 'NR==2 {print $5 " used, " $4 " available"}' || printf unknown)"
 auth_line AI_FACTORY_SESSION_SECRET "${AI_FACTORY_SESSION_SECRET:-}"
-auth_line AI_FACTORY_REVIEWER_EMAIL "${AI_FACTORY_REVIEWER_EMAIL:-}"
+auth_line AI_FACTORY_REVIEWER_USERNAME "${AI_FACTORY_REVIEWER_USERNAME:-}"
 auth_line AI_FACTORY_REVIEWER_PASSWORD_HASH "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}"
 auth_line AI_FACTORY_AUTH_TEST_BYPASS_TOKEN "${AI_FACTORY_AUTH_TEST_BYPASS_TOKEN:-}"
 
