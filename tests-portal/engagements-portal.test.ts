@@ -61,17 +61,25 @@ test("detail dashboard renders required milestone sections and waiting states", 
   for (const section of ["Nodes", "Findings", "Benchmarks", "Evidence", "Acceptance Report", "Activity"]) {
     assert.match(appSource, new RegExp(section));
   }
-  assert.match(appSource, /No evidence evaluated\./);
+  assert.match(appSource, /No findings match the current filters\./);
   assert.match(appSource, /No bundles uploaded\./);
-  assert.match(appSource, /Available after validation\./);
+  assert.match(appSource, /Readiness scoring is available after accepted evidence is evaluated\./);
   assert.match(appSource, /NCCL/);
   assert.match(appSource, /HPL/);
   assert.match(appSource, /Inference/);
-  assert.match(appSource, /Awaiting Evidence/);
+  assert.match(appSource, /Awaiting evidence/);
   assert.match(appSource, /Generate upload token/);
   assert.match(appSource, /Revoke token/);
   assert.match(appSource, /Upload-token state/);
   assert.match(appSource, /Current evidence ID/);
+  assert.match(appSource, /Node comparison/);
+  assert.match(appSource, /Readiness breakdown/);
+  assert.match(appSource, /Acceptance Report preview/);
+  assert.match(appSource, /Awaiting Benchmark Evidence/);
+  assert.match(appSource, /Benchmark results are evaluated separately and are not included in the current readiness score/);
+  assert.match(appSource, /Evidence provenance/);
+  assert.match(appSource, /Filter findings by severity/);
+  assert.match(appSource, /Blocking only/);
 });
 
 test("upload token modal shows plaintext once, warns, copies, and clears state without localStorage", () => {

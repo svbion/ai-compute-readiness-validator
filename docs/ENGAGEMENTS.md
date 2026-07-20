@@ -171,6 +171,11 @@ All engagement APIs are authenticated by the existing reviewer/admin access midd
 - `POST /api/v1/engagements/{engagement_id}/nodes/{node_id}/upload-tokens/{token_id}/revoke`
 - `GET /api/v1/engagements/{engagement_id}/evidence`
 - `GET /api/v1/engagements/{engagement_id}/activity`
+- `GET /api/v1/engagements/{engagement_id}/comparison`
+- `GET /api/v1/engagements/{engagement_id}/findings`
+- `GET /api/v1/engagements/{engagement_id}/readiness`
+- `GET /api/v1/engagements/{engagement_id}/evidence/{evidence_id}/provenance`
+- `POST /api/v1/engagements/{engagement_id}/evaluate`
 - `POST /api/v1/engagements/{engagement_id}/archive`
 - `POST /api/v1/engagement-fixtures/nvis-interview-demo`
 - `POST /api/v1/evidence/uploads` for bearer-token authenticated node uploads; this route intentionally bypasses reviewer sessions and accepts only scoped upload tokens.
@@ -192,7 +197,7 @@ Validation rules:
 - `/portal/engagements/new`: new engagement form.
 - `/portal/engagements/:engagementId`: customer acceptance dashboard shell.
 
-The detail dashboard includes sections for nodes, findings, benchmarks, evidence, acceptance report, and activity. Nodes show collection status, validation status, last collection, current evidence ID, upload-token state, token generation, token revocation, and outbound upload instructions. The evidence section shows accepted bundle metadata but does not expose raw downloads. Benchmark execution and PDF reports remain placeholders.
+The detail dashboard includes sections for top-level acceptance summary, nodes, node comparison, findings, readiness breakdown, benchmarks, evidence, acceptance report preview, and activity. Nodes show collection status, validation status, last collection, current evidence ID, upload-token state, token generation, token revocation, and outbound upload instructions. The evidence section shows accepted bundle metadata but does not expose raw downloads. Evidence links open provenance metadata only. Benchmark execution and PDF reports remain placeholders.
 
 ## Fixture behavior
 
@@ -206,10 +211,14 @@ The NVIS demo fixture is loaded only when explicitly requested through the authe
 Fixture nodes:
 
 - `node01`: awaiting evidence, NVIDIA H100 80GB HBM3, 8 GPUs.
-- `node02`: awaiting evidence, NVIDIA H100 80GB HBM3, 8 GPUs.
+- `node02`: awaiting evidence, NVIDIA H100 80GB HBM3, 8 GPUs. The generated simulated bundle intentionally uses a different NVIDIA driver to produce one high blocking remediation finding after upload.
 
 ## Evidence ingestion relationship
 
 Secure evidence bundle ingestion now attaches validated collector `.tar.gz` bundles to engagement nodes through short-lived scoped upload tokens. Accepted evidence updates node collection state, node last collection time, current evidence ID, sanitized source hostname, derived engagement received counts, and activity history. Exact duplicate bundles are rejected and newer collections supersede previous accepted evidence without deleting audit history.
 
 The upload model is outbound-only: the GPU node initiates HTTPS upload to GPU Validator. GPU Validator does not store SSH credentials, open SSH sessions, execute remote commands, require inbound cluster access, or install agents remotely. See `docs/EVIDENCE_INGESTION.md` for the detailed token model, archive validation, persistence layout, CLI commands, portal workflow, and current limitations.
+
+## Cluster intelligence relationship
+
+Accepted evidence is evaluated automatically by the comparison, findings, and readiness endpoints. Evaluation parses evidence into versioned facts with provenance, derives cluster consensus, applies profile-policy findings, computes node and engagement readiness scores, and updates server-controlled fields: `readiness_score`, `acceptance_status`, ready/remediation/failed node counts, node validation statuses, and node fact summaries. Clients cannot write these derived fields. See `docs/CLUSTER_INTELLIGENCE.md`.

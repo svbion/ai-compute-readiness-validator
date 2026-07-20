@@ -118,6 +118,86 @@ export interface ActivityEntry {
   metadata: Record<string, string | number | boolean | null>;
 }
 
+export interface ProvenanceReference {
+  evidence_id: string;
+  source_file: string;
+  source_command_id: string | null;
+  source_command: string | null;
+  collection_timestamp: string;
+  source_checksum: string | null;
+  parsed_field?: string;
+  parsed_value?: unknown;
+  sanitized?: boolean;
+  simulated?: boolean;
+}
+
+export interface ComparisonCell {
+  value: unknown;
+  consensus_value: unknown;
+  matches_consensus: boolean;
+  missing: boolean;
+  provenance: ProvenanceReference | null;
+}
+
+export interface ComparisonRow {
+  node_id: string;
+  node: string;
+  evidence_status: string;
+  simulated: boolean;
+  validation_status: string;
+  node_readiness: number | null;
+  fields: Record<string, ComparisonCell>;
+}
+
+export interface ClusterComparison {
+  engagement_id: string;
+  evaluated_at: string;
+  warnings: string[];
+  rows: ComparisonRow[];
+}
+
+export interface Finding {
+  id: string;
+  rule_id: string;
+  rule_version: string;
+  engagement_id: string;
+  node_id: string | null;
+  category: string;
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  title: string;
+  description: string;
+  impact: string;
+  recommendation: string;
+  verification_command: string;
+  blocking: boolean;
+  evidence_references: ProvenanceReference[];
+  created_at: string;
+  simulated: boolean;
+}
+
+export interface ReadinessSection {
+  score: number;
+  max: number;
+  deductions: string[];
+  status?: string;
+}
+
+export interface EngagementReadiness {
+  engagement_id: string;
+  readiness_score: number | null;
+  acceptance_status: string;
+  expected_node_count: number;
+  received_node_count: number;
+  ready_node_count: number;
+  remediation_node_count: number;
+  failed_node_count: number;
+  blocking_findings_count: number;
+  evaluated_at: string;
+  simulated_demo_warning: string | null;
+  breakdown: Record<string, ReadinessSection>;
+  deduction_reasons: string[];
+}
+
 export function formatEngagementLabel(value: string): string {
   return value.replace(/[-_]+/g, " ").replace(/\b\w/g, (match) => match.toUpperCase());
 }

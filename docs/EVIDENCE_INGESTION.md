@@ -171,6 +171,8 @@ The modal warns that the token cannot be retrieved again. The token is not writt
 
 The Evidence section shows node, evidence ID, collector version/profile, collected/uploaded timestamps, sanitized/simulated labels, command counts, bundle checksum, status, and validation warnings. Raw evidence download is intentionally not exposed yet.
 
+Accepted evidence is also evaluated by authenticated cluster-intelligence endpoints. The portal displays the derived comparison table, findings, readiness breakdown, acceptance decision, and evidence provenance modal. Provenance responses include source command, source file, collection timestamp, checksum, parsed field/value, and simulated/sanitized flags; raw content and filesystem paths are not exposed.
+
 ## Activity history
 
 Activity entries are recorded for:
@@ -192,7 +194,7 @@ python scripts/create_demo_evidence.py \
   --output /tmp/gpu-validator-demo-evidence
 ```
 
-The generated manifests include `simulated: true` and `collection_mode: fixture` and are not loaded automatically into production.
+The generated manifests include `simulated: true` and `collection_mode: fixture` and are not loaded automatically into production. `node01` is internally consistent and ready. `node02` intentionally reports a different NVIDIA driver version to demonstrate a high blocking cluster-consistency finding and `remediation_required` acceptance for the simulated engagement.
 
 ## Troubleshooting
 
@@ -205,7 +207,7 @@ Use the response `error_id` for log correlation. Do not log or share plaintext t
 
 ## Current limitations
 
-- No benchmark parsing during bundle ingestion.
+- No benchmark parsing during bundle ingestion; benchmark status is `Awaiting Benchmark Evidence` and excluded from the current readiness score.
 - No PDF report generation.
 - No raw evidence downloads from the portal.
 - No remote SSH execution or remote package installation.

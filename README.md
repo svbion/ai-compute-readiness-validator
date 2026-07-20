@@ -117,6 +117,8 @@ Portal API behavior:
 - `GET /api/v1/engagements` and related authenticated `/api/v1/engagements/*` routes manage multi-node validation engagements using file-backed JSON persistence
 - authenticated `POST|GET /api/v1/engagements/:engagementId/nodes/:nodeId/upload-tokens` routes create/list scoped evidence upload tokens; revoke uses `/upload-tokens/:tokenId/revoke`
 - `POST /api/v1/evidence/uploads` accepts token-authenticated outbound collector `.tar.gz` uploads and rejects unsafe, expired, duplicate, or malformed uploads
+- `GET /api/v1/engagements/:engagementId/comparison|findings|readiness` evaluates accepted evidence into parsed facts, cluster comparison, rule-based findings, readiness score, and acceptance decision
+- `GET /api/v1/engagements/:engagementId/evidence/:evidenceId/provenance` returns scoped parsed-value provenance without raw storage paths or raw file contents
 - `POST /api/run-scenario` intentionally returns `405`; the reviewer portal is read-only and scenario/live evidence generation remains an administrator-side CLI workflow
 - `GET /reports/:scenario/:format` serves safe report links for HTML, Markdown, and JSON evidence
 
@@ -153,6 +155,8 @@ The fixture creates `NVIS Interview Demo / Two-Node H100 Cluster Acceptance` wit
 ```bash
 python scripts/create_demo_evidence.py --output /tmp/gpu-validator-demo-evidence
 ```
+
+Uploading both generated bundles to the NVIS demo engagement intentionally demonstrates cluster intelligence: `node01` is ready, `node02` has a different NVIDIA driver version, the engagement receives 2/2 nodes, and acceptance is `remediation_required` with a `DEMONSTRATION ONLY — NOT VALID FOR CUSTOMER ACCEPTANCE` banner. See `docs/CLUSTER_INTELLIGENCE.md` for parser architecture, policies, findings, scoring, acceptance, APIs, and current limitations.
 
 ## Hosted deployment guidance
 

@@ -205,6 +205,22 @@
 
 - Cluster comparison, findings derivation, and benchmark result importers.
 
+## Phase 3B.3 cluster comparison and readiness evaluation
+
+- Added versioned parsed node facts with per-value provenance for accepted evidence records.
+- Added cluster comparison consensus, warnings for ties, mismatch/missing highlighting inputs, and authenticated comparison API.
+- Added profile-policy-driven findings rules for cluster consistency, node health, and evidence quality.
+- Added transparent node and engagement readiness scoring with category breakdowns and benchmark exclusion.
+- Added acceptance decisions separate from score, with simulated evidence banner semantics.
+- Added scoped evidence provenance API that does not expose raw storage paths or raw evidence content.
+- Enhanced the engagement portal with acceptance summary, node comparison, finding filters, readiness breakdown, benchmark awaiting state, evidence provenance modal, and acceptance report preview.
+- Updated the simulated demo generator so `node01` is ready and `node02` intentionally has a different NVIDIA driver, producing one high blocking remediation finding.
+- Added `docs/CLUSTER_INTELLIGENCE.md`.
+
+### Phase 3B.3 next milestone
+
+- NCCL, NVIDIA HPL, and inference benchmark result importers.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.
