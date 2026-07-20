@@ -84,12 +84,16 @@ ai-validator validate --name local-cluster --output-dir artifacts/live
 ai-validator collect --profile linux-host --output evidence-bundle
 ai-validator collect --profile dgx-class --output evidence-bundle --sanitize
 ai-validator collect --profile linux-host --output evidence-bundle --dry-run
+ai-validator bundle --input evidence-bundle --output node01-evidence.tar.gz
+ai-validator upload --bundle node01-evidence.tar.gz --url https://gpuvalidator.com/api/v1/evidence/uploads --token-file /secure/path/upload-token.txt
 ai-validator demo --scenario healthy --output-dir artifacts
 ai-validator demo --scenario degraded --output-dir artifacts
 ai-validator report --input artifacts/degraded-results.json --output-dir artifacts/regenerated
 ```
 
 `ai-validator collect` creates administrator-side local evidence bundles for Linux and NVIDIA GPU hosts. It is read-only, uses an internal command allowlist with argv-list subprocess execution, records per-command metadata and SHA-256 checksums, handles missing optional NVIDIA/DCGM utilities without failing the whole run, and can sanitize host-identifying fields with deterministic replacements. Optional DCGM diagnostics are skipped unless `--include-diagnostics` is explicitly passed. See `docs/EVIDENCE_COLLECTION.md` for supported profiles, exact commands, bundle layout, manifest schema, and safety exclusions.
+
+`ai-validator bundle` packages a validated collector directory into a deterministic `.tar.gz` archive. `ai-validator upload` sends that archive outbound over HTTPS using a scoped upload bearer token from `--token-file` or `GPU_VALIDATOR_UPLOAD_TOKEN`; it never accepts plaintext tokens on the command line. See `docs/EVIDENCE_INGESTION.md` for token lifecycle, archive validation, storage layout, duplicate behavior, and portal workflow.
 
 Demo runs emit both rolling and scenario-specific artifacts:
 - `latest-results.json`, `latest-report.html`, `latest-report.md`
@@ -111,6 +115,8 @@ Portal API behavior:
 - `GET /api/results?scenario=healthy|degraded` loads generated scenario artifacts from `artifacts/` when present and otherwise falls back to checked-in `sample-data/`
 - `GET /api/evidence-sources` lists simulated sources and only exposes live/imported choices when valid live artifacts exist
 - `GET /api/v1/engagements` and related authenticated `/api/v1/engagements/*` routes manage multi-node validation engagements using file-backed JSON persistence
+- authenticated `POST|GET /api/v1/engagements/:engagementId/nodes/:nodeId/upload-tokens` routes create/list scoped evidence upload tokens; revoke uses `/upload-tokens/:tokenId/revoke`
+- `POST /api/v1/evidence/uploads` accepts token-authenticated outbound collector `.tar.gz` uploads and rejects unsafe, expired, duplicate, or malformed uploads
 - `POST /api/run-scenario` intentionally returns `405`; the reviewer portal is read-only and scenario/live evidence generation remains an administrator-side CLI workflow
 - `GET /reports/:scenario/:format` serves safe report links for HTML, Markdown, and JSON evidence
 
@@ -139,9 +145,14 @@ Engagement demo flow:
 npm run dev
 # open http://localhost:3000/portal/engagements
 # click "Load NVIS demo fixture"
+# open the engagement detail page, generate one upload token per node, and copy it once
 ```
 
-The fixture creates `NVIS Interview Demo / Two-Node H100 Cluster Acceptance` with two simulated H100 node placeholders awaiting evidence. It is idempotent and does not overwrite user-created data.
+The fixture creates `NVIS Interview Demo / Two-Node H100 Cluster Acceptance` with two simulated H100 node placeholders awaiting evidence. It is idempotent and does not overwrite user-created data. For local ingestion smoke testing, generate simulated uploadable bundles with:
+
+```bash
+python scripts/create_demo_evidence.py --output /tmp/gpu-validator-demo-evidence
+```
 
 ## Hosted deployment guidance
 

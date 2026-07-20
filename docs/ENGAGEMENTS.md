@@ -166,8 +166,14 @@ All engagement APIs are authenticated by the existing reviewer/admin access midd
 - `GET /api/v1/engagements/{engagement_id}`
 - `PATCH /api/v1/engagements/{engagement_id}`
 - `GET /api/v1/engagements/{engagement_id}/nodes`
+- `POST /api/v1/engagements/{engagement_id}/nodes/{node_id}/upload-tokens`
+- `GET /api/v1/engagements/{engagement_id}/nodes/{node_id}/upload-tokens`
+- `POST /api/v1/engagements/{engagement_id}/nodes/{node_id}/upload-tokens/{token_id}/revoke`
+- `GET /api/v1/engagements/{engagement_id}/evidence`
+- `GET /api/v1/engagements/{engagement_id}/activity`
 - `POST /api/v1/engagements/{engagement_id}/archive`
 - `POST /api/v1/engagement-fixtures/nvis-interview-demo`
+- `POST /api/v1/evidence/uploads` for bearer-token authenticated node uploads; this route intentionally bypasses reviewer sessions and accepts only scoped upload tokens.
 
 Validation rules:
 
@@ -186,7 +192,7 @@ Validation rules:
 - `/portal/engagements/new`: new engagement form.
 - `/portal/engagements/:engagementId`: customer acceptance dashboard shell.
 
-The detail dashboard includes sections for nodes, findings, benchmarks, evidence, acceptance report, and activity. For this milestone, evidence upload, benchmark execution, and PDF reports are placeholders only.
+The detail dashboard includes sections for nodes, findings, benchmarks, evidence, acceptance report, and activity. Nodes show collection status, validation status, last collection, current evidence ID, upload-token state, token generation, token revocation, and outbound upload instructions. The evidence section shows accepted bundle metadata but does not expose raw downloads. Benchmark execution and PDF reports remain placeholders.
 
 ## Fixture behavior
 
@@ -202,6 +208,8 @@ Fixture nodes:
 - `node01`: awaiting evidence, NVIDIA H100 80GB HBM3, 8 GPUs.
 - `node02`: awaiting evidence, NVIDIA H100 80GB HBM3, 8 GPUs.
 
-## Future evidence upload relationship
+## Evidence ingestion relationship
 
-The next milestone is secure evidence bundle ingestion and upload tokens. Evidence bundles from `ai-validator collect` should later attach to engagement nodes, update collection status, drive node validation, derive engagement counts, and produce acceptance reports without exposing raw credentials or untrusted imported content.
+Secure evidence bundle ingestion now attaches validated collector `.tar.gz` bundles to engagement nodes through short-lived scoped upload tokens. Accepted evidence updates node collection state, node last collection time, current evidence ID, sanitized source hostname, derived engagement received counts, and activity history. Exact duplicate bundles are rejected and newer collections supersede previous accepted evidence without deleting audit history.
+
+The upload model is outbound-only: the GPU node initiates HTTPS upload to GPU Validator. GPU Validator does not store SSH credentials, open SSH sessions, execute remote commands, require inbound cluster access, or install agents remotely. See `docs/EVIDENCE_INGESTION.md` for the detailed token model, archive validation, persistence layout, CLI commands, portal workflow, and current limitations.

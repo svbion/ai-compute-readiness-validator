@@ -23,12 +23,16 @@ export const engagementStatuses = ["draft", "collecting", "processing", "ready_f
 export const acceptanceStatuses = ["not_evaluated", "ready", "ready_with_observations", "remediation_required", "failed"] as const;
 export const collectionStatuses = ["awaiting_evidence", "received", "validating", "validated", "rejected", "superseded"] as const;
 export const validationStatuses = ["not_evaluated", "ready", "observations", "remediation_required", "failed"] as const;
+export const uploadTokenStatuses = ["active", "used", "expired", "revoked"] as const;
+export const ingestionStatuses = ["received", "validating", "accepted", "rejected", "superseded"] as const;
 
 export type PlatformProfile = typeof platformProfiles[number];
 export type EngagementStatus = typeof engagementStatuses[number];
 export type AcceptanceStatus = typeof acceptanceStatuses[number];
 export type CollectionStatus = typeof collectionStatuses[number];
 export type ValidationStatus = typeof validationStatuses[number];
+export type UploadTokenStatus = typeof uploadTokenStatuses[number];
+export type IngestionStatus = typeof ingestionStatuses[number];
 
 export interface EngagementNode {
   id: string;
@@ -53,6 +57,62 @@ export interface EngagementNode {
   findings_count: number;
   critical_findings_count: number;
   high_findings_count: number;
+  current_evidence_id?: string | null;
+  upload_token_state?: string | null;
+}
+
+export interface EvidenceUploadToken {
+  id: string;
+  schema_version: string;
+  token_hash: string;
+  engagement_id: string;
+  node_id: string;
+  created_at: string;
+  expires_at: string;
+  created_by: string;
+  used_at: string | null;
+  revoked_at: string | null;
+  status: UploadTokenStatus;
+  maximum_upload_bytes: number;
+}
+
+export interface EvidenceRecord {
+  id: string;
+  schema_version: string;
+  engagement_id: string;
+  node_id: string;
+  collection_id: string;
+  collector_version: string;
+  collector_profile: string;
+  manifest_schema_version: string;
+  uploaded_at: string;
+  collected_at: string;
+  sanitized: boolean;
+  simulated: boolean;
+  command_count: number;
+  collected_count: number;
+  missing_count: number;
+  failed_count: number;
+  skipped_count: number;
+  bundle_sha256: string;
+  manifest_sha256: string;
+  storage_key: string;
+  upload_token_id: string;
+  ingestion_status: IngestionStatus;
+  validation_warnings: string[];
+  source_hostname_display: string;
+  supersedes_evidence_id: string | null;
+}
+
+export interface EngagementActivityEntry {
+  id: string;
+  engagement_id: string;
+  node_id: string | null;
+  type: string;
+  created_at: string;
+  actor: string;
+  message: string;
+  metadata: Record<string, string | number | boolean | null>;
 }
 
 export interface Engagement {
@@ -82,6 +142,9 @@ interface StoreDocument {
   schema_version: string;
   engagements: Engagement[];
   nodes: EngagementNode[];
+  upload_tokens: EvidenceUploadToken[];
+  evidence_records: EvidenceRecord[];
+  activity_entries: EngagementActivityEntry[];
 }
 
 export interface EngagementStoreOptions {
@@ -89,6 +152,7 @@ export interface EngagementStoreOptions {
   createdByFallback?: string;
   clock?: () => Date;
   idGenerator?: () => string;
+  tokenGenerator?: () => string;
 }
 
 const validTransitions: Record<EngagementStatus, EngagementStatus[]> = {
@@ -125,6 +189,32 @@ function defaultStorePath(): string {
   return path.join(process.cwd(), "artifacts", "engagements", "store.json");
 }
 
+function tokenDigest(token: string): string {
+  return crypto.createHash("sha256").update(`gpu-validator-upload-token-v1:${token}`, "utf8").digest("hex");
+}
+
+export function hashUploadToken(token: string): string {
+  return tokenDigest(token);
+}
+
+export function timingSafeTokenHashEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left, "hex");
+  const rightBuffer = Buffer.from(right, "hex");
+  if (leftBuffer.length !== rightBuffer.length) return false;
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function safePublicToken(token: EvidenceUploadToken, clock: () => Date): Omit<EvidenceUploadToken, "token_hash"> {
+  const status = token.status === "active" && new Date(token.expires_at).getTime() <= clock().getTime() ? "expired" : token.status;
+  const { token_hash: _tokenHash, ...publicToken } = token;
+  return { ...publicToken, status };
+}
+
+function safeEvidenceRecord(record: EvidenceRecord): Omit<EvidenceRecord, "storage_key"> & { storage_id: string } {
+  const { storage_key: _storageKey, ...publicRecord } = record;
+  return { ...publicRecord, storage_id: record.id };
+}
+
 function deriveCounts(engagement: Engagement, nodes: EngagementNode[]): Engagement {
   const engagementNodes = nodes.filter((node) => node.engagement_id === engagement.id && node.collection_status !== "superseded");
   const received = engagementNodes.filter((node) => node.collection_status !== "awaiting_evidence").length;
@@ -145,10 +235,16 @@ function deriveCounts(engagement: Engagement, nodes: EngagementNode[]): Engageme
 function validateDocument(document: StoreDocument): StoreDocument {
   const engagements = Array.isArray(document.engagements) ? document.engagements : [];
   const nodes = Array.isArray(document.nodes) ? document.nodes : [];
+  const uploadTokens = Array.isArray(document.upload_tokens) ? document.upload_tokens : [];
+  const evidenceRecords = Array.isArray(document.evidence_records) ? document.evidence_records : [];
+  const activityEntries = Array.isArray(document.activity_entries) ? document.activity_entries : [];
   return {
     schema_version: ENGAGEMENT_SCHEMA_VERSION,
     engagements: engagements.map((engagement) => deriveCounts({ ...engagement, schema_version: engagement.schema_version ?? ENGAGEMENT_SCHEMA_VERSION }, nodes)),
     nodes,
+    upload_tokens: uploadTokens,
+    evidence_records: evidenceRecords,
+    activity_entries: activityEntries,
   };
 }
 
@@ -157,12 +253,14 @@ export class EngagementStore {
   private createdByFallback: string;
   private clock: () => Date;
   private idGenerator: () => string;
+  private tokenGenerator: () => string;
 
   constructor(options: EngagementStoreOptions = {}) {
     this.filePath = options.filePath ?? process.env.AI_VALIDATOR_ENGAGEMENT_STORE ?? defaultStorePath();
     this.createdByFallback = options.createdByFallback ?? "reviewer";
     this.clock = options.clock ?? (() => new Date());
     this.idGenerator = options.idGenerator ?? (() => crypto.randomUUID());
+    this.tokenGenerator = options.tokenGenerator ?? (() => `gvu_${crypto.randomBytes(32).toString("base64url")}`);
   }
 
   get pathForTests(): string {
@@ -171,13 +269,13 @@ export class EngagementStore {
 
   read(): StoreDocument {
     if (!fs.existsSync(this.filePath)) {
-      return { schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: [], nodes: [] };
+      return { schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: [], nodes: [], upload_tokens: [], evidence_records: [], activity_entries: [] };
     }
     const parsed = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
     if (parsed.schema_version && parsed.schema_version !== ENGAGEMENT_SCHEMA_VERSION) {
       throw new Error(`Unsupported engagement store schema_version ${parsed.schema_version}`);
     }
-    return validateDocument({ schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: parsed.engagements ?? [], nodes: parsed.nodes ?? [] });
+    return validateDocument({ schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: parsed.engagements ?? [], nodes: parsed.nodes ?? [], upload_tokens: parsed.upload_tokens ?? [], evidence_records: parsed.evidence_records ?? [], activity_entries: parsed.activity_entries ?? [] });
   }
 
   write(document: StoreDocument): void {
@@ -198,7 +296,139 @@ export class EngagementStore {
   }
 
   getNodes(engagementId: string): EngagementNode[] {
-    return this.read().nodes.filter((node) => node.engagement_id === engagementId);
+    const document = this.read();
+    return document.nodes.filter((node) => node.engagement_id === engagementId).map((node) => ({
+      ...node,
+      current_evidence_id: document.evidence_records.find((record) => record.engagement_id === engagementId && record.node_id === node.id && record.ingestion_status === "accepted")?.id ?? null,
+      upload_token_state: document.upload_tokens.find((token) => token.engagement_id === engagementId && token.node_id === node.id && token.status === "active" && new Date(token.expires_at).getTime() > this.clock().getTime()) ? "active" : null,
+    }));
+  }
+
+  getNode(engagementId: string, nodeId: string): EngagementNode | null {
+    return this.read().nodes.find((node) => node.engagement_id === engagementId && node.id === nodeId) ?? null;
+  }
+
+  listEvidence(engagementId: string): ReturnType<typeof safeEvidenceRecord>[] {
+    return this.read().evidence_records
+      .filter((record) => record.engagement_id === engagementId)
+      .sort((left, right) => right.uploaded_at.localeCompare(left.uploaded_at))
+      .map(safeEvidenceRecord);
+  }
+
+  listActivity(engagementId: string): EngagementActivityEntry[] {
+    return this.read().activity_entries
+      .filter((entry) => entry.engagement_id === engagementId)
+      .sort((left, right) => right.created_at.localeCompare(left.created_at));
+  }
+
+  createUploadToken(engagementId: string, nodeId: string, options: { createdBy?: string; expiresInSeconds?: number; maximumUploadBytes?: number } = {}) {
+    const document = this.read();
+    const engagementIndex = document.engagements.findIndex((engagement) => engagement.id === engagementId);
+    if (engagementIndex < 0 || !document.nodes.some((node) => node.engagement_id === engagementId && node.id === nodeId)) throw new Error("Engagement node not found.");
+    const maxLifetime = Number(process.env.AI_VALIDATOR_UPLOAD_TOKEN_MAX_SECONDS ?? 24 * 60 * 60);
+    const defaultLifetime = Number(process.env.AI_VALIDATOR_UPLOAD_TOKEN_DEFAULT_SECONDS ?? 2 * 60 * 60);
+    const requestedLifetime = options.expiresInSeconds ?? defaultLifetime;
+    if (!Number.isFinite(requestedLifetime) || requestedLifetime < 60 || requestedLifetime > maxLifetime) throw new Error("expires_in_seconds must be between 60 seconds and the configured maximum.");
+    const maximumUploadBytes = options.maximumUploadBytes ?? Number(process.env.AI_VALIDATOR_EVIDENCE_MAX_COMPRESSED_BYTES ?? 50 * 1024 * 1024);
+    const now = this.clock();
+    const plaintext = this.tokenGenerator();
+    const token: EvidenceUploadToken = {
+      id: `upt_${this.idGenerator()}`,
+      schema_version: "1.0.0",
+      token_hash: hashUploadToken(plaintext),
+      engagement_id: engagementId,
+      node_id: nodeId,
+      created_at: now.toISOString(),
+      expires_at: new Date(now.getTime() + requestedLifetime * 1000).toISOString(),
+      created_by: options.createdBy ?? this.createdByFallback,
+      used_at: null,
+      revoked_at: null,
+      status: "active",
+      maximum_upload_bytes: maximumUploadBytes,
+    };
+    document.upload_tokens.push(token);
+    const engagement = document.engagements[engagementIndex];
+    if (engagement.status === "draft") document.engagements[engagementIndex] = { ...engagement, status: "collecting", updated_at: now.toISOString() };
+    this.addActivity(document, engagementId, nodeId, "upload_token_created", options.createdBy ?? this.createdByFallback, "Evidence upload token created.", { token_id: token.id });
+    this.write(document);
+    return { token: safePublicToken(token, this.clock), plaintext };
+  }
+
+  listUploadTokens(engagementId: string, nodeId: string) {
+    if (!this.getNode(engagementId, nodeId)) throw new Error("Engagement node not found.");
+    return this.read().upload_tokens
+      .filter((token) => token.engagement_id === engagementId && token.node_id === nodeId)
+      .sort((left, right) => right.created_at.localeCompare(left.created_at))
+      .map((token) => safePublicToken(token, this.clock));
+  }
+
+  revokeUploadToken(engagementId: string, nodeId: string, tokenId: string, actor?: string) {
+    const document = this.read();
+    const index = document.upload_tokens.findIndex((token) => token.id === tokenId && token.engagement_id === engagementId && token.node_id === nodeId);
+    if (index < 0) throw new Error("Upload token not found.");
+    const now = nowIso(this.clock);
+    document.upload_tokens[index] = { ...document.upload_tokens[index], status: "revoked", revoked_at: now };
+    this.addActivity(document, engagementId, nodeId, "upload_token_revoked", actor ?? this.createdByFallback, "Evidence upload token revoked.", { token_id: tokenId });
+    this.touchEngagement(document, engagementId, now);
+    this.write(document);
+    return safePublicToken(document.upload_tokens[index], this.clock);
+  }
+
+  findActiveUploadToken(plaintext: string): EvidenceUploadToken | null {
+    const digest = hashUploadToken(plaintext);
+    const now = this.clock().getTime();
+    return this.read().upload_tokens.find((token) => token.status === "active" && new Date(token.expires_at).getTime() > now && timingSafeTokenHashEqual(token.token_hash, digest)) ?? null;
+  }
+
+  markTokenUsedAndAcceptEvidence(tokenId: string, evidence: Omit<EvidenceRecord, "id" | "schema_version" | "ingestion_status" | "supersedes_evidence_id">): { record: ReturnType<typeof safeEvidenceRecord>; duplicate: boolean } {
+    const document = this.read();
+    const tokenIndex = document.upload_tokens.findIndex((token) => token.id === tokenId);
+    if (tokenIndex < 0) throw new Error("Upload token not found.");
+    const token = document.upload_tokens[tokenIndex];
+    if (token.status !== "active" || new Date(token.expires_at).getTime() <= this.clock().getTime()) throw new Error("Upload token is not active.");
+    const exactDuplicate = document.evidence_records.find((record) => record.engagement_id === evidence.engagement_id && record.node_id === evidence.node_id && record.collection_id === evidence.collection_id && record.bundle_sha256 === evidence.bundle_sha256);
+    if (exactDuplicate) {
+      this.addActivity(document, evidence.engagement_id, evidence.node_id, "evidence_duplicate_rejected", "upload-token", "Duplicate evidence upload rejected.", { evidence_id: exactDuplicate.id, collection_id: evidence.collection_id });
+      this.write(document);
+      return { record: safeEvidenceRecord(exactDuplicate), duplicate: true };
+    }
+    const now = nowIso(this.clock);
+    const previous = document.evidence_records.find((record) => record.engagement_id === evidence.engagement_id && record.node_id === evidence.node_id && record.ingestion_status === "accepted");
+    if (previous) {
+      previous.ingestion_status = "superseded";
+      this.addActivity(document, evidence.engagement_id, evidence.node_id, "evidence_superseded", "upload-token", "Previous evidence superseded by newer accepted bundle.", { evidence_id: previous.id, collection_id: evidence.collection_id });
+    }
+    const record: EvidenceRecord = { ...evidence, id: `evd_${this.idGenerator()}`, schema_version: "1.0.0", ingestion_status: "accepted", supersedes_evidence_id: previous?.id ?? null };
+    document.evidence_records.push(record);
+    document.upload_tokens[tokenIndex] = { ...token, status: "used", used_at: now };
+    const nodeIndex = document.nodes.findIndex((node) => node.engagement_id === evidence.engagement_id && node.id === evidence.node_id);
+    if (nodeIndex >= 0) {
+      document.nodes[nodeIndex] = { ...document.nodes[nodeIndex], collection_status: "received", last_collection_at: evidence.collected_at || evidence.uploaded_at, source_hostname: evidence.source_hostname_display, current_evidence_id: record.id };
+    }
+    this.addActivity(document, evidence.engagement_id, evidence.node_id, "evidence_upload_accepted", "upload-token", "Evidence upload accepted.", { evidence_id: record.id, collection_id: evidence.collection_id });
+    this.touchEngagement(document, evidence.engagement_id, now);
+    this.write(document);
+    return { record: safeEvidenceRecord(record), duplicate: false };
+  }
+
+  findDuplicateEvidence(engagementId: string, nodeId: string, collectionId: string, bundleSha256: string): ReturnType<typeof safeEvidenceRecord> | null {
+    const duplicate = this.read().evidence_records.find((record) => record.engagement_id === engagementId && record.node_id === nodeId && record.collection_id === collectionId && record.bundle_sha256 === bundleSha256);
+    return duplicate ? safeEvidenceRecord(duplicate) : null;
+  }
+
+  recordDuplicateEvidenceRejected(engagementId: string, nodeId: string, evidenceId: string, collectionId: string): void {
+    const document = this.read();
+    this.addActivity(document, engagementId, nodeId, "evidence_duplicate_rejected", "upload-token", "Duplicate evidence upload rejected.", { evidence_id: evidenceId, collection_id: collectionId });
+    this.write(document);
+  }
+
+  private touchEngagement(document: StoreDocument, engagementId: string, when: string): void {
+    const index = document.engagements.findIndex((engagement) => engagement.id === engagementId);
+    if (index >= 0) document.engagements[index] = deriveCounts({ ...document.engagements[index], updated_at: when }, document.nodes);
+  }
+
+  private addActivity(document: StoreDocument, engagementId: string, nodeId: string | null, type: string, actor: string, message: string, metadata: Record<string, string | number | boolean | null>): void {
+    document.activity_entries.push({ id: `act_${this.idGenerator()}`, engagement_id: engagementId, node_id: nodeId, type, created_at: nowIso(this.clock), actor, message, metadata });
   }
 
   createEngagement(input: Record<string, unknown>, createdBy?: string): Engagement {

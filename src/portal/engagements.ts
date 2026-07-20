@@ -64,6 +64,58 @@ export interface EngagementNode {
   findings_count: number;
   critical_findings_count: number;
   high_findings_count: number;
+  current_evidence_id?: string | null;
+  upload_token_state?: string | null;
+}
+
+export interface UploadTokenSummary {
+  id: string;
+  engagement_id: string;
+  node_id: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+  revoked_at: string | null;
+  status: string;
+  maximum_upload_bytes: number;
+}
+
+export interface EvidenceRecordSummary {
+  id: string;
+  engagement_id: string;
+  node_id: string;
+  collection_id: string;
+  collector_version: string;
+  collector_profile: string;
+  manifest_schema_version: string;
+  uploaded_at: string;
+  collected_at: string;
+  sanitized: boolean;
+  simulated: boolean;
+  command_count: number;
+  collected_count: number;
+  missing_count: number;
+  failed_count: number;
+  skipped_count: number;
+  bundle_sha256: string;
+  manifest_sha256: string;
+  upload_token_id: string;
+  ingestion_status: string;
+  validation_warnings: string[];
+  source_hostname_display: string;
+  supersedes_evidence_id: string | null;
+  storage_id: string;
+}
+
+export interface ActivityEntry {
+  id: string;
+  engagement_id: string;
+  node_id: string | null;
+  type: string;
+  created_at: string;
+  actor: string;
+  message: string;
+  metadata: Record<string, string | number | boolean | null>;
 }
 
 export function formatEngagementLabel(value: string): string {

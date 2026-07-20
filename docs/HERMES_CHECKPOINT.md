@@ -170,6 +170,41 @@
 
 - Secure evidence bundle ingestion and upload tokens.
 
+## Phase 3B.2 secure evidence upload tokens and bundle ingestion
+
+- Added versioned upload-token records with secure random plaintext tokens shown once, persisted token hashes only, timing-safe hash comparison, scoped engagement/node ownership, default two-hour lifetime, revocation, single-use marking, and derived expired status for list responses.
+- Added authenticated administrative upload-token endpoints for create, list, and revoke under `/api/v1/engagements/{engagement_id}/nodes/{node_id}/upload-tokens`.
+- Added bearer-token node upload endpoint `POST /api/v1/evidence/uploads` for outbound HTTPS collector bundle uploads; reviewer sessions do not authenticate node uploads.
+- Implemented `.tar.gz` evidence validation for safe paths, duplicate paths, unsupported tar entry types, manifest/checksum presence, UTF-8 JSON, supported manifest/profile/checksum schema, declared-file existence, SHA-256 verification, count/timestamp sanity, fixture simulated labeling, and engagement/node scope mismatch rejection.
+- Persisted accepted evidence outside public roots at `artifacts/evidence/{engagement_id}/{node_id}/{collection_id}/` by default, with original archive, normalized extracted evidence, manifest, command metadata, ingestion metadata, and storage-relative keys only.
+- Added versioned evidence records, duplicate rejection, superseding of previous current evidence, activity entries, node collection updates, last collection timestamps, sanitized hostname display, and derived received node counts.
+- Added `ai-validator bundle` for deterministic safe tar.gz packaging and `ai-validator upload` for HTTPS uploads using `--token-file` or `GPU_VALIDATOR_UPLOAD_TOKEN` without plaintext command-line token support.
+- Added `scripts/create_demo_evidence.py` to generate safe simulated `node01` and `node02` fixture bundles labeled `simulated: true` and `collection_mode: fixture`.
+- Enhanced `/portal/engagements/:engagementId` with node upload-token state, generate/revoke actions, copy-once token modal, upload instructions, evidence metadata, and activity history.
+- Added `docs/EVIDENCE_INGESTION.md` and updated engagement/README documentation.
+
+### Phase 3B.2 files changed
+
+- `README.md`
+- `docs/ENGAGEMENTS.md`
+- `docs/EVIDENCE_INGESTION.md`
+- `docs/HERMES_CHECKPOINT.md`
+- `scripts/create_demo_evidence.py`
+- `server.ts`
+- `src/App.tsx`
+- `src/ai_validator/cli.py`
+- `src/ai_validator/evidence/archive.py`
+- `src/portal/engagements.ts`
+- `src/server/engagements.ts`
+- `src/server/evidence.ts`
+- `tests/test_evidence_upload_cli.py`
+- `tests-portal/engagements-portal.test.ts`
+- `tests-portal/evidence-api.test.ts`
+
+### Phase 3B.2 next milestone
+
+- Cluster comparison, findings derivation, and benchmark result importers.
+
 ## Recovery changes
 
 - Added this checkpoint file: `docs/HERMES_CHECKPOINT.md`.

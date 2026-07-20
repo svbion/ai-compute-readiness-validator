@@ -9,7 +9,8 @@ import {
   timingSafeVerifyPassword,
   verifySignedSessionId,
 } from "./src/server/auth";
-import { registerEngagementRoutes } from "./src/server/engagements";
+import { EngagementStore, registerEngagementRoutes } from "./src/server/engagements";
+import { registerEvidenceRoutes } from "./src/server/evidence";
 
 const repoRoot = process.cwd();
 const artifactsDir = path.join(repoRoot, "artifacts");
@@ -54,6 +55,10 @@ function wantsHtml(req: express.Request): boolean {
 function isPublicRoute(pathname: string): boolean {
   return ["/", "/login", "/docs", "/security", "/request-access", "/robots.txt", "/sitemap.xml", "/favicon.ico"].includes(pathname)
     || pathname.startsWith("/assets/");
+}
+
+function isUploadTokenRoute(pathname: string): boolean {
+  return pathname === "/api/v1/evidence/uploads";
 }
 
 function firstExistingPath(candidates: string[]): string | null {
@@ -140,6 +145,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
   const app = express();
   const authConfig = buildAuthConfig(process.env);
   const mountFrontend = options.mountFrontend ?? true;
+  const engagementStore = new EngagementStore();
 
   app.use(express.json());
 
@@ -243,6 +249,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
   app.use((req, res, next) => {
     if (!authConfig.required) return next();
     if (isPublicRoute(req.path)) return next();
+    if (isUploadTokenRoute(req.path)) return next();
 
     const session = getSession(req);
     if (session) return next();
@@ -258,7 +265,8 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
     return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
   });
 
-  registerEngagementRoutes(app);
+  registerEngagementRoutes(app, engagementStore);
+  registerEvidenceRoutes(app, engagementStore);
 
   // 1. API: Get validation results by scenario or live source
   app.get("/api/results", (req, res) => {

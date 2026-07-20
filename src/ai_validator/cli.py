@@ -2,6 +2,7 @@ import os
 import sys
 from typing import Optional
 from datetime import datetime
+from pathlib import Path
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -16,6 +17,7 @@ from ai_validator.reporting.html import HtmlReporter
 from ai_validator.reporting.markdown import MarkdownReporter
 from ai_validator.profiles import get_profile
 from ai_validator.evidence.collector import collect_evidence, dry_run_commands
+from ai_validator.evidence.archive import BundleValidationError, create_bundle, upload_bundle
 
 # Import collectors
 from ai_validator.collectors.linux import LinuxCollector
@@ -393,6 +395,49 @@ def collect(
         f"missing: {summary.missing_count}; failed: {summary.failed_count}; "
         f"skipped: {summary.skipped_count}; warnings: {summary.warning_count}"
     )
+
+
+@app.command()
+def bundle(
+    input: str = typer.Option(..., "--input", help="Existing collector evidence directory"),
+    output: str = typer.Option(..., "--output", help="Output .tar.gz or .tgz archive path"),
+    force: bool = typer.Option(False, "--force", help="Overwrite output archive if it already exists"),
+):
+    """Packages a validated collector evidence directory as a deterministic tar.gz archive."""
+    try:
+        digest = create_bundle(Path(input), Path(output), force=force)
+    except BundleValidationError as exc:
+        console.print(f"[bold red]Bundle creation failed: {exc}[/bold red]")
+        sys.exit(1)
+    console.print(f"[bold green]Evidence archive written:[/bold green] [cyan]{output}[/cyan]")
+    console.print(f"SHA-256: {digest}")
+
+
+@app.command()
+def upload(
+    bundle: str = typer.Option(..., "--bundle", help="Evidence .tar.gz/.tgz archive to upload"),
+    url: str = typer.Option(..., "--url", help="GPU Validator evidence upload URL"),
+    token_file: Optional[str] = typer.Option(None, "--token-file", help="File containing the upload token"),
+    timeout: float = typer.Option(60.0, "--timeout", min=1.0, help="Upload timeout in seconds"),
+    allow_insecure_http: bool = typer.Option(False, "--allow-insecure-http", help="Allow HTTP only for local development"),
+):
+    """Uploads an evidence bundle using a bearer token from a file or GPU_VALIDATOR_UPLOAD_TOKEN."""
+    try:
+        if token_file:
+            token = Path(token_file).read_text(encoding="utf-8").strip()
+        else:
+            token = os.environ.get("GPU_VALIDATOR_UPLOAD_TOKEN", "").strip()
+        if not token:
+            raise BundleValidationError("Upload token is required via --token-file or GPU_VALIDATOR_UPLOAD_TOKEN")
+        payload = upload_bundle(Path(bundle), url, token, timeout=timeout, allow_insecure_http=allow_insecure_http)
+    except BundleValidationError as exc:
+        message = str(exc).replace(os.environ.get("GPU_VALIDATOR_UPLOAD_TOKEN", "__never_match__"), "[redacted]")
+        console.print(f"[bold red]{message}[/bold red]")
+        sys.exit(1)
+    evidence = payload.get("evidence", {}) if isinstance(payload, dict) else {}
+    console.print("[bold green]Evidence upload accepted.[/bold green]")
+    console.print(f"Evidence ID: {evidence.get('id', 'unknown')}")
+    console.print(f"Collection ID: {payload.get('collection_id', evidence.get('collection_id', 'unknown'))}")
 
 
 @app.command()

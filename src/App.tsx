@@ -52,8 +52,11 @@ import {
   filterEngagements,
   formatEngagementLabel,
   platformProfileOptions,
+  type ActivityEntry,
   type Engagement,
   type EngagementNode,
+  type EvidenceRecordSummary,
+  type UploadTokenSummary,
 } from "./portal/engagements";
 
 const scenarioMetadata = {
@@ -499,16 +502,49 @@ function NewEngagementPage() {
 function EngagementDetailPage({ engagementId }: { engagementId: string }) {
   const [engagement, setEngagement] = useState<Engagement | null>(null);
   const [nodes, setNodes] = useState<EngagementNode[]>([]);
+  const [evidenceRecords, setEvidenceRecords] = useState<EvidenceRecordSummary[]>([]);
+  const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
+  const [uploadTokens, setUploadTokens] = useState<Record<string, UploadTokenSummary[]>>({});
+  const [createdToken, setCreatedToken] = useState<(UploadTokenSummary & { token: string; upload_url: string }) | null>(null);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
+  const refreshEngagement = () => {
     Promise.all([
       fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}`).then((res) => res.ok ? res.json() : Promise.reject(new Error("Engagement not found."))),
       fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}/nodes`).then((res) => res.ok ? res.json() : Promise.reject(new Error("Nodes not found."))),
-    ]).then(([engagementPayload, nodesPayload]) => {
+      fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}/evidence`).then((res) => res.ok ? res.json() : { evidence_records: [] }),
+      fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}/activity`).then((res) => res.ok ? res.json() : { activity_entries: [] }),
+    ]).then(([engagementPayload, nodesPayload, evidencePayload, activityPayload]) => {
       setEngagement(engagementPayload.engagement);
-      setNodes(Array.isArray(nodesPayload.nodes) ? nodesPayload.nodes : []);
+      const nextNodes = Array.isArray(nodesPayload.nodes) ? nodesPayload.nodes : [];
+      setNodes(nextNodes);
+      setEvidenceRecords(Array.isArray(evidencePayload.evidence_records) ? evidencePayload.evidence_records : []);
+      setActivityEntries(Array.isArray(activityPayload.activity_entries) ? activityPayload.activity_entries : []);
+      return Promise.all(nextNodes.map((node: EngagementNode) => fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}/nodes/${encodeURIComponent(node.id)}/upload-tokens`).then((res) => res.ok ? res.json() : { upload_tokens: [] }).then((payload) => [node.id, Array.isArray(payload.upload_tokens) ? payload.upload_tokens : []] as const)));
+    }).then((tokenPairs) => {
+      if (tokenPairs) setUploadTokens(Object.fromEntries(tokenPairs));
     }).catch((err) => setError(err instanceof Error ? err.message : "Failed to load engagement."));
+  };
+  useEffect(() => {
+    refreshEngagement();
   }, [engagementId]);
+
+  const generateUploadToken = async (node: EngagementNode) => {
+    setError(null);
+    const response = await fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}/nodes/${encodeURIComponent(node.id)}/upload-tokens`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+    const payload = await response.json();
+    if (!response.ok) return setError(payload.error ?? "Failed to create upload token.");
+    setCreatedToken(payload);
+    refreshEngagement();
+  };
+
+  const revokeUploadToken = async (node: EngagementNode, token: UploadTokenSummary) => {
+    setError(null);
+    const response = await fetch(`/api/v1/engagements/${encodeURIComponent(engagementId)}/nodes/${encodeURIComponent(node.id)}/upload-tokens/${encodeURIComponent(token.id)}/revoke`, { method: "POST" });
+    if (!response.ok) setError("Failed to revoke upload token.");
+    refreshEngagement();
+  };
+
+  const closeTokenModal = () => setCreatedToken(null);
 
   if (error) return <EngagementShell><div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-100">{error}</div></EngagementShell>;
   if (!engagement) return <EngagementShell><div className="cyber-panel rounded-2xl border border-slate-800 p-6">Loading engagement...</div></EngagementShell>;
@@ -528,16 +564,20 @@ function EngagementDetailPage({ engagementId }: { engagementId: string }) {
       <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-6">{cards.map(([label, value]) => <div key={label} className="cyber-panel rounded-2xl border border-slate-800 p-4"><div className="text-[11px] font-mono uppercase tracking-[0.18em] text-slate-500">{label}</div><div className="mt-2 text-2xl font-display font-semibold text-slate-50">{value}</div></div>)}</section>
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
-          <Panel title="Nodes">{nodes.length ? <div className="space-y-3">{nodes.map((node) => <div key={node.id} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="font-semibold text-slate-50">{node.display_name}</div><div className="mt-1 text-sm text-slate-400">{node.gpu_model ?? "GPU model awaiting evidence"} • {node.gpu_count ?? 0} GPUs</div></div><EngagementStatusPill value={node.collection_status} /></div></div>)}</div> : <EmptyState text="No node records have been created for this engagement yet." />}</Panel>
+          <Panel title="Nodes">{nodes.length ? <div className="space-y-3">{nodes.map((node) => {
+            const activeToken = (uploadTokens[node.id] ?? []).find((token) => token.status === "active");
+            return <div key={node.id} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="font-semibold text-slate-50">{node.display_name}</div><div className="mt-1 text-sm text-slate-400">{node.gpu_model ?? "GPU model awaiting evidence"} • {node.gpu_count ?? 0} GPUs</div><div className="mt-2 grid gap-1 text-xs text-slate-400 md:grid-cols-2"><span>Validation: {formatEngagementLabel(node.validation_status)}</span><span>Last collection: {formatDate(node.last_collection_at)}</span><span>Current evidence ID: {node.current_evidence_id ?? "Awaiting evidence"}</span><span>Upload-token state: {activeToken ? `active until ${formatDate(activeToken.expires_at)}` : "none active"}</span></div></div><EngagementStatusPill value={node.collection_status} /></div><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => generateUploadToken(node)} className="rounded-xl border border-emerald-500/40 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/10">Generate upload token</button>{activeToken && <button onClick={() => revokeUploadToken(node, activeToken)} className="rounded-xl border border-amber-500/40 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/10">Revoke token</button>}</div><div className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400"><div className="font-mono uppercase tracking-wider text-slate-500">Upload instructions</div><div className="mt-2">Run ai-validator upload --bundle node-evidence.tar.gz --url /api/v1/evidence/uploads --token-file /secure/path/upload-token.txt. The GPU node initiates outbound HTTPS; no SSH or inbound cluster access is required.</div></div></div>;
+          })}</div> : <EmptyState text="No node records have been created for this engagement yet." />}</Panel>
           <Panel title="Findings"><EmptyState text="No evidence evaluated." /></Panel>
           <Panel title="Benchmarks"><div className="grid gap-3 md:grid-cols-3">{["NCCL", "HPL", "Inference"].map((name) => <div key={name} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"><div className="font-semibold text-slate-100">{name}</div><div className="mt-2 text-xs font-mono uppercase tracking-wider text-amber-300">Awaiting Evidence</div></div>)}</div></Panel>
         </div>
         <div className="space-y-6">
-          <Panel title="Evidence"><EmptyState text="No bundles uploaded." /></Panel>
+          <Panel title="Evidence">{evidenceRecords.length ? <div className="space-y-3">{evidenceRecords.map((record) => <div key={record.id} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300"><div className="flex flex-wrap items-center justify-between gap-2"><div className="font-semibold text-slate-50">{record.id}</div><EngagementStatusPill value={record.ingestion_status} /></div><div className="mt-3 grid gap-2 text-xs md:grid-cols-2"><div>Node: {nodes.find((node) => node.id === record.node_id)?.display_name ?? record.node_id}</div><div>Collector: {record.collector_version}</div><div>Profile: {formatEngagementLabel(record.collector_profile)}</div><div>Collected: {formatDate(record.collected_at)}</div><div>Uploaded: {formatDate(record.uploaded_at)}</div><div>Sanitized: {record.sanitized ? "yes" : "no"}</div><div>Simulated: {record.simulated ? "yes" : "no"}</div><div>Commands: {record.collected_count}/{record.command_count} collected, {record.missing_count} missing, {record.failed_count} failed, {record.skipped_count} skipped</div><div className="md:col-span-2">Bundle checksum: <span className="font-mono">{record.bundle_sha256}</span></div>{record.validation_warnings.length > 0 && <div className="md:col-span-2">Warnings: {record.validation_warnings.join("; ")}</div>}</div></div>)}</div> : <EmptyState text="No bundles uploaded." />}</Panel>
           <Panel title="Acceptance Report"><EmptyState text="Available after validation." /></Panel>
-          <Panel title="Activity"><div className="text-sm text-slate-300">Engagement created: {formatDate(engagement.created_at)}</div></Panel>
+          <Panel title="Activity">{activityEntries.length ? <div className="space-y-2 text-sm text-slate-300">{activityEntries.map((entry) => <div key={entry.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><div>{entry.message}</div><div className="mt-1 text-xs text-slate-500">{formatDate(entry.created_at)} • {formatEngagementLabel(entry.type)}</div></div>)}</div> : <div className="text-sm text-slate-300">Engagement created: {formatDate(engagement.created_at)}</div>}</Panel>
         </div>
       </section>
+      {createdToken && <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"><div className="max-w-2xl rounded-3xl border border-emerald-500/30 bg-slate-950 p-6 shadow-2xl"><div className="text-[11px] font-mono uppercase tracking-[0.2em] text-amber-300">Copy-once upload token</div><h2 className="mt-2 font-display text-2xl text-slate-50">Upload token created</h2><p className="mt-3 text-sm text-amber-100">This plaintext token is shown only once and cannot be retrieved again. It is not stored in localStorage and must not be placed in URLs or shell history.</p><pre className="mt-4 max-h-40 overflow-auto rounded-2xl border border-slate-800 bg-slate-900 p-4 text-xs text-emerald-200">{createdToken.token}</pre><div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 text-xs text-slate-300">ai-validator upload --bundle node-evidence.tar.gz --url {createdToken.upload_url} --token-file /secure/path/upload-token.txt</div><div className="mt-5 flex flex-wrap gap-3"><button onClick={() => navigator.clipboard?.writeText(createdToken.token)} className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950">Copy token</button><button onClick={closeTokenModal} className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Close and clear token</button></div></div></div>}
     </EngagementShell>
   );
 }

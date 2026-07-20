@@ -68,6 +68,29 @@ test("detail dashboard renders required milestone sections and waiting states", 
   assert.match(appSource, /HPL/);
   assert.match(appSource, /Inference/);
   assert.match(appSource, /Awaiting Evidence/);
+  assert.match(appSource, /Generate upload token/);
+  assert.match(appSource, /Revoke token/);
+  assert.match(appSource, /Upload-token state/);
+  assert.match(appSource, /Current evidence ID/);
+});
+
+test("upload token modal shows plaintext once, warns, copies, and clears state without localStorage", () => {
+  assert.match(appSource, /Copy-once upload token/);
+  assert.match(appSource, /shown only once and cannot be retrieved again/);
+  assert.match(appSource, /navigator\.clipboard\?\.writeText\(createdToken\.token\)/);
+  assert.match(appSource, /const closeTokenModal = \(\) => setCreatedToken\(null\)/);
+  assert.doesNotMatch(appSource, /localStorage\.setItem/);
+  assert.doesNotMatch(appSource, /localStorage\.getItem/);
+  assert.doesNotMatch(appSource, /\?token=/);
+});
+
+test("evidence metadata renders without raw storage paths", () => {
+  assert.match(appSource, /Bundle checksum/);
+  assert.match(appSource, /record\.collector_version/);
+  assert.match(appSource, /record\.collector_profile/);
+  assert.match(appSource, /record\.sanitized/);
+  assert.match(appSource, /record\.simulated/);
+  assert.doesNotMatch(appSource, /storage_key/);
 });
 
 test("simulated label and fixture loading are visible and explicit", () => {
@@ -78,7 +101,7 @@ test("simulated label and fixture loading are visible and explicit", () => {
 });
 
 test("unauthenticated portal engagement routes are protected by existing auth middleware", () => {
-  assert.match(serverSource, /registerEngagementRoutes\(app\)/);
+  assert.match(serverSource, /registerEngagementRoutes\(app, engagementStore\)/);
   assert.match(serverSource, /if \(req\.path\.startsWith\("\/api\/"\)/);
   assert.match(serverSource, /redirect\(302, "\/login\?reason=expired-session"\)/);
 });
