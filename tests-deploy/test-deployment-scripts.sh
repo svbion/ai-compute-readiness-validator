@@ -183,6 +183,7 @@ cat >"${verify_app}/.env.production" <<EOF
 PORT=${port}
 NODE_ENV=production
 AI_FACTORY_AUTH_REQUIRED=true
+AI_VALIDATOR_USER_STORE=/opt/ai-factory-validator/shared/users/store.json
 AI_FACTORY_SESSION_SECRET='secret\$with\$characters'
 AI_FACTORY_REVIEWER_USERNAME=reviewer
 AI_FACTORY_REVIEWER_PASSWORD_HASH='scrypt\$1234567890abcdef\$abcdef1234567890'
@@ -230,6 +231,18 @@ run_git_status_probe() {
   local repo="$1" out="$2"
   bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${repo}' AI_FACTORY_APP_USER='$(id -un)' AI_FACTORY_BRANCH=main load_deploy_config; printf 'branch=%s\n' \"\$(git_current_branch_in_repo)\"; printf 'short=%s\n' \"\$(git_short_commit_in_repo)\"; printf 'subject=%s\n' \"\$(git_commit_subject_in_repo)\"; printf 'sync=%s\n' \"\$(git_origin_sync_state_in_repo)\"; printf 'tree=%s\n' \"\$(git_status_state_in_repo)\"" >"${out}" 2>&1
 }
+
+# Persistent shared user store is approved runtime state and is preserved by deployment helpers.
+shared_repo="${TMP_ROOT}/git-shared-runtime"
+init_dirty_repo "${shared_repo}"
+mkdir -p "${shared_repo}/shared/users"
+printf '{"schema_version":"1.0.0","users":[{"username":"sfrazier"}],"audit_entries":[]}\n' >"${shared_repo}/shared/users/store.json"
+run_clean_check "${shared_repo}" "${TMP_ROOT}/shared-runtime.out"
+assert_contains "${TMP_ROOT}/shared-runtime.out" "runtime-generated artifacts only"
+shared_state="$(bash -c "source '${ROOT_DIR}/deploy/lib/common.sh'; AI_FACTORY_APP_DIR='${shared_repo}' AI_FACTORY_APP_USER='$(id -un)' load_deploy_config; printf '%s' \"\$(git_status_state_in_repo)\"")"
+[[ "${shared_state}" == "runtime-only" ]] || fail "shared runtime state was not classified as runtime-only: ${shared_state}"
+grep -F 'sfrazier' "${shared_repo}/shared/users/store.json" >/dev/null || fail "shared user store was not preserved"
+pass "shared/users/store.json is approved persistent runtime state"
 
 add_origin_for_repo() {
   local repo="$1" origin="$2"

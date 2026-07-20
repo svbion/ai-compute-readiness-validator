@@ -62,7 +62,7 @@ function wantsHtml(req: express.Request): boolean {
 }
 
 function isPublicRoute(pathname: string): boolean {
-  return ["/", "/login", "/docs", "/security", "/request-access", "/robots.txt", "/sitemap.xml", "/favicon.ico"].includes(pathname)
+  return ["/login", "/robots.txt", "/sitemap.xml", "/favicon.ico"].includes(pathname)
     || pathname.startsWith("/assets/");
 }
 
@@ -303,22 +303,26 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
 
   app.use((req, res, next) => {
     if (!authConfig.required) return next();
-    if (isPublicRoute(req.path)) return next();
-    if (isUploadTokenRoute(req.path)) return next();
-    if (isRunnerRoute(req.path)) return next();
 
     const session = getSession(req);
     if (session) {
+      if (wantsHtml(req) && (req.path === "/" || req.path === "/login")) {
+        return res.redirect(302, "/portal");
+      }
       attachSessionUser(req, session);
       return next();
     }
+
+    if (req.path === "/login" || isPublicRoute(req.path)) return next();
+    if (isUploadTokenRoute(req.path)) return next();
+    if (isRunnerRoute(req.path)) return next();
 
     if (req.path.startsWith("/api/") || req.path.startsWith("/reports/")) {
       return res.status(401).json({ error: "Authentication required", reason: "expired-session" });
     }
 
     if (wantsHtml(req)) {
-      return res.redirect(302, "/login?reason=expired-session");
+      return res.redirect(302, "/login");
     }
 
     return res.status(401).json({ error: "Authentication required", reason: "expired-session" });

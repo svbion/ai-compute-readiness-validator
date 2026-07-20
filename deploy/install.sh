@@ -92,6 +92,8 @@ main() {
   ensure_app_user
   checkout_or_update_repo
   create_env_if_missing
+  source_env_file_if_present
+  ensure_runtime_state_paths
   validate_auth_config
   install_dependencies_and_build
   install_systemd_service

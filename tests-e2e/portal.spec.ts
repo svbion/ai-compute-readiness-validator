@@ -18,41 +18,34 @@ async function expectProtectedRoutesUnauthenticated(request: APIRequestContext) 
   }
 }
 
-test("public landing page presents GPU Validator product positioning", async ({ page }) => {
+test("root redirects unauthenticated visitors to the futuristic login page", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page).toHaveTitle(/GPU Validator/);
-  await expect(page.getByRole("heading", { name: /AI Compute Infrastructure Validation and Customer Acceptance/i })).toBeVisible();
-  await expect(page.getByText("Validate GPU platforms, fabric, schedulers, storage, Kubernetes, and operational readiness before customer acceptance.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Request Early Access" }).first()).toHaveAttribute("href", "/request-access");
-  await expect(page.getByRole("link", { name: "Reviewer Login" }).first()).toHaveAttribute("href", "/login");
-  await expect(page.getByText("100 READY")).toBeVisible();
-  await expect(page.getByText("97.01 REMEDIATION REQUIRED")).toBeVisible();
-  await expect(page.getByText(/simulated evidence is used in the public demonstration/i)).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "GPU Validator" })).toBeVisible();
+  await expect(page.getByText("GPU Infrastructure Readiness, Validated")).toBeVisible();
 });
 
-test("public docs, security, and request-access pages are reachable", async ({ page }) => {
+test("login is the only unauthenticated public UI", async ({ page }) => {
   await page.goto("/docs");
-  await expect(page.getByRole("heading", { name: /Product overview/i })).toBeVisible();
-  await expect(page.getByText("collect or import evidence")).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
 
   await page.goto("/security");
-  await expect(page.getByRole("heading", { name: /Security and evidence handling/i })).toBeVisible();
-  await expect(page.getByText(/read-only operating model/i)).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
 
   await page.goto("/request-access");
-  await expect(page.getByRole("heading", { name: /Request early access/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Email access request/i })).toHaveAttribute("href", /mailto:.*subject=GPU%20Validator%20early%20access/);
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
 });
 
-test("responsive public navigation exposes primary routes on mobile", async ({ page, isMobile }) => {
+test("responsive login remains usable on mobile", async ({ page, isMobile }) => {
   test.skip(!isMobile, "mobile viewport coverage runs in the mobile project");
   await page.goto("/");
 
-  await expect(page.getByRole("navigation", { name: "Public navigation" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Docs" }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Security" }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Request Early Access" }).first()).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByLabel("Username")).toBeVisible();
+  await expect(page.locator("#reviewer-password")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
 });
 
 test("login page loads with accessible private reviewer entry", async ({ page }) => {
@@ -72,8 +65,7 @@ test("login page loads with accessible private reviewer entry", async ({ page })
 
 test("authentication-required redirect, invalid credentials, account lockout, login, and logout", async ({ page }, testInfo) => {
   await page.goto("/portal");
-  await expect(page).toHaveURL(/\/login\?reason=expired-session$/);
-  await expect(page.getByText("Your session expired")).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
 
   const invalidUsername = `unknown-reviewer-${testInfo.project.name}-${testInfo.workerIndex}`.toLowerCase();
   await page.getByLabel("Username").fill(invalidUsername);

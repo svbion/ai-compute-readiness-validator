@@ -113,3 +113,70 @@ test("login authenticates only by normalized username and ignores email metadata
     assert.equal(emailLogin.payload.reason, "invalid-credentials");
   });
 });
+
+test("sfrazier administrator login creates a session for protected admin routes", async () => {
+  await withServer(async (baseUrl, userStorePath) => {
+    const store = new UserStore({ filePath: userStorePath });
+    store.bootstrapAdmin({ username: " sfrazier ", display_name: "Sabion Frazier", password: "StrongBootstrap-123!", recovery: true });
+
+    const login = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: " SFRAZIER ", password: "StrongBootstrap-123!" }, false);
+    assert.equal(login.response.status, 200, JSON.stringify(login.payload));
+    assert.equal(login.payload.user.username, "sfrazier");
+    assert.equal(login.payload.user.role, "administrator");
+    assert.ok(login.cookie.includes("ai_factory_session="));
+
+    const admin = await jsonRequest(baseUrl, "GET", "/api/v1/admin/users", undefined, false, login.cookie);
+    assert.equal(admin.response.status, 200, JSON.stringify(admin.payload));
+    assert.equal(admin.payload.users.some((user: any) => user.username === "sfrazier"), true);
+  });
+});
+
+test("disabled, expired, and locked users cannot authenticate", async () => {
+  await withServer(async (baseUrl, userStorePath) => {
+    const disabled = await jsonRequest(baseUrl, "POST", "/api/v1/admin/users", { username: "disabled-user", display_name: "Disabled User", role: "reviewer", password: "DisabledUser-123!" });
+    const expired = await jsonRequest(baseUrl, "POST", "/api/v1/admin/users", { username: "expired-user", display_name: "Expired User", role: "reviewer", password: "ExpiredUser-123!", expires_at: "2000-01-01T00:00:00.000Z" });
+    const locked = await jsonRequest(baseUrl, "POST", "/api/v1/admin/users", { username: "locked-user", display_name: "Locked User", role: "reviewer", password: "LockedUser-123!" });
+    await jsonRequest(baseUrl, "POST", `/api/v1/admin/users/${disabled.payload.user.id}/disable`);
+    const data = JSON.parse(fs.readFileSync(userStorePath, "utf8"));
+    const lockedRecord = data.users.find((user: any) => user.id === locked.payload.user.id);
+    lockedRecord.status = "locked";
+    lockedRecord.locked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    fs.writeFileSync(userStorePath, `${JSON.stringify(data, null, 2)}\n`);
+
+    const disabledLogin = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: "disabled-user", password: "DisabledUser-123!" }, false);
+    assert.equal(disabledLogin.response.status, 401);
+    assert.equal(disabledLogin.payload.reason, "account-disabled");
+    const expiredLogin = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: "expired-user", password: "ExpiredUser-123!" }, false);
+    assert.equal(expiredLogin.response.status, 401);
+    assert.equal(expiredLogin.payload.reason, "account-expired");
+    const lockedLogin = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: "locked-user", password: "LockedUser-123!" }, false);
+    assert.equal(lockedLogin.response.status, 423);
+    assert.equal(lockedLogin.payload.reason, "account-locked");
+    const wrongPassword = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: expired.payload.user.username, password: "WrongPassword-123!" }, false);
+    assert.equal(wrongPassword.response.status, 401);
+    assert.equal(wrongPassword.payload.reason, "invalid-credentials");
+  });
+});
+
+test("public UI is login-only and root/login redirect authenticated sessions to portal", async () => {
+  await withServer(async (baseUrl) => {
+    const root = await fetch(`${baseUrl}/`, { redirect: "manual", headers: { Accept: "text/html" } });
+    assert.equal(root.status, 302);
+    assert.equal(root.headers.get("location"), "/login");
+    const docs = await fetch(`${baseUrl}/docs`, { redirect: "manual", headers: { Accept: "text/html" } });
+    assert.equal(docs.status, 302);
+    assert.equal(docs.headers.get("location"), "/login");
+    const portal = await fetch(`${baseUrl}/portal/admin/users`, { redirect: "manual", headers: { Accept: "text/html" } });
+    assert.equal(portal.status, 302);
+    assert.equal(portal.headers.get("location"), "/login");
+
+    const login = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: "admin", password: "StrongBootstrap-123!" }, false);
+    assert.equal(login.response.status, 200, JSON.stringify(login.payload));
+    const authedLogin = await fetch(`${baseUrl}/login`, { redirect: "manual", headers: { Accept: "text/html", Cookie: login.cookie } });
+    assert.equal(authedLogin.status, 302);
+    assert.equal(authedLogin.headers.get("location"), "/portal");
+    const authedRoot = await fetch(`${baseUrl}/`, { redirect: "manual", headers: { Accept: "text/html", Cookie: login.cookie } });
+    assert.equal(authedRoot.status, 302);
+    assert.equal(authedRoot.headers.get("location"), "/portal");
+  });
+});

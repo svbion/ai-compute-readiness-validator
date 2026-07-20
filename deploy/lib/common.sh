@@ -264,7 +264,7 @@ git_repo_readable_in_repo() {
 is_runtime_generated_path() {
   local path="$1"
   case "${path}" in
-    artifacts/*|.cache/*|.npm/*|.lesshst|dist/*|.venv/*|node_modules/*)
+    artifacts/*|shared/*|.cache/*|.npm/*|.lesshst|dist/*|.venv/*|node_modules/*)
       return 0
       ;;
     *)
@@ -393,6 +393,7 @@ source_env_file_if_present() {
       AI_FACTORY_DOMAIN AI_FACTORY_AUTH_REQUIRED AI_FACTORY_SESSION_SECRET \
       AI_FACTORY_REVIEWER_USERNAME AI_FACTORY_REVIEWER_PASSWORD_HASH \
       AI_FACTORY_AUTH_TEST_BYPASS_TOKEN AI_FACTORY_BASE_URL \
+      AI_VALIDATOR_USER_STORE \
       AI_FACTORY_VERIFY_CADDY AI_FACTORY_VERIFY_TLS
     PORT="${PORT:-${PORT_DEFAULT}}"
     DOMAIN="${AI_FACTORY_DOMAIN:-${DOMAIN:-${DOMAIN_DEFAULT}}}"
@@ -426,13 +427,30 @@ validate_auth_config() {
   secret_state AI_FACTORY_REVIEWER_USERNAME "${AI_FACTORY_REVIEWER_USERNAME:-}"
   secret_state AI_FACTORY_REVIEWER_PASSWORD_HASH "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}"
   secret_state AI_FACTORY_AUTH_TEST_BYPASS_TOKEN "${AI_FACTORY_AUTH_TEST_BYPASS_TOKEN:-}"
+  deploy_log "AI_VALIDATOR_USER_STORE=${AI_VALIDATOR_USER_STORE:-unset}"
   if bool_is_true "${AI_FACTORY_AUTH_REQUIRED:-${AUTH_REQUIRED:-}}" || [[ "${NODE_ENV:-}" == production && -z "${AI_FACTORY_AUTH_REQUIRED:-${AUTH_REQUIRED:-}}" ]]; then
     [[ -n "${AI_FACTORY_SESSION_SECRET:-}" && "${AI_FACTORY_SESSION_SECRET:-}" != "replace-with-at-least-32-random-characters" ]] \
       || deploy_fail "AI_FACTORY_SESSION_SECRET is required before production activation."
-    [[ -n "${AI_FACTORY_REVIEWER_USERNAME:-}" && "${AI_FACTORY_REVIEWER_USERNAME:-}" != "reviewer" ]] \
-      || deploy_fail "AI_FACTORY_REVIEWER_USERNAME must be set to the issued reviewer username before public activation."
-    [[ -n "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}" && "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}" != *replace-with* ]] \
-      || deploy_fail "AI_FACTORY_REVIEWER_PASSWORD_HASH must be set before public activation. Generate it with src/server/auth.ts."
+    if [[ -n "${AI_VALIDATOR_USER_STORE:-}" ]]; then
+      deploy_log "Using multi-user store authentication; environment reviewer credentials are optional fallback only."
+    else
+      [[ -n "${AI_FACTORY_REVIEWER_USERNAME:-}" && "${AI_FACTORY_REVIEWER_USERNAME:-}" != "reviewer" ]] \
+        || deploy_fail "AI_FACTORY_REVIEWER_USERNAME must be set when AI_VALIDATOR_USER_STORE is not configured."
+      [[ -n "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}" && "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}" != *replace-with* ]] \
+        || deploy_fail "AI_FACTORY_REVIEWER_PASSWORD_HASH must be set when AI_VALIDATOR_USER_STORE is not configured."
+    fi
+  fi
+}
+
+ensure_runtime_state_paths() {
+  local user_store="${AI_VALIDATOR_USER_STORE:-${APP_DIR}/shared/users/store.json}"
+  local user_store_dir
+  user_store_dir="$(dirname "${user_store}")"
+  deploy_log "Ensuring persistent runtime state directory ${user_store_dir}"
+  run_cmd install -d -m 0700 -o "${APP_USER}" -g "${APP_USER}" "${user_store_dir}"
+  if [[ -f "${user_store}" ]]; then
+    run_cmd chown "${APP_USER}:${APP_USER}" "${user_store}"
+    run_cmd chmod 0600 "${user_store}"
   fi
 }
 

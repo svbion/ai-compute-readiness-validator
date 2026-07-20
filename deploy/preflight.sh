@@ -81,6 +81,7 @@ if [[ -f "${APP_DIR}/.env.production" ]]; then
   secret_state AI_FACTORY_REVIEWER_USERNAME "${AI_FACTORY_REVIEWER_USERNAME:-}"
   secret_state AI_FACTORY_REVIEWER_PASSWORD_HASH "${AI_FACTORY_REVIEWER_PASSWORD_HASH:-}"
   secret_state AI_FACTORY_AUTH_TEST_BYPASS_TOKEN "${AI_FACTORY_AUTH_TEST_BYPASS_TOKEN:-}"
+  ok "AI_VALIDATOR_USER_STORE=${AI_VALIDATOR_USER_STORE:-unset}"
 else
   warn_p ".env.production not present at ${APP_DIR}"
 fi

@@ -50,7 +50,25 @@ app.add_typer(users_app, name="users")
 
 
 def _user_store_path() -> Path:
-    return Path(os.environ.get("AI_VALIDATOR_USER_STORE", "artifacts/users/store.json"))
+    configured = os.environ.get("AI_VALIDATOR_USER_STORE") or _dotenv_get(Path(".env.production"), "AI_VALIDATOR_USER_STORE")
+    return Path(configured or "artifacts/users/store.json")
+
+
+def _dotenv_get(path: Path, key: str) -> Optional[str]:
+    if not path.exists():
+        return None
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        if name.strip() != key:
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        return value
+    return None
 
 
 def _normalize_username(username: str) -> str:
@@ -80,10 +98,12 @@ def _read_user_store(path: Path) -> dict:
 
 def _write_user_store(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.chmod(0o700)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     tmp.chmod(0o600)
     tmp.replace(path)
+    path.chmod(0o600)
 
 
 def normalize_text_artifact(path: str) -> None:
@@ -565,6 +585,53 @@ def users_bootstrap_admin(
     console.print(f"Username: [cyan]{normalized}[/cyan]")
     console.print(f"User ID: [cyan]{user_id}[/cyan]")
     console.print("Password: [green]stored as hash only; plaintext was not printed[/green]")
+
+
+@users_app.command("diagnose")
+def users_diagnose(username: str = typer.Option(..., "--username", help="Username to inspect safely")):
+    """Print safe production user-store and account state without secret material."""
+    try:
+        store_path = _user_store_path()
+        normalized = _normalize_username(username)
+        exists = store_path.exists()
+        data = _read_user_store(store_path)
+        stat_result = store_path.stat() if exists else None
+        user = next((item for item in data.get("users", []) if str(item.get("username", "")).strip().lower() == normalized), None)
+        now = datetime.utcnow()
+        expired = False
+        if user and user.get("expires_at"):
+            expires_raw = str(user["expires_at"]).replace("Z", "+00:00")
+            expires_at = datetime.fromisoformat(expires_raw)
+            if expires_at.tzinfo is not None:
+                expires_at = expires_at.replace(tzinfo=None)
+            expired = expires_at <= now
+        locked = False
+        if user and user.get("locked_until"):
+            locked_raw = str(user["locked_until"]).replace("Z", "+00:00")
+            locked_until = datetime.fromisoformat(locked_raw)
+            if locked_until.tzinfo is not None:
+                locked_until = locked_until.replace(tzinfo=None)
+            locked = locked_until > now
+        report = {
+            "active_user_store_path": str(store_path),
+            "store_exists": exists,
+            "store_owner_uid": stat_result.st_uid if stat_result else None,
+            "store_owner_gid": stat_result.st_gid if stat_result else None,
+            "store_mode": oct(stat_result.st_mode & 0o777) if stat_result else None,
+            "user_count": len(data.get("users", [])),
+            "username": normalized,
+            "user_exists": user is not None,
+            "role": user.get("role") if user else None,
+            "status": user.get("status") if user else None,
+            "expired": expired,
+            "locked": locked,
+            "must_change_password": user.get("must_change_password") if user else None,
+            "session_version": user.get("session_version") if user else None,
+        }
+    except Exception as exc:
+        console.print(f"[bold red]{exc}[/bold red]")
+        sys.exit(1)
+    console.print_json(data=report)
 
 
 @runner_app.command("register")

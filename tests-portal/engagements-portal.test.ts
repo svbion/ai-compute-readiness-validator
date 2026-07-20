@@ -111,7 +111,7 @@ test("simulated label and fixture loading are visible and explicit", () => {
 test("unauthenticated portal engagement routes are protected by existing auth middleware", () => {
   assert.match(serverSource, /registerEngagementRoutes\(app, engagementStore\)/);
   assert.match(serverSource, /if \(req\.path\.startsWith\("\/api\/"\)/);
-  assert.match(serverSource, /redirect\(302, "\/login\?reason=expired-session"\)/);
+  assert.match(serverSource, /redirect\(302, "\/login"\)/);
 });
 
 test("engagement helpers filter, label, and tone engagement state", () => {

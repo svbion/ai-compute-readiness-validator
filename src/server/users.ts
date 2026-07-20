@@ -105,9 +105,11 @@ export class UserStore {
   write(document: UserDocument): void {
     const dir = path.dirname(this.filePath);
     fs.mkdirSync(dir, { recursive: true });
+    fs.chmodSync(dir, 0o700);
     const tmp = path.join(dir, `.${path.basename(this.filePath)}.${process.pid}.${Date.now()}.tmp`);
     fs.writeFileSync(tmp, `${JSON.stringify({ schema_version: USER_SCHEMA_VERSION, users: document.users, audit_entries: document.audit_entries }, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
     fs.renameSync(tmp, this.filePath);
+    fs.chmodSync(this.filePath, 0o600);
   }
 
   hasUsers(): boolean {

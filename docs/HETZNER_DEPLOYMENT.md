@@ -23,7 +23,7 @@ Repository findings from `package.json`, `server.ts`, `pyproject.toml`, and `REA
 - CLI entry point: `.venv/bin/ai-validator` or `python -m ai_validator.cli`.
 - Generated artifacts: `artifacts/latest-*`, `artifacts/healthy-*`, and `artifacts/degraded-*`.
 - Production environment variables: `PORT`, `PYTHONUNBUFFERED`, and authentication settings. The systemd service sets `NODE_ENV=production` at runtime, while `.env.production` intentionally omits `NODE_ENV` so Vite does not warn during builds. Production auth is explicitly enabled with `AI_FACTORY_AUTH_REQUIRED=true`; session secrets, reviewer credential hashes, and deployment verification tokens are generated or supplied on the server and must never be committed.
-- Persistent writable paths under systemd: `artifacts/` for generated reports. The service also reads `.venv/` and `dist/` generated during install/update.
+- Persistent writable paths under systemd: `artifacts/` for generated reports and `shared/` for runtime state. The production user store is `/opt/ai-factory-validator/shared/users/store.json`; it is outside tracked source artifacts and is preserved across builds, package installs, service restarts, and deploy updates. The service also reads `.venv/` and `dist/` generated during install/update.
 
 ## Target layout
 
@@ -34,6 +34,8 @@ Default paths used by the deployment scripts:
 /opt/ai-factory-validator/.venv/    Python virtual environment
 /opt/ai-factory-validator/dist/     Built frontend and server bundle
 /opt/ai-factory-validator/artifacts Generated reports
+/opt/ai-factory-validator/shared/   Persistent runtime state
+/opt/ai-factory-validator/shared/users/store.json Production user store
 /etc/systemd/system/ai-factory-validator.service
 /etc/caddy/Caddyfile
 ```
@@ -165,19 +167,33 @@ The real install script performs, in order:
 - installs/configures Caddy only when `AI_FACTORY_ENABLE_CADDY=true`
 - prints a secret-safe deployment summary
 
-The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Generated shell-sensitive values are single-quoted. Replace the placeholder reviewer username and password hash out-of-band before sharing the portal.
+The first install creates `.env.production` from `.env.production.example`, generates a local session secret, and generates a local deployment verification token without printing either secret. Generated shell-sensitive values are single-quoted. Production authentication should use `AI_VALIDATOR_USER_STORE=/opt/ai-factory-validator/shared/users/store.json` plus `ai-validator users bootstrap-admin --username sfrazier`; the single-reviewer environment variables are only a temporary fallback.
 
 Do not add `NODE_ENV=production` to `.env.production`. `deploy/systemd/ai-factory-validator.service` sets it for the running Express server, and `npm run build` sets it for the build command. Keeping `NODE_ENV` out of `.env.production` avoids Vite's unsupported-`NODE_ENV` warning while preserving production runtime behavior and authentication requirements.
 
 `.env.production` is dotenv data, not an arbitrary shell script. The Node application reads it through `dotenv`, and the deployment scripts safely parse only selected `KEY=VALUE` records without `eval`, shell expansion, command substitution, or backtick execution. Values containing `$`, including `scrypt$...` password hashes, are supported safely and should remain single-quoted for human clarity:
 
 ```dotenv
-AI_FACTORY_REVIEWER_USERNAME=reviewer
-AI_FACTORY_REVIEWER_PASSWORD_HASH='scrypt$exampleSalt$exampleDerivedKey'
+AI_VALIDATOR_USER_STORE=/opt/ai-factory-validator/shared/users/store.json
+AI_FACTORY_REVIEWER_USERNAME=
+AI_FACTORY_REVIEWER_PASSWORD_HASH=
 AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='token$with$dollar-signs'
 ```
 
 Never use command substitutions such as `$(...)` or backticks in production env files, and never commit real `.env.production` secrets.
+
+## Production state directory and update safety
+
+Deployment scripts treat `shared/` as persistent runtime state. `shared/users/store.json` is allowed to exist in the checkout without enabling globally dirty deployments, and `deploy/update.sh` does not delete or overwrite it. The helper creates the parent directory as `0700` and preserves the store file as `0600` when present. Do not set `AI_FACTORY_ALLOW_DIRTY_UPDATE=true` for routine updates; use it only for deliberate emergency source changes.
+
+Safe production update sequence:
+
+```bash
+cd /opt/ai-factory-validator
+sudo -E env AI_FACTORY_DRY_RUN=true AI_FACTORY_APP_DIR=/opt/ai-factory-validator AI_FACTORY_BRANCH=hermes-mvp AI_FACTORY_DOMAIN=gpuvalidator.com AI_FACTORY_ENABLE_CADDY=true ./deploy/update.sh
+sudo -E env AI_FACTORY_APP_DIR=/opt/ai-factory-validator AI_FACTORY_BRANCH=hermes-mvp AI_FACTORY_DOMAIN=gpuvalidator.com AI_FACTORY_ENABLE_CADDY=true ./deploy/update.sh
+sudo -u ai-validator -H bash -lc 'cd /opt/ai-factory-validator && . .venv/bin/activate && ai-validator users diagnose --username sfrazier'
+```
 
 Generate a reviewer password hash on the server without storing the plaintext password in the repository:
 

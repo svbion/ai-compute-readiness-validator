@@ -25,10 +25,10 @@ test("development can explicitly require authentication", () => {
   assert.equal(shouldRequireAuth({ NODE_ENV: "development" }), false);
 });
 
-test("auth config rejects required auth without credentials and session secret", () => {
+test("auth config rejects required auth without a session secret", () => {
   assert.throws(
     () => buildAuthConfig({ NODE_ENV: "production" }),
-    /AI_FACTORY_SESSION_SECRET|AI_FACTORY_REVIEWER_USERNAME|AI_FACTORY_REVIEWER_PASSWORD_HASH/,
+    /AI_FACTORY_SESSION_SECRET/,
   );
 });
 

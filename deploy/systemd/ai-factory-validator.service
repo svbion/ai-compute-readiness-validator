@@ -19,6 +19,7 @@ PrivateTmp=true
 NoNewPrivileges=true
 ProtectSystem=full
 ReadWritePaths=/opt/ai-factory-validator/artifacts
+ReadWritePaths=/opt/ai-factory-validator/shared
 ReadWritePaths=/opt/ai-factory-validator/.venv
 ReadWritePaths=/opt/ai-factory-validator/dist
 

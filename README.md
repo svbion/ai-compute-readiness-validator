@@ -197,12 +197,15 @@ Dry run performs zero mutations: it does not run apt, create users, touch Git, c
 Production `.env.production` is dotenv data, not an arbitrary shell script. Deployment tooling safely parses selected `KEY=VALUE` records without shell evaluation, so password hashes containing `$` are supported without Bash expansion. Keep shell-sensitive values single-quoted for human clarity and Node `dotenv` compatibility, for example:
 
 ```dotenv
-AI_FACTORY_REVIEWER_USERNAME=reviewer
-AI_FACTORY_REVIEWER_PASSWORD_HASH='scrypt$exampleSalt$exampleDerivedKey'
+AI_VALIDATOR_USER_STORE=/opt/ai-factory-validator/shared/users/store.json
+AI_FACTORY_REVIEWER_USERNAME=
+AI_FACTORY_REVIEWER_PASSWORD_HASH=
 AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='token$with$dollar-signs'
 ```
 
-Authentication uses username as the only login identifier. Email remains optional user profile metadata and is ignored during authentication.
+Authentication uses username as the only login identifier. Email remains optional user profile metadata and is ignored during authentication. Production should bootstrap the administrator `sfrazier` into `/opt/ai-factory-validator/shared/users/store.json` with `ai-validator users bootstrap-admin`; environment reviewer credentials are only a temporary fallback.
+
+The public UI is login-only. Unauthenticated `/` and legacy marketing/documentation paths redirect to `/login`; authenticated `/` and `/login` redirect to `/portal`.
 
 Never use command substitutions or backticks in production env files, and never commit real `.env.production` secrets.
 

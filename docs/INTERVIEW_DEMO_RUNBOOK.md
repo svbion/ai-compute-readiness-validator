@@ -2,7 +2,7 @@
 
 ## Recommended RC1 order
 
-1. Open `https://gpuvalidator.com`.
+1. Open `https://gpuvalidator.com`; unauthenticated visitors should land on `/login`.
 2. Log in as administrator.
 3. Open `/portal/admin/users`.
 4. Create an NVIDIA interviewer account and copy the one-time credentials.
@@ -41,6 +41,18 @@ AI_VALIDATOR_USER_STORE=artifacts/users/store.json \
 ```
 
 The sign-in page uses Username and Password only. Temporary reviewer credentials should be read back as Login URL, Username, Temporary Password, Role, and Expiration; do not display or request an email address for interview login.
+
+## Production administrator check
+
+Production uses the persistent store at `/opt/ai-factory-validator/shared/users/store.json`; do not use `artifacts/users/store.json` for the live service. Before an interview, run:
+
+```bash
+cd /opt/ai-factory-validator
+. .venv/bin/activate
+ai-validator users diagnose --username sfrazier
+```
+
+Confirm `active_user_store_path` is `/opt/ai-factory-validator/shared/users/store.json`, `user_exists` is true, `role` is `administrator`, `status` is `active`, and both `expired` and `locked` are false. The diagnostic output is safe to share because it does not print password hashes or secrets.
 
 ## Data labeling
 

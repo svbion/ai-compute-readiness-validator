@@ -31,6 +31,8 @@ EOF
   run_cmd chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
   safe_git_update
   create_env_if_missing
+  source_env_file_if_present
+  ensure_runtime_state_paths
   validate_auth_config
 
   deploy_log "Installing Node dependencies"
