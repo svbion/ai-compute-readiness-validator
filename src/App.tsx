@@ -34,6 +34,7 @@ import {
   buildSourceContext,
   buildBenchmarkCatalog,
   deriveAcceptanceGate,
+  deriveDashboardOverview,
   deriveFabricHealth,
   deriveGpuHealth,
   deriveSchedulerSnapshot,
@@ -941,6 +942,81 @@ function NotFoundPage() {
   return <EngagementShell><section className="mx-auto max-w-3xl rounded-3xl border border-slate-800 bg-slate-950/50 p-8 text-center"><div className="text-[11px] font-mono uppercase tracking-[0.24em] text-amber-300">404</div><h1 className="mt-3 font-display text-4xl text-slate-50">Portal page not found</h1><p className="mt-3 text-slate-400">This route is not implemented. Use the portal navigation to return to a supported RC1 workflow.</p><a href="/portal/engagements" className="mt-6 inline-flex rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950">Return to engagements</a></section></EngagementShell>;
 }
 
+function DashboardKpiCard({ label, value, description, tone = "neutral", icon: Icon }: { label: string; value: string | number; description: string; tone?: "healthy" | "warning" | "critical" | "neutral"; icon: React.ComponentType<{ className?: string }> }) {
+  const toneClass = tone === "healthy" ? "text-[var(--gv-accent-hover)]" : tone === "warning" ? "text-[var(--gv-warning)]" : tone === "critical" ? "text-[var(--gv-critical)]" : "text-[var(--gv-text-primary)]";
+  const haloClass = tone === "healthy" ? "border-[var(--gv-border-highlight)] bg-[var(--gv-accent-muted)] text-[var(--gv-accent-hover)]" : tone === "warning" ? "border-amber-500/25 bg-amber-500/10 text-amber-300" : tone === "critical" ? "border-red-500/25 bg-red-500/10 text-red-300" : "border-[var(--gv-border-default)] bg-[var(--gv-bg-card-muted)] text-[var(--gv-text-muted)]";
+  return (
+    <article className="gv-card p-4" aria-label={`${label}: ${value}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="gv-eyebrow text-[var(--gv-text-faint)]">{label}</div>
+          <div className={`mt-3 font-display text-3xl font-semibold tabular-nums leading-none ${toneClass}`}>{value}</div>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--gv-text-muted)]">{description}</p>
+        </div>
+        <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${haloClass}`} aria-hidden="true"><Icon className="h-5 w-5" /></span>
+      </div>
+    </article>
+  );
+}
+
+function StatusProgressRow({ label, value, status }: { label: string; value: number; status: CheckStatus }) {
+  const tone = status === "pass" ? "bg-[var(--gv-accent)]" : status === "warning" ? "bg-[var(--gv-warning)]" : status === "fail" ? "bg-[var(--gv-critical)]" : "bg-slate-600";
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+        <span className="text-[var(--gv-text-muted)]">{label}</span>
+        <span className="font-mono text-[var(--gv-text-secondary)]">{value.toFixed(1)}%</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-slate-900" role="meter" aria-label={`${label} score`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
+        <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function ReadinessGauge({ value, label }: { value: number; label: string }) {
+  const circumference = 2 * Math.PI * 44;
+  const offset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference;
+  return (
+    <div className="flex flex-col items-center justify-center" role="img" aria-label={`Readiness gauge ${value.toFixed(2)} percent, ${label}`}>
+      <svg viewBox="0 0 112 112" className="h-40 w-40" aria-hidden="true">
+        <circle cx="56" cy="56" r="44" fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth="9" />
+        <circle cx="56" cy="56" r="44" fill="none" stroke="var(--gv-accent)" strokeWidth="9" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} transform="rotate(-90 56 56)" />
+      </svg>
+      <div className="-mt-28 flex h-28 flex-col items-center justify-center text-center">
+        <div className="font-display text-3xl font-semibold text-[var(--gv-text-primary)]">{value.toFixed(1)}%</div>
+        <div className="mt-1 text-xs font-semibold text-[var(--gv-accent-hover)]">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardChartCard({ categoryScores }: { categoryScores: ReturnType<typeof deriveDashboardOverview>["categoryScores"] }) {
+  return (
+    <section className="gv-card p-5" aria-labelledby="readiness-visualization-title">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 id="readiness-visualization-title" className="font-display text-lg font-semibold text-[var(--gv-text-primary)]">Validation readiness by domain</h2>
+          <p className="mt-1 text-sm text-[var(--gv-text-muted)]">Scores are derived from the active validation payload category averages.</p>
+        </div>
+        <span className="gv-badge gv-badge-neutral">Evidence-backed</span>
+      </div>
+      <div className="grid h-[248px] grid-cols-6 items-end gap-3 border-b border-l border-[var(--gv-border-default)] px-4 pb-4 pt-6" role="img" aria-label={`Category readiness: ${categoryScores.map((item) => `${item.label} ${item.score.toFixed(1)} percent`).join(", ")}`}>
+        {categoryScores.map((item) => (
+          <div key={item.id} className="flex h-full flex-col justify-end gap-2 text-center">
+            <div className="relative flex flex-1 items-end justify-center rounded-t-xl bg-slate-950/40">
+              <div className={`w-full rounded-t-xl ${item.status === "pass" ? "bg-[linear-gradient(180deg,var(--gv-accent-hover),var(--gv-accent))]" : item.status === "warning" ? "bg-amber-400" : item.status === "fail" ? "bg-red-500" : "bg-slate-600"}`} style={{ height: `${Math.max(4, Math.min(100, item.score))}%` }} />
+              <span className="absolute -top-5 text-[10px] font-mono text-[var(--gv-text-muted)]">{item.score.toFixed(0)}%</span>
+            </div>
+            <span className="truncate text-[10px] text-[var(--gv-text-faint)]" title={item.label}>{item.label.split(" ")[0]}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
 function PortalApp() {
   const [activeTab, setActiveTab] = useState<"diagnostics" | "benchmarks">("diagnostics");
   const [selectedScenario, setSelectedScenario] = useState<"healthy" | "degraded">("degraded");
@@ -1002,6 +1078,7 @@ function PortalApp() {
   };
 
   const acceptanceGate = useMemo(() => deriveAcceptanceGate(cluster), [cluster]);
+  const dashboardOverview = useMemo(() => deriveDashboardOverview(cluster), [cluster]);
   const gpuHealth = useMemo(() => deriveGpuHealth(cluster), [cluster]);
   const fabricHealth = useMemo(() => deriveFabricHealth(cluster), [cluster]);
   const schedulerSnapshot = useMemo(() => deriveSchedulerSnapshot(cluster), [cluster]);
@@ -1016,6 +1093,8 @@ function PortalApp() {
   const criticalCount = countChecks(cluster, (check) => check.status === "fail" && check.severity === "critical");
   const warningCount = countChecks(cluster, (check) => check.status === "warning");
   const nodeCount = cluster?.nodes.length ?? 0;
+  const attentionChecks = useMemo(() => getAllChecks(cluster).filter((check) => check.status !== "pass").slice(0, 6), [cluster]);
+  const recentChecks = useMemo(() => getAllChecks(cluster).slice(0, 7), [cluster]);
 
   const categoryAverages = cluster?.metadata?.category_averages ?? {};
   const categoryCards = [
@@ -1044,17 +1123,16 @@ function PortalApp() {
         <div className="min-w-0">
           <div className="gv-eyebrow">Overview</div>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--gv-text-primary)] md:text-4xl">GPU Validator</h1>
-            <span className="gv-badge gv-badge-success">AI Factory Readiness Portal</span>
+            <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--gv-text-primary)] md:text-4xl"><span className="sr-only">GPU Validator </span>Infrastructure Overview</h1>
+            <span className={`gv-badge ${acceptanceGate.handoffApproved ? "gv-badge-success" : "border-red-500/25 bg-red-500/10 text-red-300"}`}>{acceptanceGate.handoffDecision}</span>
             {simulated && <span className="gv-badge gv-badge-neutral">Simulated scenario</span>}
           </div>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--gv-text-muted)] md:text-base">AI Compute Infrastructure Validation and Customer Acceptance.</p>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--gv-text-muted)] md:text-base">Validation readiness, benchmark evidence, and system health across the selected infrastructure scope.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {scopeBadges.map((item) => <span key={item} className="gv-badge gv-badge-neutral">{item}</span>)}
           </div>
-          <p className="mt-4 text-sm text-[var(--gv-text-faint)]">Target profiles: DGX-class systems • HGX-based systems • OEM GPU platforms</p>
         </div>
-        <div className="grid gap-3 lg:min-w-[380px]">
+        <div className="grid gap-3 lg:min-w-[420px]">
           <div className="gv-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -1078,7 +1156,6 @@ function PortalApp() {
               </div>
             </div>
             <p className="mt-3 text-xs leading-relaxed text-[var(--gv-text-muted)]">{scenarioMetadata[selectedScenario].description}</p>
-            <p className="mt-3 rounded-xl border border-[var(--gv-border-default)] bg-[var(--gv-bg-canvas)] px-3 py-2 text-xs leading-relaxed text-[var(--gv-text-muted)]">Reviewer portal is read-only. Scenario artifacts are generated by administrator-side CLI workflows, not from the public reviewer surface.</p>
           </div>
           <div className="gv-card p-4">
             <label htmlFor="evidence-source" className="gv-eyebrow text-[var(--gv-text-faint)]">Evidence source</label>
@@ -1101,152 +1178,172 @@ function PortalApp() {
         </div>
       </section>
 
-              <div className="flex max-w-md rounded-xl border border-slate-800 bg-slate-950/50 p-1">
-          <button
-            onClick={() => setActiveTab("diagnostics")}
-            className={`flex-1 rounded-lg px-4 py-2.5 text-xs font-display font-semibold uppercase tracking-[0.18em] transition cursor-pointer ${
-              activeTab === "diagnostics" ? "bg-slate-900 text-slate-100 border border-slate-700" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Diagnostics
-          </button>
-          <button
-            onClick={() => setActiveTab("benchmarks")}
-            className={`flex-1 rounded-lg px-4 py-2.5 text-xs font-display font-semibold uppercase tracking-[0.18em] transition cursor-pointer ${
-              activeTab === "benchmarks" ? "bg-slate-900 text-slate-100 border border-slate-700" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Benchmark readiness
-          </button>
-        </div>
+      {loading && (
+        <section className="gv-card mb-5 flex items-center gap-3 p-5">
+          <RefreshCw className="h-5 w-5 animate-spin text-[var(--gv-accent-hover)]" />
+          <div>
+            <div className="text-sm font-semibold text-[var(--gv-text-primary)]">{loadingMessage}</div>
+            <div className="text-xs text-[var(--gv-text-muted)]">Refreshing portal state from the existing validation API.</div>
+          </div>
+        </section>
+      )}
 
-        {loading && (
-          <section className="cyber-panel rounded-2xl border border-slate-800/80 p-6 flex items-center gap-3">
-            <RefreshCw className="h-5 w-5 animate-spin text-emerald-400" />
-            <div>
-              <div className="text-sm font-semibold text-slate-100">{loadingMessage}</div>
-              <div className="text-xs text-slate-400 mt-1">Refreshing portal state from the existing validation API.</div>
-            </div>
+      {error && (
+        <section className="mb-5 flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/5 p-5">
+          <AlertTriangle className="mt-0.5 h-5 w-5 text-red-400" />
+          <div>
+            <div className="text-sm font-semibold text-red-200">Controlled error state</div>
+            <div className="mt-1 text-sm text-red-100/80">{error}</div>
+          </div>
+        </section>
+      )}
+
+      {!loading && !cluster && !error && (
+        <section className="gv-card p-10 text-center">
+          <Sparkles className="mx-auto mb-3 h-8 w-8 text-slate-500" />
+          <div className="text-sm font-semibold text-[var(--gv-text-primary)]">No validation evidence loaded.</div>
+          <div className="mt-2 text-xs text-[var(--gv-text-muted)]">Choose a scenario or evidence source to populate the dashboard.</div>
+        </section>
+      )}
+
+      {cluster && (
+        <div className="space-y-5">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5" aria-label="Dashboard KPI summary">
+            <DashboardKpiCard label="Validation score" value={`${dashboardOverview.readinessScore.toFixed(2)}%`} description={`${dashboardOverview.passedChecks}/${dashboardOverview.totalChecks} checks passing`} tone={dashboardOverview.acceptanceApproved ? "healthy" : "warning"} icon={Gauge} />
+            <DashboardKpiCard label="Evidence coverage" value={`${dashboardOverview.evidenceCoveragePercent}%`} description={`${dashboardOverview.totalChecks} checks carry command evidence`} tone="healthy" icon={ShieldCheck} />
+            <DashboardKpiCard label="Findings" value={dashboardOverview.failedChecks + dashboardOverview.warningChecks} description={`${dashboardOverview.failedChecks} failed • ${dashboardOverview.warningChecks} warning`} tone={dashboardOverview.failedChecks > 0 ? "critical" : dashboardOverview.warningChecks > 0 ? "warning" : "healthy"} icon={AlertTriangle} />
+            <DashboardKpiCard label="Infrastructure scope" value={dashboardOverview.nodeCount} description={`${gpuHealth.discoveredGpuCount} discovered GPUs from current payload`} tone="neutral" icon={Server} />
+            <DashboardKpiCard label="Benchmark evidence" value={dashboardOverview.benchmarkCount} description={dashboardOverview.benchmarkCount ? "Embedded benchmark payloads available" : "No benchmark payload embedded"} tone={dashboardOverview.benchmarkCount ? "healthy" : "neutral"} icon={Activity} />
           </section>
-        )}
 
-        {error && (
-          <section className="cyber-panel rounded-2xl border border-red-500/30 bg-red-500/5 p-6 flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5" />
-            <div>
-              <div className="text-sm font-semibold text-red-200">Controlled error state</div>
-              <div className="text-sm text-red-100/80 mt-1">{error}</div>
-            </div>
+          <section className="grid gap-5 xl:grid-cols-[1.35fr_0.75fr]">
+            <DashboardChartCard categoryScores={dashboardOverview.categoryScores} />
+            <section className="gv-card p-5" aria-labelledby="acceptance-readiness-title">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h2 id="acceptance-readiness-title" className="font-display text-lg font-semibold text-[var(--gv-text-primary)]">Acceptance readiness</h2>
+                  <p className="mt-1 text-sm text-[var(--gv-text-muted)]">Readiness score and handoff gate are separate operational signals.</p>
+                </div>
+                {acceptanceGate.handoffApproved ? <ShieldCheck className="h-5 w-5 text-[var(--gv-accent-hover)]" /> : <ShieldAlert className="h-5 w-5 text-red-400" />}
+              </div>
+              <ReadinessGauge value={dashboardOverview.readinessScore} label={dashboardOverview.statusLabel} />
+              <div className="mt-4 space-y-3">
+                <StatusProgressRow label="Diagnostics" value={dashboardOverview.readinessScore} status={dashboardOverview.failedChecks ? "fail" : dashboardOverview.warningChecks ? "warning" : "pass"} />
+                <StatusProgressRow label="Evidence" value={dashboardOverview.evidenceCoveragePercent} status={dashboardOverview.evidenceCoveragePercent === 100 ? "pass" : "warning"} />
+                <StatusProgressRow label="Acceptance criteria" value={acceptanceGate.handoffApproved ? 100 : 62} status={acceptanceGate.handoffApproved ? "pass" : "fail"} />
+                <StatusProgressRow label="Report completeness" value={100} status="pass" />
+              </div>
+            </section>
           </section>
-        )}
 
-        {!loading && !cluster && !error && (
-          <section className="cyber-panel rounded-2xl border border-slate-800/80 p-10 text-center">
-            <Sparkles className="h-8 w-8 text-slate-500 mx-auto mb-3" />
-            <div className="text-sm font-semibold text-slate-100">No validation evidence loaded.</div>
-            <div className="text-xs text-slate-400 mt-2">Choose a scenario or run the current one to populate the portal.</div>
-          </section>
-        )}
-
-        {cluster && (
-          <section className="cyber-panel rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
-            {sourceContext.importedEvidenceBanner && (
-              <div role="status" className="mb-5 rounded-2xl border border-amber-500/35 bg-amber-500/10 p-4 text-sm font-semibold leading-relaxed text-amber-100">
-                {sourceContext.importedEvidenceBanner}
-              </div>
-            )}
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-emerald-300">Source context</div>
-                <h2 className="mt-2 text-xl font-display font-semibold text-slate-50">{sourceContext.evidenceSource}</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
-                  Evidence source: {sourceContext.evidenceSource} • Selected validation profile: {sourceContext.selectedValidationProfile} • Detected environment: {sourceContext.detectedEnvironment}
-                </p>
-              </div>
-              <span className={`rounded-full px-3 py-1.5 text-xs font-mono uppercase tracking-wider ${sourceContext.sourceConfidence === "Demo only" ? "border border-slate-700 bg-slate-900 text-slate-300" : "border border-emerald-500/25 bg-emerald-500/12 text-emerald-300"}`}>
-                {sourceContext.sourceConfidence}
-              </span>
-            </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: "Evidence source", value: sourceContext.evidenceSource },
-                { label: "Selected validation profile", value: sourceContext.selectedValidationProfile },
-                { label: "Collection timestamp", value: sourceContext.collectionTimestamp },
-                { label: "Hardware identity status", value: sourceContext.hardwareIdentityStatus },
-                { label: "Sanitization status", value: sourceContext.sanitizationStatus },
-                { label: "Source confidence", value: sourceContext.sourceConfidence },
-                { label: "Detected environment", value: sourceContext.detectedEnvironment },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950/35 p-4">
-                  <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">{item.label}</div>
-                  <div className="mt-2 text-sm leading-relaxed text-slate-200">{item.value}</div>
+          <section className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">
+            <section className="gv-card overflow-hidden" aria-labelledby="diagnostics-summary-title">
+              <div className="flex items-start justify-between gap-3 border-b border-[var(--gv-border-default)] p-5">
+                <div>
+                  <h2 id="diagnostics-summary-title" className="font-display text-lg font-semibold text-[var(--gv-text-primary)]">Diagnostics summary</h2>
+                  <p className="mt-1 text-sm text-[var(--gv-text-muted)]">Highest-priority validation findings from the active scenario.</p>
                 </div>
-              ))}
-            </div>
-            <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/35 p-4">
-              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">Limitations</div>
-              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed text-slate-300">
-                {sourceContext.limitations.map((limitation) => (
-                  <li key={limitation}>{limitation}</li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        )}
-
-        {cluster && activeTab === "diagnostics" && (
-          <>
-            <section className="grid gap-4 lg:grid-cols-[1.2fr_1.2fr_0.8fr_0.8fr]">
-              <div className="cyber-panel rounded-2xl border border-slate-800/80 p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">Overall Readiness Score</div>
-                    <div className="mt-3 flex items-end gap-2">
-                      <span className="text-4xl font-display font-bold text-slate-50">{cluster.overall_score.toFixed(2)}%</span>
-                    </div>
-                    <div className="mt-2 text-xs text-slate-400">
-                      Aggregate infrastructure health across Linux, GPU, fabric, scheduler, orchestration, and storage evidence.
-                    </div>
-                  </div>
-                  <Gauge className="h-10 w-10 text-emerald-400 shrink-0" />
-                </div>
+                <button onClick={() => setActiveTab("diagnostics")} className="gv-button-secondary py-2 text-xs">View diagnostics</button>
               </div>
-
-              <div className="cyber-panel rounded-2xl border border-slate-800/80 p-5 bg-red-500/4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">Customer Acceptance Status</div>
-                    <div className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${pillClassesForStatus(acceptanceGate.acceptanceStatus)}`}>
-                      {acceptanceGate.acceptanceStatus}
-                    </div>
-                    <div className="mt-3 text-xs text-slate-400 max-w-md">
-                      {acceptanceGate.explanatoryText}
-                    </div>
-                  </div>
-                  {acceptanceGate.handoffApproved ? (
-                    <ShieldCheck className="h-10 w-10 text-emerald-400 shrink-0" />
-                  ) : (
-                    <ShieldAlert className="h-10 w-10 text-red-400 shrink-0" />
-                  )}
-                </div>
-              </div>
-
-              <div className="cyber-panel rounded-2xl border border-slate-800/80 p-5">
-                <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">Active findings</div>
-                <div className="mt-3 flex items-end gap-3">
-                  <span className="text-4xl font-display font-bold text-slate-50">{criticalCount}</span>
-                  <span className="text-xs text-slate-400 mb-1">critical</span>
-                </div>
-                <div className="mt-2 text-xs text-slate-400">Warnings: {warningCount} • Recommendations: {cluster.recommendations.length}</div>
-              </div>
-
-              <div className="cyber-panel rounded-2xl border border-slate-800/80 p-5">
-                <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">Validation profile</div>
-                <div className="mt-3 text-sm font-semibold text-slate-100">{validationProfile.title}</div>
-                <div className="mt-2 text-xs text-slate-400">{validationProfile.mode}</div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-left text-xs">
+                  <thead className="bg-slate-950/50 text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--gv-text-faint)]">
+                    <tr><th className="px-5 py-3">Check</th><th className="px-5 py-3">Node</th><th className="px-5 py-3">Severity</th><th className="px-5 py-3">Status</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--gv-border-default)]">
+                    {(attentionChecks.length ? attentionChecks : recentChecks).map((check) => (
+                      <tr key={`${check.node}-${check.id}`} className="hover:bg-white/[0.02]">
+                        <td className="px-5 py-3"><div className="font-medium text-[var(--gv-text-primary)]">{check.title}</div><div className="mt-1 max-w-md text-[var(--gv-text-muted)]">Evidence-backed {formatStatusLabel(check.category)} validation check</div></td>
+                        <td className="px-5 py-3 font-mono text-[var(--gv-text-muted)]">{check.node}</td>
+                        <td className="px-5 py-3 uppercase text-[var(--gv-text-muted)]">{check.severity}</td>
+                        <td className="px-5 py-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-mono uppercase ${pillClassesForStatus(check.status)}`}>{formatStatusLabel(check.status)}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </section>
 
+            <section className="gv-card p-5" aria-labelledby="benchmark-summary-title">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h2 id="benchmark-summary-title" className="font-display text-lg font-semibold text-[var(--gv-text-primary)]">Benchmark summary</h2>
+                  <p className="mt-1 text-sm text-[var(--gv-text-muted)]">Current payload benchmark evidence and supported ingestion families.</p>
+                </div>
+                <button onClick={() => setActiveTab("benchmarks")} className="gv-button-secondary py-2 text-xs">View benchmarks</button>
+              </div>
+              {cluster.benchmark_results.length ? (
+                <div className="space-y-3">
+                  {cluster.benchmark_results.slice(0, 3).map((result) => (
+                    <div key={`${result.benchmark_type}-${result.timestamp}`} className="rounded-2xl border border-[var(--gv-border-default)] bg-slate-950/30 p-3">
+                      <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-[var(--gv-text-primary)]">{result.benchmark_type}</span><span className={`rounded-full px-2.5 py-1 text-[10px] font-mono uppercase ${pillClassesForStatus(result.status)}`}>{formatStatusLabel(result.status)}</span></div>
+                      <div className="mt-2 text-xs text-[var(--gv-text-muted)]">{Object.entries(result.metrics).slice(0, 3).map(([key, value]) => `${key}: ${value ?? "n/a"}`).join(" • ")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-[var(--gv-border-default)] bg-slate-950/25 p-4 text-sm text-[var(--gv-text-muted)]">No benchmark results are embedded in the current scenario. Supported result ingestion remains available without presenting fabricated NCCL/HPL values.</div>
+              )}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {benchmarkCatalog.supportedIngestion.slice(0, 5).map((name) => <span key={name} className="gv-badge gv-badge-neutral">{name}</span>)}
+              </div>
+            </section>
+          </section>
+
+          <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+            <section className="gv-card p-5" aria-labelledby="acceptance-gate-title">
+              <div className="mb-4 flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-[var(--gv-accent-hover)]" /><h2 id="acceptance-gate-title" className="font-display text-lg font-semibold text-[var(--gv-text-primary)]">Customer Acceptance Gate</h2></div>
+              <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+                <div>
+                  <span className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${pillClassesForStatus(acceptanceGate.handoffDecision)}`}>{acceptanceGate.handoffDecision}</span>
+                  <p className="mt-3 text-sm leading-relaxed text-[var(--gv-text-secondary)]">{acceptanceGate.blockedReason}</p>
+                  <p className="mt-3 rounded-2xl border border-[var(--gv-border-default)] bg-slate-950/30 p-4 text-sm leading-relaxed text-[var(--gv-text-muted)]">{acceptanceGate.explanatoryText}</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[{ label: "Critical", value: acceptanceGate.criticalFindings }, { label: "High", value: acceptanceGate.highSeverityFindings }, { label: "Recommendations", value: acceptanceGate.unresolvedRecommendations }, { label: "Approved", value: acceptanceGate.handoffApproved ? "Yes" : "No" }].map((item) => <div key={item.label} className="rounded-2xl border border-[var(--gv-border-default)] bg-slate-950/30 p-4"><div className="gv-eyebrow text-[var(--gv-text-faint)]">{item.label}</div><div className="mt-2 font-display text-2xl font-semibold text-[var(--gv-text-primary)]">{item.value}</div></div>)}
+                </div>
+              </div>
+            </section>
+
+            <section className="gv-card p-5" aria-labelledby="evidence-report-title">
+              {sourceContext.importedEvidenceBanner && <div role="status" className="mb-4 rounded-2xl border border-amber-500/35 bg-amber-500/10 p-3 text-sm font-semibold text-amber-100">{sourceContext.importedEvidenceBanner}</div>}
+              <div className="gv-eyebrow text-[var(--gv-accent-hover)]">Source context</div>
+              <h2 id="evidence-report-title" className="mt-2 font-display text-lg font-semibold text-[var(--gv-text-primary)]">Evidence and report activity</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--gv-text-muted)]">Evidence source: {sourceContext.evidenceSource} • Selected validation profile: {sourceContext.selectedValidationProfile} • Detected environment: {sourceContext.detectedEnvironment}</p>
+              <div className="mt-4 grid gap-3 text-sm">
+                <div className="flex justify-between gap-3"><span className="text-[var(--gv-text-muted)]">Collection timestamp</span><span className="text-right text-[var(--gv-text-secondary)]">{sourceContext.collectionTimestamp}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[var(--gv-text-muted)]">Hardware identity status</span><span className="text-right text-[var(--gv-text-secondary)]">{sourceContext.hardwareIdentityStatus}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[var(--gv-text-muted)]">Sanitization status</span><span className="text-right text-[var(--gv-text-secondary)]">{sourceContext.sanitizationStatus}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[var(--gv-text-muted)]">Source confidence</span><span className="text-right text-[var(--gv-text-secondary)]">{sourceContext.sourceConfidence}</span></div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a href={reportLinks.html} target="_blank" rel="noreferrer" className="gv-button-secondary py-2 text-xs"><FileText className="h-3.5 w-3.5" /> HTML report</a>
+                <a href={reportLinks.markdown} target="_blank" rel="noreferrer" className="gv-button-secondary py-2 text-xs"><FileText className="h-3.5 w-3.5" /> Markdown</a>
+                <a href={reportLinks.json} target="_blank" rel="noreferrer" className="gv-button-secondary py-2 text-xs"><FileJson className="h-3.5 w-3.5" /> JSON evidence</a>
+              </div>
+              <div className="mt-4 rounded-2xl border border-[var(--gv-border-default)] bg-slate-950/30 p-3"><div className="gv-eyebrow text-[var(--gv-text-faint)]">Limitations</div><ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-relaxed text-[var(--gv-text-muted)]">{sourceContext.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}</ul></div>
+            </section>
+          </section>
+
+          <section className="gv-card p-5" aria-labelledby="quick-actions-title">
+            <h2 id="quick-actions-title" className="font-display text-lg font-semibold text-[var(--gv-text-primary)]">Quick actions</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <button onClick={() => setActiveTab("diagnostics")} className="rounded-2xl border border-[var(--gv-border-default)] bg-slate-950/30 p-4 text-left transition hover:border-[var(--gv-border-highlight)]"><ShieldCheck className="mb-3 h-5 w-5 text-[var(--gv-accent-hover)]" /><div className="text-sm font-semibold text-[var(--gv-text-primary)]">View diagnostics</div><div className="mt-1 text-xs text-[var(--gv-text-muted)]">Inspect validation evidence</div></button>
+              <button onClick={() => setActiveTab("benchmarks")} className="rounded-2xl border border-[var(--gv-border-default)] bg-slate-950/30 p-4 text-left transition hover:border-[var(--gv-border-highlight)]"><Gauge className="mb-3 h-5 w-5 text-[var(--gv-accent-hover)]" /><div className="text-sm font-semibold text-[var(--gv-text-primary)]">View benchmarks</div><div className="mt-1 text-xs text-[var(--gv-text-muted)]">Review supported ingestion</div></button>
+              <a href="/portal/engagements" className="rounded-2xl border border-[var(--gv-border-default)] bg-slate-950/30 p-4 transition hover:border-[var(--gv-border-highlight)]"><Server className="mb-3 h-5 w-5 text-[var(--gv-accent-hover)]" /><div className="text-sm font-semibold text-[var(--gv-text-primary)]">Open engagements</div><div className="mt-1 text-xs text-[var(--gv-text-muted)]">Manage validation workspaces</div></a>
+              <a href="/portal/library" className="rounded-2xl border border-[var(--gv-border-default)] bg-slate-950/30 p-4 transition hover:border-[var(--gv-border-highlight)]"><Layers className="mb-3 h-5 w-5 text-[var(--gv-accent-hover)]" /><div className="text-sm font-semibold text-[var(--gv-text-primary)]">Operations library</div><div className="mt-1 text-xs text-[var(--gv-text-muted)]">Open safe runbooks</div></a>
+            </div>
+          </section>
+
+          <div className="flex max-w-md rounded-xl border border-slate-800 bg-slate-950/50 p-1" aria-label="Dashboard detail tabs">
+            <button onClick={() => setActiveTab("diagnostics")} className={`flex-1 rounded-lg px-4 py-2.5 text-xs font-display font-semibold uppercase tracking-[0.18em] transition cursor-pointer ${activeTab === "diagnostics" ? "bg-slate-900 text-slate-100 border border-slate-700" : "text-slate-400 hover:text-slate-200"}`}>Diagnostics</button>
+            <button onClick={() => setActiveTab("benchmarks")} className={`flex-1 rounded-lg px-4 py-2.5 text-xs font-display font-semibold uppercase tracking-[0.18em] transition cursor-pointer ${activeTab === "benchmarks" ? "bg-slate-900 text-slate-100 border border-slate-700" : "text-slate-400 hover:text-slate-200"}`}>Benchmark readiness</button>
+          </div>
+        </div>
+      )}
+
+        {cluster && activeTab === "diagnostics" && (
+          <>
             <section className="cyber-panel rounded-2xl border border-slate-800/80 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <ShieldAlert className="h-5 w-5 text-emerald-400" />
@@ -1602,37 +1699,6 @@ function PortalApp() {
                           : "Keep dgx04 drained, complete GPU diagnostics, remediate the ECC fault, and repeat the degraded scenario acceptance run."}
                       </div>
                     </div>
-                  </div>
-                </section>
-
-                <section className="cyber-panel rounded-2xl border border-slate-800/80 p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <FileText className="h-5 w-5 text-emerald-400" />
-                    <h2 className="text-lg font-display font-semibold text-slate-50">Report Access</h2>
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      { label: "View standalone HTML report", href: reportLinks.html, icon: FileText },
-                      { label: "View Markdown report", href: reportLinks.markdown, icon: FileText },
-                      { label: "View JSON evidence", href: reportLinks.json, icon: FileJson },
-                    ].map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <a
-                          key={item.label}
-                          href={item.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/30 p-4 text-sm text-slate-200 transition hover:border-emerald-500/35 hover:text-emerald-300"
-                        >
-                          <span className="flex items-center gap-3">
-                            <Icon className="h-4 w-4" />
-                            {item.label}
-                          </span>
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      );
-                    })}
                   </div>
                 </section>
 

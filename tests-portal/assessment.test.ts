@@ -7,6 +7,7 @@ import {
   buildArtifactLinks,
   buildSourceContext,
   deriveAcceptanceGate,
+  deriveDashboardOverview,
   deriveFabricHealth,
   deriveGpuHealth,
   type EvidenceSourceOption,
@@ -62,6 +63,45 @@ test("GPU and fabric summaries derive from scenario evidence", () => {
   assert.equal(fabricHealth.affectedNode, "dgx03");
   assert.equal(fabricHealth.expectedLink, "400 Gb/s (4x)");
   assert.equal(fabricHealth.negotiatedLink, "200 Gb/s (2x)");
+});
+
+test("dashboard overview aggregates validation and benchmark state without fabricated infrastructure metrics", () => {
+  const degraded = loadScenario("degraded");
+  const overview = deriveDashboardOverview(degraded);
+
+  assert.equal(overview.readinessScore, 97.01);
+  assert.equal(overview.nodeCount, 4);
+  assert.equal(overview.totalChecks, 112);
+  assert.equal(overview.passedChecks, 108);
+  assert.equal(overview.warningChecks, 2);
+  assert.equal(overview.failedChecks, 2);
+  assert.equal(overview.evidenceCoveragePercent, 100);
+  assert.equal(overview.benchmarkCount, degraded.benchmark_results.length);
+  assert.equal(overview.acceptanceApproved, false);
+  assert.equal(overview.statusLabel, "Remediation required");
+  assert.deepEqual(overview.categoryScores.map((item) => item.id), ["gpu", "network", "linux", "slurm", "kubernetes", "storage"]);
+  assert.ok(overview.categoryScores.every((item) => Number.isFinite(item.score)));
+});
+
+test("dashboard overview tolerates sparse or partially unavailable validation data", () => {
+  const sparseCluster = {
+    name: "partial",
+    overall_score: 0,
+    classification: "Incomplete",
+    nodes: [],
+    recommendations: [],
+    benchmark_results: [],
+    timestamp: "2026-07-20T00:00:00Z",
+    metadata: {},
+  } as Cluster;
+  const overview = deriveDashboardOverview(sparseCluster);
+
+  assert.equal(overview.totalChecks, 0);
+  assert.equal(overview.passedChecks, 0);
+  assert.equal(overview.evidenceCoveragePercent, 0);
+  assert.equal(overview.benchmarkCount, 0);
+  assert.equal(overview.categoryScores.length, 6);
+  assert.ok(overview.categoryScores.every((item) => item.score === 0));
 });
 
 test("report links stay on safe server routes", () => {

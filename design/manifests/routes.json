@@ -206,7 +206,7 @@
       "route": "/dashboard",
       "category": "application",
       "reference_image": "design/references/application/dashboard.png",
-      "implementation_status": "partial",
+      "implementation_status": "redesigned_phase_2",
       "existing_route": "/portal",
       "dependencies": [],
       "shared_components_required": [
@@ -216,7 +216,7 @@
         "table/status tokens"
       ],
       "priority": "P1",
-      "notes": ""
+      "notes": "Phase 2 redesigned /portal dashboard content using the canonical dashboard reference while preserving scenario, evidence-source, acceptance-gate, diagnostics, benchmark, and report behavior."
     },
     {
       "id": "gpu-inventory",

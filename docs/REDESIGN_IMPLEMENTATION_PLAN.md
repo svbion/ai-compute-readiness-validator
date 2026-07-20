@@ -66,7 +66,7 @@ Risks: responsive overflow and keyboard navigation.
 
 ### 11. Dashboard
 Scope: redesign `/portal` using `dashboard.png` while preserving scenario controls and evidence-source behavior.
-Acceptance: existing e2e scenario tests pass; screenshot captured.
+Acceptance: existing e2e scenario tests pass; screenshot captured. Status: Phase 2 implementation completed in `docs/REDESIGN_CHANGELOG.md`; `/portal` now has a KPI row, validation-domain chart, acceptance readiness gauge, diagnostics summary, benchmark summary, acceptance gate, evidence/report activity, quick actions, and retained detail tabs.
 
 ### 12. GPU Inventory
 Scope: lift existing node/evidence facts into inventory page when route exists.

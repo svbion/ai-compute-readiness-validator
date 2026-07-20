@@ -130,6 +130,28 @@ export interface FabricHealthSummary {
   summary: string;
 }
 
+export interface DashboardCategoryScore {
+  id: "gpu" | "network" | "linux" | "slurm" | "kubernetes" | "storage";
+  label: string;
+  score: number;
+  status: CheckStatus;
+}
+
+export interface DashboardOverview {
+  readinessScore: number;
+  statusLabel: string;
+  acceptanceApproved: boolean;
+  nodeCount: number;
+  totalChecks: number;
+  passedChecks: number;
+  warningChecks: number;
+  failedChecks: number;
+  unavailableChecks: number;
+  evidenceCoveragePercent: number;
+  benchmarkCount: number;
+  categoryScores: DashboardCategoryScore[];
+}
+
 const classificationText = (classification: string) => classification.trim().toLowerCase();
 
 export function getAllChecks(cluster: Cluster | null | undefined): ValidationCheck[] {
@@ -406,6 +428,56 @@ export function deriveFabricHealth(cluster: Cluster | null | undefined): FabricH
       "Inspect negotiated width.",
       "Inspect negotiated speed.",
     ],
+  };
+}
+
+const dashboardCategories: Array<{ id: DashboardCategoryScore["id"]; label: string }> = [
+  { id: "gpu", label: "GPU & DCGM" },
+  { id: "network", label: "InfiniBand / RDMA" },
+  { id: "linux", label: "Linux Platform" },
+  { id: "slurm", label: "Slurm" },
+  { id: "kubernetes", label: "Kubernetes" },
+  { id: "storage", label: "Storage" },
+];
+
+function statusForScore(score: number): CheckStatus {
+  if (score >= 99) return "pass";
+  if (score >= 95) return "warning";
+  if (score > 0) return "fail";
+  return "unknown";
+}
+
+export function deriveDashboardOverview(cluster: Cluster | null | undefined): DashboardOverview {
+  const checks = getAllChecks(cluster);
+  const totalChecks = checks.length;
+  const passedChecks = checks.filter((check) => check.status === "pass").length;
+  const warningChecks = checks.filter((check) => check.status === "warning").length;
+  const failedChecks = checks.filter((check) => check.status === "fail").length;
+  const unavailableChecks = checks.filter((check) => check.status === "unavailable" || check.status === "unknown").length;
+  const evidenceBackedChecks = checks.filter((check) => check.evidence?.length).length;
+  const acceptance = deriveAcceptanceGate(cluster);
+  const categoryAverages = cluster?.metadata?.category_averages ?? {};
+
+  return {
+    readinessScore: Number.isFinite(cluster?.overall_score) ? Number(cluster?.overall_score) : 0,
+    statusLabel: acceptance.acceptanceStatus,
+    acceptanceApproved: acceptance.handoffApproved,
+    nodeCount: cluster?.nodes?.length ?? 0,
+    totalChecks,
+    passedChecks,
+    warningChecks,
+    failedChecks,
+    unavailableChecks,
+    evidenceCoveragePercent: totalChecks > 0 ? Math.round((evidenceBackedChecks / totalChecks) * 100) : 0,
+    benchmarkCount: cluster?.benchmark_results?.length ?? 0,
+    categoryScores: dashboardCategories.map((category) => {
+      const score = Number(categoryAverages[category.id] ?? 0);
+      return {
+        ...category,
+        score: Number.isFinite(score) ? score : 0,
+        status: statusForScore(Number.isFinite(score) ? score : 0),
+      };
+    }),
   };
 }
 

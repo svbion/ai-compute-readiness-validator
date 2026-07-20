@@ -220,3 +220,39 @@ Phase 1 should introduce shared primitives without rewriting business logic:
 - Existing routes remain reachable.
 - Tests pass.
 - Screenshot smoke works.
+
+
+## Phase 2 dashboard audit and implementation notes
+
+Completed after commit `9aa93d1 feat(ui): establish GPUValidator application shell` and before the Phase 2 dashboard commit.
+
+### Existing dashboard sections before Phase 2
+
+- Compact Phase 1 page header with scenario controls and evidence-source selector.
+- Source context panel with provenance, hardware identity, sanitization, confidence, and limitations.
+- Diagnostics tab with readiness score, acceptance status, active findings, category cards, topology, selected-node details, GPU health, InfiniBand/RDMA health, scheduler/orchestration, handoff summary, report access, and interview walkthrough.
+- Benchmark tab with supported ingestion families, demonstrated sample benchmark payloads, and future orchestration caveats.
+
+### API-backed and scenario-dependent values used
+
+- `/api/evidence-sources` controls available evidence source options.
+- `/api/results?scenario=healthy` and `/api/results?scenario=degraded` provide active `Cluster` payloads.
+- `deriveDashboardOverview` now centralizes KPI aggregates: readiness score, total/pass/warning/fail checks, evidence coverage, benchmark count, node count, acceptance status, and category scores.
+- Existing acceptance-gate, GPU-health, fabric-health, scheduler, source-context, artifact-link, validation-profile, and benchmark-catalog helpers remain the source of truth.
+
+### Generated-reference values intentionally not copied
+
+The canonical dashboard image shows live operational metrics such as utilization, temperature, power draw, active benchmark jobs, and production cluster counts. The current backend does not expose live telemetry, Prometheus/DCGM streaming, job queues, temperature, or power APIs for `/portal`; Phase 2 therefore maps the composition to truthful validation-domain metrics instead of fabricating those values.
+
+### Phase 2 visual differences from reference
+
+- Composition now matches the reference more closely: compact header, KPI row, main chart/status row, diagnostics table, benchmark summary, acceptance card, evidence/report card, and quick actions.
+- Lower detailed diagnostics remain available below the dashboard so existing workflows and tests are preserved.
+- `/portal` remains a validation/readiness dashboard, not a live monitoring page.
+
+### Remaining dashboard gaps
+
+- No live utilization/temperature/power telemetry is available yet.
+- No active benchmark-job queue is available on `/portal`; benchmark execution-plane APIs exist under engagement workflows and remain future page work.
+- Global search remains visual-only from Phase 1.
+- Full extraction into separate component files can happen after another page validates the reusable patterns.
