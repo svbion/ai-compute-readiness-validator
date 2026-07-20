@@ -193,129 +193,188 @@ function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#030610] text-slate-100 selection:bg-emerald-500/25 selection:text-emerald-200">
-      <div className="absolute inset-0 opacity-70" aria-hidden="true">
+    <main className="login-shell relative min-h-screen overflow-hidden bg-[#030610] text-slate-100 selection:bg-emerald-500/25 selection:text-emerald-200">
+      <div className="absolute inset-0" aria-hidden="true">
         <div className="login-grid absolute inset-0" />
-        <div className="absolute left-1/2 top-0 h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="absolute bottom-[-10rem] right-[-8rem] h-[30rem] w-[30rem] rounded-full bg-cyan-500/8 blur-3xl" />
+        <div className="login-starfield absolute inset-0" />
+        <div className="login-scan absolute inset-0" />
+        <div className="absolute left-[-10rem] top-[-12rem] h-[34rem] w-[34rem] rounded-full bg-emerald-500/12 blur-3xl" />
+        <div className="absolute right-[-12rem] top-[12%] h-[32rem] w-[32rem] rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="absolute bottom-[-14rem] left-[35%] h-[30rem] w-[30rem] rounded-full bg-emerald-500/8 blur-3xl" />
         <div className="signal-path signal-path-a" />
         <div className="signal-path signal-path-b" />
+        <div className="signal-path signal-path-c" />
       </div>
 
-      <section className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-6 py-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-emerald-300">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(118,185,0,0.8)]" />
+      <section className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-6 py-10 lg:grid-cols-[1.08fr_0.92fr] lg:py-16">
+        <div className="login-hero-enter space-y-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-emerald-200 shadow-[0_0_32px_rgba(118,185,0,0.08)] backdrop-blur">
+            <span className="login-live-dot h-2 w-2 rounded-full bg-emerald-400" />
             Invite-only reviewer access
           </div>
 
           <div className="space-y-5">
-            <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-slate-500">AI Factory Readiness Portal</div>
-            <h1 className="max-w-4xl text-4xl font-display font-bold tracking-tight text-slate-50 md:text-6xl">
+            <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-cyan-200/80">AI Factory Readiness Portal</div>
+            <h1 className="font-display text-4xl font-bold tracking-tight text-slate-50 md:text-6xl">
               GPU Validator
             </h1>
+            <p className="max-w-3xl font-display text-3xl font-semibold leading-tight text-white md:text-5xl">
+              GPU Infrastructure Readiness, Validated
+            </p>
             <p className="max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
-              Private access to GPU infrastructure readiness, validation evidence, and customer-acceptance workflows.
+              Secure access to GPU cluster validation, benchmark intelligence, evidence review, and customer acceptance workflows. Private access to GPU infrastructure readiness for enterprise demonstrations and technical interviews.
             </p>
           </div>
 
-          <div className="grid max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
-            {["Linux", "GPU Compute", "InfiniBand / RDMA", "Slurm", "Kubernetes", "Storage", "Customer Acceptance"].map((item) => (
-              <span key={item} className="rounded-2xl border border-slate-800 bg-slate-950/45 px-3 py-2 text-xs text-slate-300 backdrop-blur">
+          <div className="login-topology relative max-w-2xl overflow-hidden rounded-[2rem] border border-slate-800/80 bg-slate-950/45 p-5 shadow-2xl backdrop-blur" aria-hidden="true">
+            <div className="mb-4 flex items-center justify-between gap-4 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-400">
+              <span>Cluster fabric</span>
+              <span className="text-emerald-300">Validation flow</span>
+            </div>
+            <svg viewBox="0 0 620 250" className="h-56 w-full" aria-hidden="true" focusable="false">
+              <defs>
+                <linearGradient id="fabricLine" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0%" stopColor="rgba(34,211,238,0.1)" />
+                  <stop offset="50%" stopColor="rgba(118,185,0,0.65)" />
+                  <stop offset="100%" stopColor="rgba(34,211,238,0.28)" />
+                </linearGradient>
+              </defs>
+              <path className="fabric-line fabric-line-a" d="M92 70 C190 34 278 46 348 94 S500 168 548 86" />
+              <path className="fabric-line fabric-line-b" d="M78 178 C170 104 270 124 346 154 S474 202 556 154" />
+              <path className="fabric-line fabric-line-c" d="M142 120 H252 C298 120 322 82 370 82 H506" />
+              {[
+                [92, 70, "GPU-0"],
+                [142, 178, "GPU-1"],
+                [278, 112, "IB"],
+                [370, 82, "GPU-2"],
+                [506, 82, "GPU-3"],
+                [548, 154, "Gate"],
+              ].map(([cx, cy, label]) => (
+                <g key={label as string}>
+                  <circle className="fabric-node-ring" cx={cx as number} cy={cy as number} r="24" />
+                  <circle className="fabric-node" cx={cx as number} cy={cy as number} r="12" />
+                  <text x={cx as number} y={(cy as number) + 44} textAnchor="middle" className="fabric-label">{label}</text>
+                </g>
+              ))}
+              <circle className="fabric-pulse fabric-pulse-a" cx="92" cy="70" r="5" />
+              <circle className="fabric-pulse fabric-pulse-b" cx="278" cy="112" r="5" />
+              <circle className="fabric-pulse fabric-pulse-c" cx="548" cy="154" r="5" />
+            </svg>
+          </div>
+
+          <div className="login-tag-grid grid max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
+            {["GPU Compute", "InfiniBand / RDMA", "NCCL", "Slurm", "Kubernetes", "Storage", "Customer Acceptance", "Evidence Review"].map((item) => (
+              <span key={item} className="login-capability-tag rounded-2xl border border-slate-800 bg-slate-950/55 px-3 py-2 text-xs text-slate-300 backdrop-blur">
                 {item}
               </span>
             ))}
           </div>
 
-          <div className="max-w-2xl rounded-3xl border border-slate-800 bg-slate-950/45 p-5 text-sm leading-7 text-slate-400 backdrop-blur">
-            <p className="text-slate-300">Built by Sabion P. Frazier</p>
+          <div className="grid max-w-2xl gap-3 sm:grid-cols-3">
+            {["Session-based access", "No public registration", "Reviewer workflow"].map((item) => (
+              <div key={item} className="rounded-2xl border border-emerald-500/15 bg-emerald-500/8 px-4 py-3 text-sm text-emerald-100/90 backdrop-blur">
+                <ShieldCheck className="mb-2 h-4 w-4 text-emerald-300" />
+                {item}
+              </div>
+            ))}
+          </div>
+
+          <div className="max-w-2xl rounded-3xl border border-slate-800/80 bg-slate-950/55 p-5 text-sm leading-7 text-slate-400 shadow-xl backdrop-blur">
+            <p className="font-medium text-slate-200">Built by Sabion P. Frazier</p>
             <p className="mt-2">
               This project is an independent portfolio project and is not affiliated with, sponsored by, or endorsed by NVIDIA.
             </p>
           </div>
         </div>
 
-        <div className="cyber-panel rounded-[2rem] border border-slate-800/80 bg-slate-950/75 p-6 shadow-2xl md:p-8">
-          <div className="mb-7 flex items-start justify-between gap-4">
-            <div>
-              <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-slate-500">Secure entry</div>
-              <h2 className="mt-3 text-2xl font-display font-semibold text-slate-50">Reviewer sign in</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">Use an issued reviewer invitation when authentication is enabled.</p>
+        <div className="login-card-enter">
+          <div className="login-auth-card cyber-panel relative overflow-hidden rounded-[2rem] border border-slate-700/80 bg-slate-950/80 p-6 shadow-2xl md:p-8">
+            <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/70 to-transparent" aria-hidden="true" />
+            <div className="mb-7 flex items-start justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/8 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.2em] text-cyan-100">
+                  <span className="login-security-pulse h-2 w-2 rounded-full bg-cyan-300" />
+                  Secure access
+                </div>
+                <h2 className="mt-5 text-2xl font-display font-semibold text-slate-50">Reviewer sign in</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Authenticate with your issued username and password to enter the validation portal.</p>
+              </div>
+              <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-3 shadow-[0_0_24px_rgba(118,185,0,0.12)]">
+                <Lock className="h-5 w-5 text-emerald-300" />
+              </div>
             </div>
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3">
-              <Lock className="h-5 w-5 text-emerald-300" />
-            </div>
+
+            <form onSubmit={submitLogin} className="space-y-5">
+              <div>
+                <label htmlFor="reviewer-username" className="mb-2 block text-sm font-medium text-slate-100">Username</label>
+                <div className="login-input-wrap relative">
+                  <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="reviewer-username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    spellCheck={false}
+                    autoCapitalize="none"
+                    placeholder="reviewer"
+                    required
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    className="login-input w-full rounded-2xl border border-slate-700/90 bg-slate-950/85 py-3.5 pl-11 pr-3 text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-emerald-400/80 focus:ring-4 focus:ring-emerald-500/15"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="reviewer-password" className="mb-2 block text-sm font-medium text-slate-100">Password</label>
+                <div className="login-input-wrap relative">
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="reviewer-password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className="login-input w-full rounded-2xl border border-slate-700/90 bg-slate-950/85 py-3.5 pl-11 pr-12 text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-emerald-400/80 focus:ring-4 focus:ring-emerald-500/15"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-xl border border-transparent p-2 text-slate-400 transition hover:border-cyan-400/25 hover:bg-cyan-400/10 hover:text-cyan-100 active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/55 p-4 text-xs leading-6 text-slate-300">
+                Invitation required. Access is private, session-based, and does not store credentials in browser local storage.
+              </div>
+
+              {message && (
+                <div role="alert" aria-live="polite" className={`login-alert rounded-2xl border p-4 text-sm ${locked ? "border-amber-500/35 bg-amber-500/12 text-amber-100" : "border-red-500/35 bg-red-500/12 text-red-100"}`}>
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="login-primary-button group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-emerald-500 px-4 py-3.5 font-semibold text-slate-950 shadow-[0_14px_36px_rgba(118,185,0,0.18)] transition hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-[0_18px_44px_rgba(118,185,0,0.24)] active:translate-y-0 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-emerald-500/30 disabled:cursor-not-allowed disabled:bg-emerald-700 disabled:text-slate-900 disabled:shadow-none"
+              >
+                <span className="login-button-sweep absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true" />
+                {loading && <RefreshCw className="relative z-10 h-4 w-4 animate-spin" />}
+                <span className="relative z-10">{loading ? "Checking reviewer access" : "Sign In"}</span>
+              </button>
+            </form>
+
+            <p className="mt-6 text-xs leading-6 text-slate-400">
+              Privacy-oriented demo portal: no analytics, no public registration, no social login, and no vendor endorsement claim.
+            </p>
           </div>
-
-          <form onSubmit={submitLogin} className="space-y-5">
-            <div>
-              <label htmlFor="reviewer-username" className="mb-2 block text-sm font-medium text-slate-200">Username</label>
-              <div className="relative">
-                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <input
-                  id="reviewer-username"
-                  name="username"
-                  type="text"
-                  autoComplete="username"
-                  spellCheck={false}
-                  autoCapitalize="none"
-                  placeholder="Username"
-                  required
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-3 text-slate-100 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="reviewer-password" className="mb-2 block text-sm font-medium text-slate-200">Password</label>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <input
-                  id="reviewer-password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-12 text-slate-100 outline-none transition focus:border-emerald-500/60 focus:ring-4 focus:ring-emerald-500/10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((value) => !value)}
-                  className="absolute right-2 top-1/2 rounded-xl p-2 -translate-y-1/2 text-slate-400 transition hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/45 p-4 text-xs leading-6 text-slate-400">
-              Invitation required. Access is private, session-based, and does not store credentials in browser local storage.
-            </div>
-
-            {message && (
-              <div role="alert" aria-live="polite" className={`rounded-2xl border p-4 text-sm ${locked ? "border-amber-500/30 bg-amber-500/10 text-amber-100" : "border-red-500/30 bg-red-500/10 text-red-100"}`}>
-                {message}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/25 disabled:cursor-not-allowed disabled:bg-emerald-700"
-            >
-              {loading && <RefreshCw className="h-4 w-4 animate-spin" />}
-              {loading ? "Checking reviewer access" : "Sign In"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-xs leading-6 text-slate-500">
-            Privacy-oriented demo portal: no analytics, no public registration, no social login, and no vendor endorsement claim.
-          </p>
         </div>
       </section>
     </main>
