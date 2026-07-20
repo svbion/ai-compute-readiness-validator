@@ -67,10 +67,13 @@
 
 ## Production operations cleanup
 
-- Current live deployment commit before this cleanup: `540d33e`.
-- Cleanup completed: status Git inspection now uses shared app-user Git helpers; deployment summary reports the actual deployed commit/subject; `deploy/status.sh` reports product, app dir, configured/checked-out branch, commit SHA/subject, origin sync, filtered working tree state, service/PID, local health/login, Caddy version/state/config, DNS/public HTTP(S), artifact timestamps, disk use, and secret-safe auth states.
-- Build config cleanup: `.env.production.example` no longer includes `NODE_ENV`; `deploy/systemd/ai-factory-validator.service` continues setting runtime `NODE_ENV=production`, and `npm run build` sets `NODE_ENV=production` for the production build while using a Vite mode that does not load `.env.production`.
-- Added `docs/PRODUCTION_SMOKE_TEST.md` for DNS, TLS, redirect, auth, API/report, local service, Caddy, logs, rollback, and secret-safety checks.
+- Production is live at `https://gpuvalidator.com`; DNS, HTTPS, browser access, authentication, backend service, Caddy, and deployment verification have been validated.
+- Current deployment cleanup commit: `390e444 fix(deploy): improve production status and build configuration`.
+- Cleanup completed: Git inspection now validates repository readability, runs read-only Git commands as `AI_FACTORY_APP_USER`, reports configured branch, checked-out branch, deployed commit/subject, origin sync, and filtered working-tree state without treating inaccessible checkouts as detached.
+- Deployment summaries in `install.sh`/`update.sh` use the shared Git helper and report the actual deployed commit when the repository is valid and readable.
+- Vite cleanup remains in place: `.env.production.example` omits `NODE_ENV`; systemd sets runtime `NODE_ENV=production`; `npm run build` sets production build mode without loading `.env.production`.
+- `deploy/status.sh` now reports operational status and authentication variables as `SET`/`EMPTY` only, without secret values or lengths.
+- `docs/PRODUCTION_SMOKE_TEST.md` covers DNS, TLS, root/www, auth, protected APIs/reports, local service, Caddy, logs, rollback, and secret safety.
 - Next objective: public landing page.
 
 ## Recovery changes
@@ -89,7 +92,7 @@
 - `npm run test:portal`: passed, 14 tests.
 - `pytest` using existing `.venv`: passed, 16 tests.
 - Focused literal parse for `scrypt$1234567890abcdef$abcdef1234567890`: passed.
-- Production status Git fixture tests: normal branch, detached HEAD, app-user Git, missing repo, runtime-only dirty paths, and source dirty paths passed.
+- Production status Git fixture tests: normal branch, detached HEAD, app-user Git, missing/inaccessible repo, runtime-only dirty paths, and source dirty paths passed.
 
 ## Production safety notes
 
