@@ -256,3 +256,24 @@ The canonical dashboard image shows live operational metrics such as utilization
 - No active benchmark-job queue is available on `/portal`; benchmark execution-plane APIs exist under engagement workflows and remain future page work.
 - Global search remains visual-only from Phase 1.
 - Full extraction into separate component files can happen after another page validates the reusable patterns.
+
+
+## Phase 3 GPU inventory audit and implementation notes
+
+Completed after commit `20a3618 feat(dashboard): redesign infrastructure overview` and before Phase 3 UI implementation.
+
+### Inventory data model findings
+
+- No first-class per-GPU backend object exists. Current APIs expose engagement nodes, accepted evidence records, comparison rows, diagnostic findings, readiness summaries, runner capabilities, and simulated cluster validation payloads.
+- Engagement node payloads provide node-level `gpu_model`, `gpu_count`, `driver_version`, `cuda_version`, collection status, validation status, readiness score, and accepted evidence IDs when evidence has been parsed.
+- Accepted evidence provenance exposes source command/file/timestamp/checksum for parsed node-level fields through comparison/provenance data. It does not expose per-GPU UUID, serial number, firmware, PCI address, temperatures, power draw, utilization, fan speed, memory usage, ECC counters, PCIe throughput, or NVLink throughput to the frontend inventory route.
+- Scenario cluster payloads include validation checks and command evidence summaries for GPU count, driver/CUDA, ECC validation, NVLink validation, DCGM presence/health, and benchmark samples. They remain simulated unless explicitly imported live evidence says otherwise.
+- First implementation is read-only. CSV export is generated client-side from currently filtered inventory rows and intentionally excludes storage paths, bundle checksums, raw evidence bodies, and secret-like fields.
+
+### Phase 3 implementation notes
+
+- `/portal/inventory/gpus` uses the existing Phase 1 shell and sidebar.
+- Inventory is scoped to all visible engagements and nodes. When no engagement-level GPU rows can be derived, the page falls back to the existing healthy validation scenario and labels it as simulated, not real hardware evidence.
+- One inventory row is derived per reported GPU count. Per-GPU unavailable fields are rendered as `Not collected` rather than fabricated.
+- Hardware health is not inferred from absent telemetry. The page separates validation status, evidence completeness, and hardware-health unknown/failed/warning derived only from accepted findings or validation failure states.
+- Detail drawer sections preserve evidence provenance where comparison cells provide source command/file metadata.

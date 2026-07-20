@@ -69,9 +69,9 @@ Scope: redesign `/portal` using `dashboard.png` while preserving scenario contro
 Acceptance: existing e2e scenario tests pass; screenshot captured. Status: Phase 2 implementation completed in `docs/REDESIGN_CHANGELOG.md`; `/portal` now has a KPI row, validation-domain chart, acceptance readiness gauge, diagnostics summary, benchmark summary, acceptance gate, evidence/report activity, quick actions, and retained detail tabs.
 
 ### 12. GPU Inventory
-Scope: lift existing node/evidence facts into inventory page when route exists.
+Scope: lift existing node/evidence facts into inventory page when route exists. Status: Phase 3 implemented at `/portal/inventory/gpus` as a read-only derived inventory using engagement, node, evidence, comparison, findings, readiness, and simulated scenario fallback data.
 Inputs: `gpu-inventory.png`, engagement APIs.
-Risks: duplicating engagement detail data flows.
+Risks: duplicating engagement detail data flows. Remaining risk: per-GPU UUID/serial/telemetry require future backend evidence support and must remain unavailable until collected.
 
 ### 13. Clusters and Cluster Detail
 Scope: cluster list/detail composition from engagement/readiness APIs.

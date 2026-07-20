@@ -221,11 +221,11 @@
     {
       "id": "gpu-inventory",
       "title": "GPUs",
-      "route": "/inventory/gpus",
+      "route": "/portal/inventory/gpus",
       "category": "application",
       "reference_image": "design/references/application/gpu-inventory.png",
-      "implementation_status": "partial",
-      "existing_route": "/portal/engagements/:id",
+      "implementation_status": "redesigned_phase_3",
+      "existing_route": "/portal/inventory/gpus",
       "dependencies": [],
       "shared_components_required": [
         "application shell",
@@ -234,7 +234,7 @@
         "table/status tokens"
       ],
       "priority": "P1",
-      "notes": ""
+      "notes": "Phase 3 implemented authenticated read-only GPU inventory. Derived from engagement nodes, accepted evidence summaries, comparison provenance, findings, readiness, and simulated scenario fallback when no engagement GPU identity exists. Unsupported per-GPU telemetry/identity fields render as Not collected."
     },
     {
       "id": "nodes",

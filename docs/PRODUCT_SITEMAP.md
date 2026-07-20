@@ -7,6 +7,7 @@ The frontend is a Vite/React single-page application with manual path dispatch i
 - `/login`
 - `/portal`
 - `/portal/engagements`
+- `/portal/inventory/gpus`
 - `/portal/engagements/new`
 - `/portal/engagements/:id`
 - `/portal/library`
@@ -86,7 +87,8 @@ Administration
 
 ## Adaptation to current product
 - Dashboard maps to current `/portal` classic validation portal, but the redesign should eventually use `/dashboard` or alias `/portal` to dashboard.
-- Clusters, inventory, validation results, and benchmarks currently exist inside engagement workflows and the classic portal rather than separate route modules.
+- GPU inventory is now a standalone authenticated read-only route at `/portal/inventory/gpus`, derived from existing engagement node/evidence/comparison/findings/readiness APIs with scenario fallback labeling when no engagement GPU identity is present.
+- Clusters, validation results, and benchmarks currently exist inside engagement workflows and the classic portal rather than separate route modules.
 - Administration currently focuses on users, demo, and system health.
 - Public marketing routes are not active because the current release intentionally enforces login-only public access.
 - AI Copilot, pricing, billing, and MLPerf are future or roadmap surfaces and must not be mocked as functional.

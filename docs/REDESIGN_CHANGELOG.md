@@ -169,3 +169,63 @@ Validation results: lint passed, production build passed, portal tests passed 58
 ### Next phase
 
 Phase 3 should redesign GPU inventory workflows only after mapping existing engagement/node/GPU evidence into a truthful inventory page or route.
+
+
+## Phase 3 — GPU Inventory
+
+Date: 2026-07-20
+Status: implemented and validated.
+
+### Route redesigned
+
+- Added authenticated `/portal/inventory/gpus`. No Clusters, Validation Center, Benchmarks, Monitoring, Alerts, Reports, AI Copilot, Settings, Authentication, or public marketing routes were started.
+
+### Data sources
+
+- `/api/v1/engagements`
+- `/api/v1/engagements/:id/nodes`
+- `/api/v1/engagements/:id/evidence`
+- `/api/v1/engagements/:id/comparison`
+- `/api/v1/engagements/:id/findings`
+- `/api/v1/engagements/:id/readiness`
+- Fallback only: `/api/results?scenario=healthy`, explicitly labeled as simulated validation scenario data.
+
+### Inventory fields supported
+
+- Node, GPU index, vendor where derivable, model where reported, driver version, CUDA version, validation status, evidence completeness, NVLink validation state where reported, ECC validation state where reported, last validated timestamp, engagement/cluster scope, evidence source, command/source file provenance where available, sanitized/simulated flags, and command-count coverage.
+
+### Fields intentionally unavailable
+
+- UUID, serial number, firmware, PCI bus ID, NUMA node, compute capability, MIG mode, per-GPU memory total from engagement APIs, live temperature, power draw, utilization, fan speed, memory usage, PCIe throughput, NVLink throughput, and ECC counters. These render as `Not collected` unless future evidence/API support is added.
+
+### Components and helpers added
+
+- `src/portal/inventory.ts` centralizes `GpuInventoryItem`, summary/filter/sort types, derivation from engagement and scenario payloads, health/evidence completeness semantics, filtering, sorting, options, and CSV export.
+- `GpuInventoryPage`, `InventorySummaryCard`, `InventoryStatusBadge`, and `GpuDetailDrawer` were added in `src/App.tsx` while reusing `EngagementShell`, `Panel`, `EmptyState`, and existing tokenized styles.
+
+### Behavior preserved
+
+- Existing login/session/logout, `/portal` dashboard, engagements, operations library, admin routes, evidence upload/provenance flows, and report links remain unchanged.
+- The sidebar remains the single shared authenticated shell; no duplicate shell was created.
+
+### Screenshots captured
+
+- `design/implementation-screenshots/current/phase3-gpu-inventory-1536x1024.png`
+- `design/implementation-screenshots/current/phase3-gpu-inventory-1440x900.png`
+- `design/implementation-screenshots/current/phase3-gpu-inventory-1280x800.png`
+- `design/implementation-screenshots/comparisons/phase3-gpu-inventory-vs-reference.png`
+
+### Tests added
+
+- `tests-portal/inventory.test.ts` covers complete and sparse derivation, missing identity, unknown versus failed health semantics, evidence completeness, summary totals, combined filtering, sorting, missing UUIDs, duplicate disambiguation, field availability, malformed optional evidence, scenario fallback derivation, and CSV export.
+- `tests-e2e/portal.spec.ts` covers route protection, sidebar navigation, rendering, search, combined filters, clear filters, sorting, drawer open/close, empty filter state, backend error state, and CSV export.
+
+### Known gaps
+
+- There is still no backend first-class GPU inventory endpoint. Phase 3 derives read-only inventory on the client from existing contracts.
+- Hardware telemetry remains unavailable and is not shown as live health.
+- Per-GPU identity remains coarse because current evidence parsing is node-level; UUID/serial/PCI/MIG fields require a future safe evidence schema/API extension.
+
+### Next phase
+
+Recommended Phase 4 scope: Clusters only, mapping existing engagement list/detail/readiness data into a truthful cluster route without starting validation center, benchmarks, monitoring, alerts, reports, Copilot, settings, auth, or public marketing pages.

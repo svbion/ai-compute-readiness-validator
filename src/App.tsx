@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  ArrowUpDown,
   ChevronRight,
   Cpu,
+  Download,
   ExternalLink,
   FileJson,
   FileText,
@@ -18,8 +20,10 @@ import {
   Server,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Waypoints,
+  X,
   Eye,
   EyeOff,
   User,
@@ -63,6 +67,22 @@ import {
   type ProvenanceReference,
   type UploadTokenSummary,
 } from "./portal/engagements";
+import {
+  defaultGpuInventoryFilters,
+  deriveGpuInventory,
+  deriveGpuInventoryFromCluster,
+  deriveGpuInventorySummary,
+  exportGpuInventoryCsv,
+  filterGpuInventory,
+  inventoryOptions,
+  sortGpuInventory,
+  validationStatusLabel,
+  type EngagementInventoryPayload,
+  type GpuInventoryFilterState,
+  type GpuInventoryItem,
+  type GpuInventorySortKey,
+  type GpuInventorySortState,
+} from "./portal/inventory";
 import { libraryPages, libraryRoutes, searchLibrary, type LibraryPage } from "./portal/operations-library";
 
 void libraryRoutes;
@@ -434,10 +454,10 @@ const shellNavGroups: ShellNavGroup[] = [
   {
     title: "Infrastructure",
     items: [
-      { label: "Clusters", href: "/portal/engagements", icon: Server, match: (path) => path.startsWith("/portal/engagements") },
-      { label: "GPUs", href: "/portal/engagements", icon: Cpu, match: () => false },
+      { label: "GPU Inventory", href: "/portal/inventory/gpus", icon: Cpu, match: (path) => path === "/portal/inventory/gpus" },
+      { label: "Engagements", href: "/portal/engagements", icon: Server, match: (path) => path.startsWith("/portal/engagements") },
       { label: "Fabric", href: "/portal", icon: Network, match: () => false },
-      { label: "Library", href: "/portal/library", icon: Layers, match: (path) => path.startsWith("/portal/library") },
+      { label: "Operations Library", href: "/portal/library", icon: Layers, match: (path) => path.startsWith("/portal/library") },
     ],
   },
   {
@@ -807,6 +827,153 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 
 function EmptyState({ text }: { text: string }) {
   return <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-950/30 p-6 text-sm text-slate-400">{text}</div>;
+}
+
+function inventoryTone(status: string): "healthy" | "warning" | "critical" | "neutral" {
+  if (["passed", "complete"].includes(status)) return "healthy";
+  if (["warning", "partial", "not_validated", "unknown", "not_collected"].includes(status)) return "warning";
+  if (["failed", "missing"].includes(status)) return "critical";
+  return "neutral";
+}
+
+function InventoryStatusBadge({ value, label }: { value: string; label?: string }) {
+  return <span className={`rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider ${toneClasses[inventoryTone(value)]}`}>{label ?? validationStatusLabel(value as any)}</span>;
+}
+
+function unavailable(value: string | number | null | undefined, fallback = "Not collected") {
+  return value === null || value === undefined || value === "" ? fallback : String(value);
+}
+
+function InventorySummaryCard({ label, value, description, tone = "neutral" }: { label: string; value: number; description: string; tone?: "healthy" | "warning" | "critical" | "neutral" }) {
+  const toneClass = tone === "healthy" ? "text-emerald-300" : tone === "warning" ? "text-amber-300" : tone === "critical" ? "text-red-300" : "text-slate-50";
+  return <article className="gv-card p-4"><div className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">{label}</div><div className={`mt-2 font-display text-3xl font-semibold tabular-nums ${toneClass}`}>{value.toLocaleString()}</div><p className="mt-2 text-xs leading-5 text-slate-400">{description}</p></article>;
+}
+
+function GpuDetailDrawer({ item, onClose }: { item: GpuInventoryItem | null; onClose: () => void }) {
+  useEffect(() => {
+    if (!item) return;
+    const handler = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [item, onClose]);
+  if (!item) return null;
+  const Field = ({ label, value }: { label: string; value: string | number | null | undefined }) => <div><dt className="text-[10px] font-mono uppercase tracking-[0.16em] text-slate-500">{label}</dt><dd className="mt-1 break-words text-sm text-slate-200">{unavailable(value)}</dd></div>;
+  return (
+    <div className="pointer-events-none fixed inset-y-0 right-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="gpu-detail-title">
+      <aside className="pointer-events-auto h-full w-full max-w-[440px] overflow-y-auto border-l border-emerald-500/20 bg-[#050914]/98 p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-emerald-300">GPU Details</div>
+            <h2 id="gpu-detail-title" className="mt-3 font-display text-2xl font-semibold text-slate-50">{item.nodeName} / GPU {item.gpuIndex ?? "unknown"}</h2>
+            <div className="mt-3 flex flex-wrap gap-2"><InventoryStatusBadge value={item.validationStatus} /><InventoryStatusBadge value={item.evidenceCompleteness} label={`Evidence ${item.evidenceCompleteness}`} /></div>
+          </div>
+          <button autoFocus onClick={onClose} aria-label="Close GPU details" className="rounded-xl border border-slate-700 p-2 text-slate-300 hover:border-emerald-500/40 hover:text-emerald-300"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="mt-5 space-y-4">
+          <Panel title="Identity"><dl className="grid gap-4 sm:grid-cols-2"><Field label="Node" value={item.nodeName} /><Field label="GPU index" value={item.gpuIndex} /><Field label="Vendor" value={item.vendor} /><Field label="Model" value={item.model} /><Field label="UUID" value={item.uuid} /><Field label="PCI address" value={item.pciBusId} /><Field label="Memory" value={item.memoryTotal} /><Field label="Compute capability" value={item.computeCapability} /></dl></Panel>
+          <Panel title="Software"><dl className="grid gap-4 sm:grid-cols-2"><Field label="Driver" value={item.driverVersion} /><Field label="CUDA" value={item.cudaVersion} /><Field label="MIG mode" value={item.migMode} /><Field label="ECC mode" value={item.eccMode} /></dl></Panel>
+          <Panel title="Validation"><div className="space-y-3 text-sm text-slate-300"><div className="flex flex-wrap gap-2"><InventoryStatusBadge value={item.validationStatus} /><InventoryStatusBadge value={item.healthStatus} label={`Hardware health ${item.healthStatus.replace(/_/g, " ")}`} /></div><div>Hardware health is shown as unknown unless accepted findings explicitly report a GPU-affecting failure or warning.</div>{item.failures.length > 0 && <ul className="list-disc pl-5 text-red-100">{item.failures.map((failure) => <li key={failure}>{failure}</li>)}</ul>}{item.warnings.length > 0 && <ul className="list-disc pl-5 text-amber-100">{item.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}</div></Panel>
+          <Panel title="Connectivity"><dl className="grid gap-4 sm:grid-cols-2"><Field label="NVLink" value={item.nvlinkState} /><Field label="NUMA" value={item.numaNode} /><Field label="PCIe" value={item.pciBusId} /><Field label="Fabric association" value={item.clusterName ?? item.engagementName} /></dl></Panel>
+          <Panel title="Evidence"><dl className="grid gap-4"><Field label="Evidence source" value={item.evidenceSource.source.replace(/_/g, " ")} /><Field label="Evidence ID" value={item.evidenceSource.evidenceId} /><Field label="Command" value={item.evidenceSource.command} /><Field label="Source file" value={item.evidenceSource.sourceFile} /><Field label="Collected" value={formatDate(item.evidenceSource.collectedAt)} /><Field label="Sanitized" value={item.evidenceSource.sanitized === null ? null : item.evidenceSource.sanitized ? "yes" : "no"} /><Field label="Simulated" value={item.evidenceSource.simulated ? "yes" : "no"} /><Field label="Commands" value={item.evidenceSource.commandCounts.total === null ? null : `${item.evidenceSource.commandCounts.collected}/${item.evidenceSource.commandCounts.total} collected, ${item.evidenceSource.commandCounts.failed ?? 0} failed, ${item.evidenceSource.commandCounts.missing ?? 0} missing`} /></dl>{item.evidenceSource.warnings.length > 0 && <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-100">{item.evidenceSource.warnings.join(" ")}</div>}</Panel>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function GpuInventoryPage() {
+  const [items, setItems] = useState<GpuInventoryItem[]>([]);
+  const [filters, setFilters] = useState<GpuInventoryFilterState>(defaultGpuInventoryFilters);
+  const [sortState, setSortState] = useState<GpuInventorySortState>({ key: "nodeName", direction: "asc" });
+  const [selected, setSelected] = useState<GpuInventoryItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [scope, setScope] = useState("All visible engagement and validation data");
+
+  const loadInventory = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const engagementResponse = await fetch("/api/v1/engagements");
+      if (!engagementResponse.ok) throw new Error("Failed to load engagements for GPU inventory.");
+      const engagementPayload = await engagementResponse.json();
+      const engagements: Engagement[] = Array.isArray(engagementPayload.engagements) ? engagementPayload.engagements : [];
+      const payloads: EngagementInventoryPayload[] = await Promise.all(engagements.map(async (engagement) => {
+        const id = encodeURIComponent(engagement.id);
+        const [nodes, evidence, comparison, findings, readiness] = await Promise.all([
+          fetch(`/api/v1/engagements/${id}/nodes`).then((res) => res.ok ? res.json() : { nodes: [] }),
+          fetch(`/api/v1/engagements/${id}/evidence`).then((res) => res.ok ? res.json() : { evidence_records: [] }),
+          fetch(`/api/v1/engagements/${id}/comparison`).then((res) => res.ok ? res.json() : { comparison: null }),
+          fetch(`/api/v1/engagements/${id}/findings`).then((res) => res.ok ? res.json() : { findings: [] }),
+          fetch(`/api/v1/engagements/${id}/readiness`).then((res) => res.ok ? res.json() : { readiness: null }),
+        ]);
+        return { engagement, nodes: Array.isArray(nodes.nodes) ? nodes.nodes : [], evidenceRecords: Array.isArray(evidence.evidence_records) ? evidence.evidence_records : [], comparison: comparison.comparison ?? null, findings: Array.isArray(findings.findings) ? findings.findings : [], readiness: readiness.readiness ?? null };
+      }));
+      const derived = deriveGpuInventory(payloads);
+      if (derived.length > 0) {
+        setItems(derived);
+        setScope(`${derived.length.toLocaleString()} GPUs across ${engagements.length.toLocaleString()} engagement${engagements.length === 1 ? "" : "s"}`);
+      } else {
+        const scenarioResponse = await fetch("/api/results?scenario=healthy");
+        const scenarioPayload = scenarioResponse.ok ? await scenarioResponse.json() : null;
+        const scenarioItems = deriveGpuInventoryFromCluster(scenarioPayload?.cluster ?? scenarioPayload);
+        setItems(scenarioItems);
+        setScope(scenarioItems.length ? "Simulated validation scenario fallback — not real hardware evidence" : "All visible engagement and validation data");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to derive GPU inventory.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadInventory(); }, []);
+  const filtered = useMemo(() => sortGpuInventory(filterGpuInventory(items, filters), sortState), [items, filters, sortState]);
+  const summary = useMemo(() => deriveGpuInventorySummary(filtered), [filtered]);
+  const options = useMemo(() => ({ models: inventoryOptions(items, "model"), vendors: inventoryOptions(items, "vendor"), drivers: inventoryOptions(items, "driverVersion"), cudas: inventoryOptions(items, "cudaVersion"), engagements: inventoryOptions(items, "engagement") }), [items]);
+  const update = (patch: Partial<GpuInventoryFilterState>) => setFilters((current) => ({ ...current, ...patch }));
+  const sortBy = (key: GpuInventorySortKey) => setSortState((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" }));
+  const exportCsv = () => {
+    const blob = new Blob([exportGpuInventoryCsv(filtered)], { type: "text/csv;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "gpu-inventory-current-filter.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+  const SortButton = ({ column, label }: { column: GpuInventorySortKey; label: string }) => <button type="button" onClick={() => sortBy(column)} aria-sort={sortState.key === column ? (sortState.direction === "asc" ? "ascending" : "descending") : "none"} className="inline-flex items-center gap-1 text-left"><span>{label}</span><ArrowUpDown className="h-3 w-3" /></button>;
+
+  return (
+    <EngagementShell>
+      <section className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-emerald-300">Infrastructure inventory</div>
+          <h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">GPU Inventory</h1>
+          <p className="mt-3 max-w-4xl leading-7 text-slate-400">Validated GPU hardware, software identity, and evidence coverage across the current infrastructure scope.</p>
+          <div className="mt-3 text-xs text-slate-500">Scope: {scope}. Evidence fields marked “Not collected” are not present in current APIs or accepted evidence.</div>
+        </div>
+        <div className="flex flex-wrap gap-3"><button type="button" onClick={loadInventory} className="gv-button-secondary py-2.5 text-sm"><RefreshCw className="h-4 w-4" />Refresh</button><button type="button" onClick={exportCsv} disabled={filtered.length === 0} className="gv-button-secondary py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"><Download className="h-4 w-4" />Export CSV</button></div>
+      </section>
+      <section className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5"><InventorySummaryCard label="Total GPUs discovered" value={summary.totalGpus} description={`${summary.representedNodes} nodes represented`} /><InventorySummaryCard label="Validated GPUs" value={summary.validatedGpus} description="Passed validation state, not live health" tone="healthy" /><InventorySummaryCard label="Warnings" value={summary.warningGpus} description="Validation warnings or nonblocking findings" tone="warning" /><InventorySummaryCard label="Failures" value={summary.failedGpus} description="Failed validation or blocking findings" tone="critical" /><InventorySummaryCard label="Incomplete evidence" value={summary.incompleteEvidenceGpus} description={`${summary.representedModels} models, ${summary.representedDriverVersions} drivers represented`} tone="warning" /></section>
+      <section className="cyber-panel mb-5 rounded-2xl border border-slate-800 p-4">
+        <div className="mb-3 flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-slate-500"><SlidersHorizontal className="h-4 w-4" />Search and filters</div>
+        <div className="grid gap-3 xl:grid-cols-[1.5fr_repeat(4,1fr)_auto]">
+          <label className="relative block"><span className="sr-only">Search GPU inventory</span><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><input aria-label="Search GPU inventory" value={filters.query} onChange={(event) => update({ query: event.target.value })} placeholder="Search node, model, UUID, driver, engagement" className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 py-3 pl-10 pr-3 text-sm text-slate-100 outline-none focus:border-emerald-500/60" /></label>
+          <select aria-label="Filter by validation status" value={filters.validationStatus} onChange={(event) => update({ validationStatus: event.target.value as any })} className="rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-sm text-slate-100"><option value="all">All validation</option><option value="passed">Passed</option><option value="warning">Warning</option><option value="failed">Failed</option><option value="not_validated">Not validated</option><option value="unknown">Unknown</option></select>
+          <select aria-label="Filter by evidence completeness" value={filters.evidenceCompleteness} onChange={(event) => update({ evidenceCompleteness: event.target.value as any })} className="rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-sm text-slate-100"><option value="all">All evidence</option><option value="complete">Complete</option><option value="partial">Partial</option><option value="missing">Missing</option></select>
+          <select aria-label="Filter by GPU model" value={filters.model} onChange={(event) => update({ model: event.target.value })} className="rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-sm text-slate-100"><option value="all">All models</option>{options.models.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+          <select aria-label="Filter by driver version" value={filters.driverVersion} onChange={(event) => update({ driverVersion: event.target.value })} className="rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-3 text-sm text-slate-100"><option value="all">All drivers</option>{options.drivers.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+          <button type="button" onClick={() => setFilters(defaultGpuInventoryFilters)} className="rounded-2xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 hover:border-emerald-500/40">Clear</button>
+        </div>
+      </section>
+      {loading && <div className="cyber-panel rounded-2xl border border-slate-800 p-6 text-slate-300">Loading GPU inventory...</div>}
+      {error && <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-100">{error}</div>}
+      {!loading && !error && items.length === 0 && <EmptyState text="No GPU inventory has been discovered for this scope. Run or import hardware validation evidence to populate GPU identity." />}
+      {!loading && !error && items.length > 0 && filtered.length === 0 && <EmptyState text="No GPUs match the current filters. Clear filters or broaden the search." />}
+      {!loading && !error && filtered.length > 0 && <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/45"><div className="overflow-x-auto"><table className="min-w-[1040px] w-full text-left text-xs"><thead className="sticky top-0 bg-slate-950/95 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-500"><tr><th className="p-3"><SortButton column="nodeName" label="Node" /></th><th className="p-3"><SortButton column="gpuIndex" label="GPU / Model" /></th><th className="p-3">UUID</th><th className="p-3"><SortButton column="driverVersion" label="Driver / CUDA" /></th><th className="p-3">ECC</th><th className="p-3">NVLink</th><th className="p-3"><SortButton column="validationStatus" label="Validation" /></th><th className="p-3"><SortButton column="evidenceCompleteness" label="Evidence" /></th><th className="p-3"><SortButton column="lastValidatedAt" label="Last Validated" /></th></tr></thead><tbody>{filtered.map((item) => <tr key={item.id} tabIndex={0} aria-selected={selected?.id === item.id} onClick={() => setSelected(item)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(item); } }} className={`cursor-pointer border-t border-slate-900 transition hover:bg-emerald-500/5 focus:bg-emerald-500/10 focus:outline-none ${selected?.id === item.id ? "bg-emerald-500/10" : ""}`}><td className="sticky left-0 bg-inherit p-3 font-semibold text-slate-100">{item.nodeName}<div className="mt-1 text-[10px] font-normal text-slate-500">{item.engagementName ?? item.clusterName ?? "Current scope"}</div></td><td className="p-3 text-slate-300"><div className="font-mono text-slate-100">GPU {item.gpuIndex ?? "?"}</div><div className="mt-1 max-w-[210px] truncate text-slate-400">{unavailable(item.model)}</div></td><td className="p-3 font-mono text-[11px] text-slate-400">{unavailable(item.uuid)}</td><td className="p-3 text-slate-300"><div>{unavailable(item.driverVersion)}</div><div className="mt-1 text-slate-500">CUDA {unavailable(item.cudaVersion)}</div></td><td className="p-3 text-slate-400">{unavailable(item.eccMode)}</td><td className="p-3 text-slate-400">{unavailable(item.nvlinkState)}</td><td className="p-3"><InventoryStatusBadge value={item.validationStatus} /></td><td className="p-3"><InventoryStatusBadge value={item.evidenceCompleteness} label={item.evidenceCompleteness} /></td><td className="p-3 text-slate-400">{formatDate(item.lastValidatedAt)}</td></tr>)}</tbody></table></div><div className="border-t border-slate-800 px-4 py-3 text-xs text-slate-500">Showing {filtered.length.toLocaleString()} of {items.length.toLocaleString()} GPUs. Select a row to inspect evidence provenance and unavailable fields.</div></section>}
+      <GpuDetailDrawer item={selected} onClose={() => setSelected(null)} />
+    </EngagementShell>
+  );
 }
 
 function OperationsLibraryPage({ slug }: { slug?: string }) {
@@ -1812,6 +1979,7 @@ export default function App() {
   if (pathName === "/portal/admin/system") return <AdminSystemPage />;
   if (pathName === "/portal/library") return <OperationsLibraryPage />;
   if (pathName.startsWith("/portal/library/")) return <OperationsLibraryPage slug={decodeURIComponent(pathName.replace("/portal/library/", ""))} />;
+  if (pathName === "/portal/inventory/gpus") return <GpuInventoryPage />;
   if (pathName === "/portal/engagements") return <EngagementListPage />;
   if (pathName === "/portal/engagements/new") return <NewEngagementPage />;
   if (pathName.startsWith("/portal/engagements/")) {

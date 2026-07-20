@@ -69,4 +69,5 @@ Use `design/prompts/audit-design-drift.md`. Report drift with file path, compone
 ## Phase status
 - Phase 1 foundation and authenticated shell: see `docs/REDESIGN_CHANGELOG.md`.
 - Phase 2 `/portal` dashboard redesign: see `docs/REDESIGN_CHANGELOG.md`.
+- Phase 3 `/portal/inventory/gpus` GPU inventory redesign: read-only derived inventory from engagement/node/evidence/comparison data with simulated scenario fallback labeling; see `docs/REDESIGN_CHANGELOG.md`.
 - Current-state audit before code changes: see `docs/REDESIGN_CURRENT_STATE.md`.

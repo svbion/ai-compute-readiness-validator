@@ -120,6 +120,59 @@ test("protected routes remain unavailable before authentication", async ({ reque
   await expectProtectedRoutesUnauthenticated(request);
 });
 
+test("GPU inventory route is protected, navigable, filterable, sortable, and exposes details", async ({ page, request, isMobile }) => {
+  test.skip(isMobile, "desktop sidebar inventory workflow is covered in the desktop project");
+  const unauthenticated = await request.get("/portal/inventory/gpus", { maxRedirects: 0 });
+  expect([302, 401]).toContain(unauthenticated.status());
+
+  await login(page);
+  await page.getByRole("link", { name: /GPU Inventory/ }).click();
+  await expect(page).toHaveURL(/\/portal\/inventory\/gpus$/);
+  await expect(page.getByRole("heading", { name: "GPU Inventory" })).toBeVisible();
+  await expect(page.getByText(/Validated GPU hardware/)).toBeVisible();
+  await expect(page.getByText(/Not collected/).first()).toBeVisible();
+
+  await expect(page.getByLabel("Search GPU inventory")).toBeVisible();
+  await page.getByLabel("Search GPU inventory").fill("dgx01");
+  await expect(page.getByText(/Showing \d+ of \d+ GPUs/)).toBeVisible();
+  await page.getByLabel("Filter by validation status").selectOption("passed");
+  await expect(page.getByText("Passed").first()).toBeVisible();
+  await page.getByRole("button", { name: "Clear" }).click();
+  await expect(page.getByLabel("Search GPU inventory")).toHaveValue("");
+
+  await page.getByRole("button", { name: /GPU \/ Model/ }).click();
+  await page.locator("tbody tr").first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByText("Identity").last()).toBeVisible();
+  await expect(page.getByText("Evidence source")).toBeVisible();
+  await page.getByRole("button", { name: "Close GPU details" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("GPU inventory handles no filter matches and backend errors truthfully", async ({ page, isMobile }) => {
+  test.skip(isMobile, "desktop inventory error states are covered in the desktop project");
+  await login(page);
+  await page.goto("/portal/inventory/gpus");
+  await page.getByLabel("Search GPU inventory").fill("no-such-gpu-uuid");
+  await expect(page.getByText("No GPUs match the current filters")).toBeVisible();
+
+  const errorPage = await page.context().newPage();
+  await errorPage.route("**/api/v1/engagements", async (route) => {
+    await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "Controlled inventory failure" }) });
+  });
+  await errorPage.goto("/portal/inventory/gpus");
+  await expect(errorPage.getByRole("alert")).toContainText("Failed to load engagements for GPU inventory");
+});
+
+test("GPU inventory export control is backed by current filtered CSV data", async ({ page }) => {
+  await login(page);
+  await page.goto("/portal/inventory/gpus");
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Export CSV/ }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("gpu-inventory-current-filter.csv");
+});
+
 test("report links and authenticated API routes work", async ({ page }) => {
   await login(page);
 

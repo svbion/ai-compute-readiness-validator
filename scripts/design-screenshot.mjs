@@ -74,6 +74,10 @@ try {
     await loginIfNeeded(route);
     await page.goto(`${baseURL}${route}`, { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts?.ready);
+    if (args.selectRow === "true") {
+      const firstRow = page.locator("tbody tr").first();
+      if (await firstRow.count()) await firstRow.click();
+    }
     await page.waitForTimeout(500);
     const file = path.join(outputDir, `${name}-${width}x${height}.png`);
     await page.screenshot({ path: file, fullPage: true, animations: "disabled" });

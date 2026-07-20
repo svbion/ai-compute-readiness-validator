@@ -76,20 +76,20 @@
       "title": "GPU Inventory",
       "category": "application",
       "file": "design/references/application/gpu-inventory.png",
-      "route": "/inventory/gpus",
+      "route": "/portal/inventory/gpus",
       "dimensions": {
         "width": 1536,
         "height": 1024
       },
-      "canonical": false,
-      "status": "candidate",
+      "canonical": true,
+      "status": "implemented_phase_3",
       "probable_page": "GPU Inventory",
       "complete": true,
       "duplicate_of": null,
       "style_consistency": "consistent canonical shell",
       "original_source": "/Users/svbion/Desktop/GPUValidator-Design-References/04-application/02-gpu-inventory.png",
       "sha256": "8307919678b7fa864954ba142f7f0853bd437a6f128b8484ec306332d3882ca1",
-      "notes": "Application page reference using the shared sidebar/topbar/card system."
+      "notes": "Phase 3 canonical application-page reference. Implementation follows composition while preserving truthful data: no fake live telemetry, UUIDs, serials, firmware, or per-GPU health metrics."
     },
     {
       "id": "clusters",
