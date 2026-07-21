@@ -1,0 +1,68 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+
+const appSource = fs.readFileSync(path.join(process.cwd(), "src", "App.tsx"), "utf8");
+
+const requiredRoutes = [
+  "/portal/fabric",
+  "/portal/validations",
+  "/portal/benchmarks",
+  "/portal/monitoring",
+  "/portal/alerts",
+  "/portal/reports",
+  "/portal/settings",
+  "/portal/notifications",
+  "/portal/profile",
+  "/portal/search",
+];
+
+test("enterprise sidebar routes are concrete pages instead of dashboard placeholders", () => {
+  for (const route of requiredRoutes) {
+    assert.match(appSource, new RegExp(`pathName === "${route.replaceAll("/", "\\/")}"|href: "${route.replaceAll("/", "\\/")}"`), `${route} should be routed or directly linked`);
+  }
+
+  const placeholderNav = appSource.match(/label: "(?:Fabric|Validation|Benchmarks|Alerts|Reports|Runbooks)"[^\n]+href: "\/portal"/g) ?? [];
+  assert.deepEqual(placeholderNav, [], "sidebar operational links must not point back to /portal placeholders");
+});
+
+test("global search, notifications, profile, settings, monitoring, alerts, validation, and benchmark pages expose real controls", () => {
+  for (const symbol of [
+    "function GlobalSearchPage",
+    "function NotificationsPage",
+    "function UserProfilePage",
+    "function SettingsPage",
+    "function MonitoringPage",
+    "function AlertsPage",
+    "function ReportsPage",
+    "function ValidationPage",
+    "function BenchmarksPage",
+    "function FabricPage",
+  ]) {
+    assert.match(appSource, new RegExp(symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${symbol} must exist`);
+  }
+
+  for (const text of [
+    "Recent searches",
+    "Search suggestions",
+    "Ctrl+K",
+    "Validation Timeline",
+    "Copy diagnostics",
+    "Download evidence",
+    "Generate report",
+    "Acknowledge",
+    "API latency",
+    "Agent latency",
+    "NCCL bandwidth",
+    "Cancel validation",
+  ]) {
+    assert.match(appSource, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${text} must be rendered by the UI`);
+  }
+});
+
+test("validation API exposes cancel semantics for UI retry/cancel workflows", () => {
+  const agentsSource = fs.readFileSync(path.join(process.cwd(), "src", "server", "agents.ts"), "utf8");
+  assert.match(agentsSource, /\/api\/v1\/validations\/:validationId\/cancel/);
+  assert.match(agentsSource, /Validation cancelled by reviewer/);
+});

@@ -229,6 +229,25 @@ export function registerAgentRoutes(app: express.Express, store: EngagementStore
     return res.set("Cache-Control", "no-store").json({ validation, jobs: (document.validation_jobs as ValidationJobRecord[]).filter((job) => job.validation_id === validation.id), results: (document.validation_results as ValidationResultRecord[]).filter((result) => result.validation_id === validation.id) });
   });
 
+  app.post("/api/v1/validations/:validationId/cancel", (req, res) => {
+    const document = ensureDoc(store);
+    maintainJobs(document);
+    const validation = (document.validations as ValidationRecord[]).find((item) => item.id === req.params.validationId);
+    if (!validation) return err(res, 404, "Validation not found.");
+    if (["completed", "failed", "timed_out", "cancelled"].includes(validation.state)) return err(res, 409, "Validation is already terminal and cannot be cancelled.");
+    const cancelledAt = nowIso();
+    for (const job of (document.validation_jobs as ValidationJobRecord[]).filter((item) => item.validation_id === validation.id && ["queued", "claimed", "running"].includes(item.state))) {
+      job.state = "cancelled";
+      job.completed_at = cancelledAt;
+      job.error = "Validation cancelled by reviewer.";
+    }
+    validation.state = "cancelled";
+    validation.completed_at = cancelledAt;
+    validation.error = "Validation cancelled by reviewer.";
+    writeDoc(store, document);
+    return res.set("Cache-Control", "no-store").json({ validation, jobs: (document.validation_jobs as ValidationJobRecord[]).filter((job) => job.validation_id === validation.id), results: (document.validation_results as ValidationResultRecord[]).filter((result) => result.validation_id === validation.id) });
+  });
+
   app.get("/api/v1/agents/:agentId/jobs/next", (req, res) => {
     if (!requireAgent(req, res)) return;
     const document = ensureDoc(store);

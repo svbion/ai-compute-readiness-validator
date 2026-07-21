@@ -10,6 +10,7 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "test": "npm run test:portal",
     "test:portal": "node --import tsx --test tests-portal/**/*.test.ts",
     "test:e2e": "playwright test",
     "test:deploy": "bash tests-deploy/test-deployment-scripts.sh",

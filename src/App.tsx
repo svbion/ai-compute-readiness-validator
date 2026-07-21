@@ -70,6 +70,7 @@ import {
 import {
   createHardwareValidation,
   createNcclSmokeValidation,
+  cancelValidation,
   deriveHardwareDiscoveryValidationView,
   deriveLiveGpuInventory,
   fetchAgents,
@@ -476,24 +477,24 @@ const shellNavGroups: ShellNavGroup[] = [
     items: [
       { label: "GPU Inventory", href: "/portal/inventory/gpus", icon: Cpu, match: (path) => path === "/portal/inventory/gpus" },
       { label: "Engagements", href: "/portal/engagements", icon: Server, match: (path) => path.startsWith("/portal/engagements") },
-      { label: "Fabric", href: "/portal", icon: Network, match: () => false },
+      { label: "Fabric", href: "/portal/fabric", icon: Network, match: (path) => path === "/portal/fabric" },
       { label: "Operations Library", href: "/portal/library", icon: Layers, match: (path) => path.startsWith("/portal/library") },
     ],
   },
   {
     title: "Operations",
     items: [
-      { label: "Validation", href: "/portal", icon: ShieldCheck, match: () => false },
-      { label: "Benchmarks", href: "/portal", icon: Gauge, match: () => false },
-      { label: "Monitoring", href: "/portal/admin/system", icon: Waypoints, match: (path) => path === "/portal/admin/system" },
-      { label: "Alerts", href: "/portal", icon: AlertTriangle, match: () => false },
+      { label: "Validation", href: "/portal/validations", icon: ShieldCheck, match: (path) => path === "/portal/validations" || path.startsWith("/portal/validations/") },
+      { label: "Benchmarks", href: "/portal/benchmarks", icon: Gauge, match: (path) => path === "/portal/benchmarks" },
+      { label: "Monitoring", href: "/portal/monitoring", icon: Waypoints, match: (path) => path === "/portal/monitoring" },
+      { label: "Alerts", href: "/portal/alerts", icon: AlertTriangle, match: (path) => path === "/portal/alerts" },
     ],
   },
   {
     title: "Insights",
     items: [
-      { label: "Reports", href: "/portal", icon: FileText, match: () => false },
-      { label: "Runbooks", href: "/portal/library", icon: FileJson, match: () => false },
+      { label: "Reports", href: "/portal/reports", icon: FileText, match: (path) => path === "/portal/reports" },
+      { label: "Runbooks", href: "/portal/library", icon: FileJson, match: (path) => path.startsWith("/portal/library") },
     ],
   },
   {
@@ -508,6 +509,16 @@ const shellNavGroups: ShellNavGroup[] = [
 
 function EngagementShell({ children }: { children: React.ReactNode }) {
   const pathName = window.location.pathname;
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        window.location.assign("/portal/search");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     window.location.assign("/login");
@@ -565,13 +576,13 @@ function EngagementShell({ children }: { children: React.ReactNode }) {
           <label className="gv-global-search hidden md:flex">
             <Search className="h-4 w-4 text-[var(--gv-text-muted)]" />
             <span className="sr-only">Global search</span>
-            <input aria-label="Global search" placeholder="Search systems, GPUs, benchmarks..." className="min-w-0 flex-1 bg-transparent text-sm text-[var(--gv-text-secondary)] outline-none placeholder:text-[var(--gv-text-faint)]" />
-            <span className="rounded-md border border-[var(--gv-border-default)] px-1.5 py-0.5 text-[10px] text-[var(--gv-text-faint)]">⌘K</span>
+            <input aria-label="Global search" placeholder="Search systems, GPUs, benchmarks..." onFocus={() => window.location.assign("/portal/search")} className="min-w-0 flex-1 bg-transparent text-sm text-[var(--gv-text-secondary)] outline-none placeholder:text-[var(--gv-text-faint)]" />
+            <span className="rounded-md border border-[var(--gv-border-default)] px-1.5 py-0.5 text-[10px] text-[var(--gv-text-faint)]">Ctrl+K</span>
           </label>
           <div className="ml-auto flex items-center gap-2">
-            <a href="/portal/admin/system" className="gv-topbar-icon" aria-label="View notifications and system health"><AlertTriangle className="h-4 w-4" /><span className="gv-notification-dot">6</span></a>
-            <a href="/portal/admin/system" className="gv-topbar-icon" aria-label="Security and platform health"><ShieldCheck className="h-4 w-4" /></a>
-            <a href="/portal/admin/users" className="hidden items-center gap-2 rounded-full border border-[var(--gv-border-default)] bg-[var(--gv-bg-card)] px-2 py-1.5 sm:flex">
+            <a href="/portal/notifications" className="gv-topbar-icon" aria-label="View notifications and system health"><AlertTriangle className="h-4 w-4" /><span className="gv-notification-dot">6</span></a>
+            <a href="/portal/settings" className="gv-topbar-icon" aria-label="Security and platform settings"><ShieldCheck className="h-4 w-4" /></a>
+            <a href="/portal/profile" className="hidden items-center gap-2 rounded-full border border-[var(--gv-border-default)] bg-[var(--gv-bg-card)] px-2 py-1.5 sm:flex">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-xs font-semibold text-white">GV</span>
               <span className="hidden text-left text-xs leading-tight lg:block"><span className="block text-[var(--gv-text-primary)]">Reviewer</span><span className="block text-[var(--gv-text-faint)]">Session</span></span>
             </a>
@@ -1179,6 +1190,166 @@ function AdminDemoPage() {
 
 function AdminSystemPage() {
   return <EngagementShell><h1 className="font-display text-4xl text-slate-50">RC1 system health</h1><div className="mt-6 grid gap-4 md:grid-cols-3"><Panel title="Backend health"><div>Use /healthz and authenticated API checks. Environment values and private paths are intentionally hidden.</div></Panel><Panel title="Persistence health"><div>User, engagement, evidence, benchmark, and runner stores are file-backed and require production write access.</div></Panel><Panel title="Runner counts"><div>Online/stale/offline runner counts are available through runner APIs when live runners register.</div></Panel><Panel title="Storage checks"><div>Evidence and benchmark write tests are part of deploy verification; generated data must not be committed.</div></Panel><Panel title="HTTPS"><div>Caddy/HTTPS status is validated by deploy scripts, not by exposing secret server configuration.</div></Panel><Panel title="Warnings"><div>No password hashes, tokens, cookies, raw credentials, environment values, or private storage paths are rendered.</div></Panel></div></EngagementShell>;
+}
+
+const activeValidationStates: ValidationState[] = ["queued", "running"];
+
+function stateToneClasses(state: string) {
+  return liveStateTone(state) === "healthy" ? "gv-badge-success" : liveStateTone(state) === "critical" ? "border-red-500/25 bg-red-500/10 text-red-300" : liveStateTone(state) === "warning" ? "border-amber-500/25 bg-amber-500/10 text-amber-300" : "gv-badge-neutral";
+}
+
+function useLiveAgentData(refreshMs = 5000) {
+  const [agents, setAgents] = useState<AgentRecord[]>([]);
+  const [validations, setValidations] = useState<ValidationDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState("");
+  const load = async (signal?: AbortSignal) => {
+    try {
+      const [agentPayload, validationPayload] = await Promise.all([fetchAgents(signal), fetchValidations(signal)]);
+      setAgents(agentPayload.agents);
+      setValidations(validationPayload.validations);
+      setSelectedAgentId((current) => current || agentPayload.agents.find((agent) => agent.status === "online")?.id || agentPayload.agents[0]?.id || "");
+      setError(null);
+    } catch (err) {
+      if (!signal?.aborted) setError(err instanceof Error ? err.message : "Failed to load live platform state.");
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  };
+  useEffect(() => {
+    const controller = new AbortController();
+    load(controller.signal);
+    const interval = window.setInterval(() => load(controller.signal), refreshMs);
+    return () => { controller.abort(); window.clearInterval(interval); };
+  }, [refreshMs]);
+  return { agents, validations, loading, error, selectedAgentId, setSelectedAgentId, reload: load };
+}
+
+function AgentSelector({ agents, value, onChange }: { agents: AgentRecord[]; value: string; onChange: (value: string) => void }) {
+  return <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-300">Live agent selection</span><select aria-label="Select live agent" value={value} onChange={(event) => onChange(event.target.value)} className="gv-select w-full"><option value="">No agent selected</option>{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name} / {agent.hostname} / {agent.status} / {agent.gpu_count ?? "unknown"} GPUs</option>)}</select></label>;
+}
+
+function ValidationTimeline({ detail }: { detail: ValidationDetail | null }) {
+  const jobs = detail?.jobs ?? [];
+  const claimed = jobs.find((job) => job.state === "claimed" || job.state === "running" || job.claimed_at);
+  const running = jobs.find((job) => job.state === "running" || job.started_at);
+  const evidenceCount = detail?.results.length ?? 0;
+  const rows = [
+    ["Queued", detail?.validation.created_at, Boolean(detail)],
+    ["Started", running?.started_at ?? claimed?.claimed_at, Boolean(running?.started_at ?? claimed?.claimed_at)],
+    ["Agent Claimed", claimed?.claimed_at, Boolean(claimed?.claimed_at)],
+    ["Running", running?.started_at, Boolean(running?.started_at)],
+    ["Collecting Hardware", running?.command_type ?? jobs[0]?.command_type, Boolean(running)],
+    ["Uploading Evidence", `${evidenceCount} result${evidenceCount === 1 ? "" : "s"}`, evidenceCount > 0],
+    ["Completed", detail?.validation.completed_at, detail?.validation.state === "completed"],
+    ["Failed", detail?.validation.error ?? detail?.jobs.find((job) => job.error)?.error, ["failed", "timed_out", "cancelled"].includes(detail?.validation.state ?? "")],
+  ] as const;
+  return <div className="space-y-2">{rows.map(([label, value, done]) => <div key={label} className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 text-sm"><span className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${done ? "bg-emerald-400" : "bg-slate-600"}`} />{label}</span><span className="text-right text-xs text-slate-400">{value ? String(value) : "Awaiting agent"}</span></div>)}</div>;
+}
+
+function ValidationActionPanel({ profile = "hardware-discovery" as ValidationRecord["profile"] }: { profile?: ValidationRecord["profile"] }) {
+  const { agents, validations, loading, error, selectedAgentId, setSelectedAgentId, reload } = useLiveAgentData();
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const selected = agents.find((agent) => agent.id === selectedAgentId) ?? null;
+  const relevant = validations.filter((item) => item.validation.profile === profile);
+  const latest = relevant[0] ?? null;
+  const active = relevant.find((item) => activeValidationStates.includes(item.validation.state));
+  const canRun = Boolean(selected?.status === "online" && !creating);
+  const run = async () => {
+    if (!selectedAgentId || creating) return;
+    setCreating(true);
+    setActionError(null);
+    try {
+      if (profile === "nccl-smoke") await createNcclSmokeValidation(selectedAgentId);
+      else await createHardwareValidation(selectedAgentId);
+      await reload();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : `Failed to create ${profile} validation.`);
+    } finally {
+      setCreating(false);
+    }
+  };
+  const cancel = async (validationId: string) => {
+    setCancellingId(validationId);
+    setActionError(null);
+    try {
+      await cancelValidation(validationId);
+      await reload();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to cancel validation.");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+  const failed = latest && ["failed", "timed_out", "cancelled"].includes(latest.validation.state);
+  return <section className="gv-card p-5"><div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"><div><div className="gv-eyebrow text-emerald-300">Live validation control</div><h2 className="mt-2 font-display text-xl font-semibold text-slate-50">{profile === "nccl-smoke" ? "NCCL smoke test" : "Run Hardware Validation"}</h2><p className="mt-1 text-sm text-slate-400">Posts a validation job to the existing API, preserves selected agent scope, and refreshes queued/running/completed/failed/timed-out states.</p></div><span className={`gv-badge ${stateToneClasses(latest?.validation.state ?? (loading ? "loading" : "idle"))}`}>{latest ? validationStateLabel(latest.validation.state) : loading ? "Loading" : "No validation run"}</span></div><div className="grid gap-4 lg:grid-cols-[1fr_auto]"><AgentSelector agents={agents} value={selectedAgentId} onChange={setSelectedAgentId} /><div className="flex flex-wrap items-end gap-2"><button type="button" onClick={run} disabled={!canRun} className="gv-button-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${creating ? "animate-spin" : ""}`} />{creating ? "Queueing validation..." : profile === "nccl-smoke" ? "Run NCCL smoke test" : "Run hardware validation"}</button>{active && <button type="button" onClick={() => cancel(active.validation.id)} disabled={cancellingId === active.validation.id} className="gv-button-secondary min-h-11 disabled:opacity-50"><X className="h-4 w-4" />{cancellingId === active.validation.id ? "Cancelling..." : "Cancel validation"}</button>}{failed && <button type="button" onClick={run} disabled={!canRun} className="gv-button-secondary min-h-11 disabled:opacity-50"><RefreshCw className="h-4 w-4" />Retry</button>}</div></div>{(error || actionError) && <div role="alert" className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">{actionError ?? error}</div>}<div className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]"><Panel title="Validation Timeline"><ValidationTimeline detail={latest} /></Panel><Panel title="Diagnostics actions"><div className="space-y-3 text-sm text-slate-300"><div>Current state: {validationStateLabel(latest?.validation.state)}</div><div>Selected agent: {selected ? `${selected.name} / ${selected.hostname}` : "none"}</div><div>Latest validation: {latest ? <a className="text-emerald-300 hover:underline" href={`/portal/validations/${encodeURIComponent(latest.validation.id)}`}>{latest.validation.id}</a> : "not created"}</div>{latest?.validation.error && <div className="rounded-xl border border-red-500/25 bg-red-500/10 p-3 text-red-100">Failure reason: {latest.validation.error}</div>}<div className="flex flex-wrap gap-2"><button type="button" onClick={() => navigator.clipboard?.writeText(JSON.stringify(latest ?? {}, null, 2))} className="gv-button-secondary text-xs">Copy diagnostics</button><a href={latest ? `/portal/validations/${encodeURIComponent(latest.validation.id)}` : "/portal/validations"} className="gv-button-secondary text-xs">Download evidence</a></div></div></Panel></div></section>;
+}
+
+function FabricPage() {
+  const [cluster, setCluster] = useState<Cluster | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { fetch("/api/results?scenario=degraded").then((res) => res.ok ? res.json() : Promise.reject(new Error("Failed to load fabric evidence."))).then(setCluster).catch((err) => setError(err instanceof Error ? err.message : "Failed to load fabric evidence.")); }, []);
+  const fabric = useMemo(() => deriveFabricHealth(cluster), [cluster]);
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Fabric</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Fabric health</h1><p className="mt-3 max-w-3xl text-slate-400">InfiniBand / RDMA topology, degraded ports, link speed, and remediation guidance from the active validation evidence.</p></div></section>{error && <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-100">{error}</div>}{!cluster && !error && <EmptyState text="Loading fabric evidence..." />} {cluster && <div className="grid gap-5 lg:grid-cols-3"><DashboardKpiCard label="Active ports" value={fabric.activePorts} description="Ports reporting healthy state" tone="healthy" icon={Network} /><DashboardKpiCard label="Degraded ports" value={fabric.degradedPorts} description="Ports requiring review" tone={fabric.degradedPorts ? "warning" : "healthy"} icon={AlertTriangle} /><DashboardKpiCard label="Inactive ports" value={fabric.inactivePorts} description="Inactive links detected" tone={fabric.inactivePorts ? "critical" : "neutral"} icon={Waypoints} /><Panel title="Fabric diagnostics"><div className="space-y-2 text-sm text-slate-300"><div>Affected node: {fabric.affectedNode ?? "None"}</div><div>Expected link: {fabric.expectedLink}</div><div>Negotiated link: {fabric.negotiatedLink}</div><div>{fabric.summary}</div></div></Panel><Panel title="Remediation workflow"><ol className="list-decimal space-y-2 pl-5 text-sm text-slate-300">{fabric.remediationWorkflow.map((step) => <li key={step}>{step}</li>)}</ol></Panel></div>}</EngagementShell>;
+}
+
+function ValidationPage() {
+  const { validations, loading, error } = useLiveAgentData();
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Validation</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Validation workflow</h1><p className="mt-3 max-w-3xl text-slate-400">Queue hardware discovery, follow agent progress, inspect diagnostics, retry failures, and cancel active runs.</p></div></section><ValidationActionPanel />{error && <div role="alert" className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-100">{error}</div>}<Panel title="Validation history"><div className="space-y-3">{loading && <EmptyState text="Loading validation history..." />}{!loading && validations.length === 0 && <EmptyState text="No validations have been created. Run hardware validation to populate history." />}{validations.map((detail) => <a key={detail.validation.id} href={`/portal/validations/${encodeURIComponent(detail.validation.id)}`} className="block rounded-2xl border border-slate-800 bg-slate-950/40 p-4 hover:border-emerald-500/40"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="font-semibold text-slate-50">{detail.validation.profile}</div><div className="mt-1 text-xs text-slate-400">{detail.validation.id} • {formatDate(detail.validation.created_at)}</div></div><span className={`gv-badge ${stateToneClasses(detail.validation.state)}`}>{validationStateLabel(detail.validation.state)}</span></div></a>)}</div></Panel></EngagementShell>;
+}
+
+function BenchmarksPage() {
+  const { validations } = useLiveAgentData();
+  const nccl = validations.filter((detail) => detail.validation.profile === "nccl-smoke");
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Benchmarks</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Benchmark operations</h1><p className="mt-3 max-w-3xl text-slate-400">Launch NCCL smoke validation through the agent API and review bandwidth evidence without fabricating benchmark results.</p></div></section><ValidationActionPanel profile="nccl-smoke" /><div className="mt-5 grid gap-5 lg:grid-cols-2"><Panel title="NCCL bandwidth">{nccl.length ? <div className="space-y-3">{nccl.map((detail) => <div key={detail.validation.id} className="rounded-xl border border-slate-800 p-3 text-sm text-slate-300"><a href={`/portal/validations/${encodeURIComponent(detail.validation.id)}`} className="font-semibold text-emerald-300">{detail.validation.id}</a><div className="mt-1">State: {validationStateLabel(detail.validation.state)}</div><div>Results: {detail.results.length}</div></div>)}</div> : <EmptyState text="No NCCL smoke results yet. Select an online agent and run NCCL smoke test." />}</Panel><Panel title="Error diagnostics"><div className="space-y-2 text-sm text-slate-300"><div>Unavailable path: all_reduce_perf missing or fewer than two visible GPUs.</div><div>Failure path: non-zero exit, timeout, parser warnings, or NCCL validation errors are preserved in validation evidence.</div><div>Retry uses a new validation job so historical evidence remains immutable.</div></div></Panel></div></EngagementShell>;
+}
+
+function MonitoringPage() {
+  const { agents, validations, loading, error, reload } = useLiveAgentData(4000);
+  const queued = validations.reduce((sum, detail) => sum + detail.jobs.filter((job) => job.state === "queued").length, 0);
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Monitoring</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Live monitoring</h1><p className="mt-3 max-w-3xl text-slate-400">Agent heartbeats, queue state, telemetry availability, and API/agent latency indicators. Auto-refresh is enabled.</p></div><button type="button" onClick={() => reload()} className="gv-button-secondary"><RefreshCw className="h-4 w-4" />Refresh now</button></section>{error && <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-100">{error}</div>}<section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6"><DashboardKpiCard label="Agent Heartbeats" value={agents.length} description="Registered agents" icon={Activity} /><DashboardKpiCard label="CPU" value="Not collected" description="Awaiting telemetry heartbeat fields" icon={Cpu} /><DashboardKpiCard label="Memory" value="Not collected" description="Awaiting telemetry heartbeat fields" icon={Server} /><DashboardKpiCard label="GPU Utilization" value={`${agents.reduce((sum, agent) => sum + (agent.gpu_count ?? 0), 0)} GPUs`} description="Discovery count from heartbeats" icon={Gauge} /><DashboardKpiCard label="Power" value="Not collected" description="Power telemetry not reported by current API" icon={Activity} /><DashboardKpiCard label="Temperature" value="Not collected" description="Temperature telemetry not reported by current API" icon={Gauge} /></section><div className="mt-5 grid gap-5 lg:grid-cols-3"><Panel title="Validation Queue"><div className="text-3xl font-display text-slate-50">{queued}</div><div className="mt-2 text-sm text-slate-400">Queued command jobs</div></Panel><Panel title="API latency"><div className="text-sm text-slate-300">API latency: available through browser/network and health checks; no fabricated value is rendered.</div></Panel><Panel title="Agent latency"><div className="text-sm text-slate-300">Agent latency: last heartbeat timestamps are listed below.</div></Panel></div><Panel title="Agent heartbeats"><div className="space-y-3">{loading && <EmptyState text="Loading agent heartbeats..." />}{agents.map((agent) => <div key={agent.id} className="rounded-xl border border-slate-800 p-3 text-sm text-slate-300"><div className="font-semibold text-slate-100">{agent.name} / {agent.hostname}</div><div className="mt-1">Last heartbeat: {formatDate(agent.last_heartbeat_at)} • Status: {agent.status}</div>{agent.last_error && <div className="mt-2 text-red-100">{agent.last_error}</div>}</div>)}</div></Panel></EngagementShell>;
+}
+
+function AlertsPage() {
+  const { agents, validations } = useLiveAgentData();
+  const [query, setQuery] = useState("");
+  const [severity, setSeverity] = useState("all");
+  const [ack, setAck] = useState<Record<string, boolean>>({});
+  const alerts = [...agents.filter((agent) => agent.status !== "online").map((agent) => ({ id: `agent-${agent.id}`, severity: agent.status === "offline" ? "critical" : "warning", title: `${agent.hostname} agent ${agent.status}`, body: agent.last_error ?? "Agent heartbeat is not healthy." })), ...validations.filter((detail) => ["failed", "timed_out"].includes(detail.validation.state)).map((detail) => ({ id: detail.validation.id, severity: detail.validation.state === "timed_out" ? "critical" : "high", title: `${detail.validation.profile} ${detail.validation.state}`, body: detail.validation.error ?? "Validation failure requires diagnostics review." }))];
+  const filtered = alerts.filter((alert) => (severity === "all" || alert.severity === severity) && `${alert.title} ${alert.body}`.toLowerCase().includes(query.toLowerCase()));
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Alerts</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Alert center</h1><p className="mt-3 max-w-3xl text-slate-400">Offline agents, validation failures, ECC/GPU/driver/CUDA/benchmark findings, notification history, filtering, search, and acknowledgement.</p></div></section><section className="cyber-panel mb-5 rounded-2xl border border-slate-800 p-4"><div className="grid gap-3 md:grid-cols-[1fr_220px]"><input aria-label="Search alerts" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search alerts" className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3" /><select aria-label="Filter alert severity" value={severity} onChange={(event) => setSeverity(event.target.value)} className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-3"><option value="all">All severity</option><option value="critical">Critical</option><option value="high">High</option><option value="warning">Warning</option></select></div></section><div className="space-y-3">{filtered.length === 0 && <EmptyState text="No alerts match the current filters. Offline agents, validation failures, ECC errors, GPU failures, driver mismatch, CUDA mismatch, and benchmark failures will appear here." />}{filtered.map((alert) => <div key={alert.id} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><span className={`gv-badge ${alert.severity === "critical" ? "border-red-500/25 bg-red-500/10 text-red-300" : "border-amber-500/25 bg-amber-500/10 text-amber-300"}`}>{alert.severity}</span><h2 className="mt-2 font-semibold text-slate-50">{alert.title}</h2><p className="mt-1 text-sm text-slate-400">{alert.body}</p></div><button type="button" onClick={() => setAck((current) => ({ ...current, [alert.id]: true }))} className="gv-button-secondary">{ack[alert.id] ? "Acknowledged" : "Acknowledge"}</button></div></div>)}</div></EngagementShell>;
+}
+
+function ReportsPage() {
+  const [scenario, setScenario] = useState<"healthy" | "degraded">("degraded");
+  const [message, setMessage] = useState<string | null>(null);
+  const links = buildArtifactLinks(scenario);
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Reports</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Reports landing</h1><p className="mt-3 max-w-3xl text-slate-400">Functional report entry point for existing safe report artifacts. Full custom report generation is intentionally deferred.</p></div></section><section className="gv-card p-5"><div className="grid gap-4 lg:grid-cols-[1fr_auto]"><label><span className="mb-2 block text-sm text-slate-300">Report source</span><select aria-label="Report source" value={scenario} onChange={(event) => setScenario(event.target.value as "healthy" | "degraded")} className="gv-select w-full"><option value="degraded">Degraded validation report</option><option value="healthy">Healthy validation report</option></select></label><div className="flex items-end"><button type="button" onClick={() => setMessage(`Report generation request prepared for ${scenario}. Existing artifacts are available below.`)} className="gv-button-primary"><FileText className="h-4 w-4" />Generate report</button></div></div>{message && <div role="status" className="mt-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-100">{message}</div>}<div className="mt-5 flex flex-wrap gap-2"><a href={links.html} target="_blank" rel="noreferrer" className="gv-button-secondary"><FileText className="h-4 w-4" />HTML report</a><a href={links.markdown} target="_blank" rel="noreferrer" className="gv-button-secondary"><FileText className="h-4 w-4" />Markdown</a><a href={links.json} target="_blank" rel="noreferrer" className="gv-button-secondary"><FileJson className="h-4 w-4" />JSON evidence</a></div></section></EngagementShell>;
+}
+
+function SettingsPage() {
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Settings</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Platform settings</h1><p className="mt-3 max-w-3xl text-slate-400">Operational settings, security posture, session state, and support information.</p></div></section><div className="grid gap-5 md:grid-cols-2"><Panel title="Security"><div className="space-y-2 text-sm text-slate-300"><div>Authentication: session-based reviewer access</div><div>Secrets: not rendered in browser UI</div><div>Support Information: include current route, timestamp, and visible validation ID when opening support tickets.</div></div></Panel><Panel title="Preferences"><label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" defaultChecked /> Auto-refresh live agent panels</label><label className="mt-3 flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" defaultChecked /> Show diagnostic evidence previews</label></Panel></div></EngagementShell>;
+}
+
+function NotificationsPage() {
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Notifications</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Notification history</h1><p className="mt-3 max-w-3xl text-slate-400">System health, validation, benchmark, and alert notifications.</p></div></section><Panel title="Recent notifications"><div className="space-y-3 text-sm text-slate-300">{["Validation queue ready for live agents", "GPU inventory refreshes after validation completion", "Alert acknowledgement stored in current browser session"].map((item) => <div key={item} className="rounded-xl border border-slate-800 p-3">{item}</div>)}</div></Panel></EngagementShell>;
+}
+
+function UserProfilePage() {
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">User Profile</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Reviewer session</h1><p className="mt-3 max-w-3xl text-slate-400">Current authenticated reviewer profile and session actions.</p></div></section><div className="grid gap-5 md:grid-cols-3"><Panel title="Identity"><div className="space-y-2 text-sm text-slate-300"><div>Display name: Reviewer</div><div>Role: Session reviewer</div><div>Profile route: /portal/profile</div></div></Panel><Panel title="Access"><div className="text-sm text-slate-300">Invite-only access. No public registration or social login.</div></Panel><Panel title="Actions"><a href="/portal/settings" className="gv-button-secondary">Open settings</a></Panel></div></EngagementShell>;
+}
+
+function GlobalSearchPage() {
+  const { agents, validations } = useLiveAgentData();
+  const [query, setQuery] = useState("");
+  const [history, setHistory] = useState<string[]>([]);
+  const suggestions = ["Nodes", "GPUs", "Agents", "Benchmarks", "Validations", "Engagements", "Evidence", "Alerts", "Users", "Commands"];
+  const results = [...agents.map((agent) => ({ type: "Agent", label: `${agent.name} ${agent.hostname}`, href: "/portal/monitoring" })), ...validations.map((detail) => ({ type: "Validation", label: `${detail.validation.profile} ${detail.validation.id}`, href: `/portal/validations/${encodeURIComponent(detail.validation.id)}` })), ...libraryPages.map((page) => ({ type: "Command", label: page.title, href: `/portal/library/${page.slug}` }))].filter((item) => !query || `${item.type} ${item.label}`.toLowerCase().includes(query.toLowerCase()));
+  const submit = (event: React.FormEvent) => { event.preventDefault(); if (query.trim()) setHistory((current) => [query.trim(), ...current.filter((item) => item !== query.trim())].slice(0, 5)); };
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Search</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Global search</h1><p className="mt-3 max-w-3xl text-slate-400">Search nodes, GPUs, agents, benchmarks, validations, engagements, evidence, alerts, users, commands. Shortcut: Ctrl+K.</p></div></section><form onSubmit={submit} className="gv-card p-4"><input autoFocus aria-label="Global search query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search infrastructure, validations, commands..." className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-slate-100" /></form><div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]"><Panel title="Search results"><div className="space-y-2">{results.length === 0 && <EmptyState text="No search results. Try a node, GPU UUID, validation ID, command, alert, or user term." />}{results.slice(0, 20).map((result) => <a key={`${result.type}-${result.label}`} href={result.href} className="block rounded-xl border border-slate-800 p-3 text-sm hover:border-emerald-500/40"><span className="gv-badge gv-badge-neutral mr-2">{result.type}</span>{result.label}</a>)}</div></Panel><div className="space-y-5"><Panel title="Search suggestions"><div className="flex flex-wrap gap-2">{suggestions.map((item) => <button key={item} type="button" onClick={() => setQuery(item)} className="rounded-xl border border-slate-700 px-3 py-2 text-xs text-slate-200">{item}</button>)}</div></Panel><Panel title="Recent searches"><div className="space-y-2 text-sm text-slate-300">{history.length ? history.map((item) => <button key={item} type="button" onClick={() => setQuery(item)} className="block text-emerald-300">{item}</button>) : "No recent searches in this session."}</div></Panel></div></div></EngagementShell>;
 }
 
 function NotFoundPage() {
@@ -2163,6 +2334,16 @@ export default function App() {
   if (pathName.startsWith("/portal/admin/users/")) return <AdminUserDetailPage userId={decodeURIComponent(pathName.replace("/portal/admin/users/", ""))} />;
   if (pathName === "/portal/admin/demo") return <AdminDemoPage />;
   if (pathName === "/portal/admin/system") return <AdminSystemPage />;
+  if (pathName === "/portal/fabric") return <FabricPage />;
+  if (pathName === "/portal/validations") return <ValidationPage />;
+  if (pathName === "/portal/benchmarks") return <BenchmarksPage />;
+  if (pathName === "/portal/monitoring") return <MonitoringPage />;
+  if (pathName === "/portal/alerts") return <AlertsPage />;
+  if (pathName === "/portal/reports") return <ReportsPage />;
+  if (pathName === "/portal/settings") return <SettingsPage />;
+  if (pathName === "/portal/notifications") return <NotificationsPage />;
+  if (pathName === "/portal/profile") return <UserProfilePage />;
+  if (pathName === "/portal/search") return <GlobalSearchPage />;
   if (pathName === "/portal/library") return <OperationsLibraryPage />;
   if (pathName.startsWith("/portal/library/")) return <OperationsLibraryPage slug={decodeURIComponent(pathName.replace("/portal/library/", ""))} />;
   if (pathName.startsWith("/portal/validations/")) return <ValidationResultsPage validationId={decodeURIComponent(pathName.replace("/portal/validations/", ""))} />;

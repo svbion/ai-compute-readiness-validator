@@ -22,7 +22,7 @@ export interface AgentRecord {
   metadata: Record<string, unknown>;
 }
 export interface ValidationRecord { id: string; schema_version: string; profile: ValidationProfile; agent_id: string; state: ValidationState; created_at: string; completed_at: string | null; error: string | null; job_ids: string[] }
-export interface ValidationJobRecord { id: string; validation_id: string; agent_id: string; state: string; command_type: ValidationCommandType; command?: { argv?: string[] } }
+export interface ValidationJobRecord { id: string; validation_id: string; agent_id: string; state: string; command_type: ValidationCommandType; command?: { argv?: string[] }; claimed_at?: string | null; started_at?: string | null; completed_at?: string | null; error?: string | null }
 export interface ValidationResultRecord {
   id: string;
   schema_version: string;
@@ -354,4 +354,8 @@ export function createHardwareValidation(agentId: string, signal?: AbortSignal) 
 
 export function createNcclSmokeValidation(agentId: string, signal?: AbortSignal) {
   return json<{ validation: ValidationRecord; jobs: ValidationJobRecord[] }>("/api/v1/validations", { method: "POST", body: JSON.stringify({ profile: "nccl-smoke", agent_id: agentId }) }, signal);
+}
+
+export function cancelValidation(validationId: string, signal?: AbortSignal) {
+  return json<ValidationDetail>(`/api/v1/validations/${encodeURIComponent(validationId)}/cancel`, { method: "POST" }, signal);
 }
