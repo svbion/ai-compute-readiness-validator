@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -246,5 +247,86 @@ test("report preview route renders and persists professional HTML with source li
     assert.ok(persisted.html_artifact_path.startsWith(reportsDir));
     assert.ok(fs.existsSync(persisted.html_artifact_path));
     assert.match(fs.readFileSync(persisted.html_artifact_path, "utf8"), /Report Provenance/);
+  });
+});
+
+test("reports API generates persists and downloads a valid server-side PDF artifact", async () => {
+  await withServer(async (baseUrl, storePath, reportsDir) => {
+    const { agentId, validationId } = await seedLiveA100Validation(baseUrl);
+    const created = await jsonRequest(baseUrl, "POST", "/api/v1/reports", {
+      name: "RunPod A100 Executive PDF",
+      report_type: "executive-summary",
+      scope_type: "validation_run",
+      scope_id: validationId,
+      customer: "NVIDIA interview demo",
+      engagement_id: "eng_demo",
+      cluster_id: "cluster_runpod_a100",
+      confidentiality: "Customer Confidential",
+      version: 3,
+    });
+    assert.equal(created.response.status, 201, JSON.stringify(created.payload));
+    const reportId = created.payload.report.report_id;
+
+    const generated = await jsonRequest(baseUrl, "POST", `/api/v1/reports/${reportId}/generate/pdf`);
+    assert.equal(generated.response.status, 200, JSON.stringify(generated.payload));
+    assert.equal(generated.payload.report.pdf_mime_type, "application/pdf");
+    assert.match(generated.payload.report.pdf_artifact_path, /gpuvalidator_executive-summary_cluster_runpod_a100_\d{8}_v3\.pdf$/);
+    assert.ok(generated.payload.report.pdf_artifact_path.startsWith(reportsDir));
+    assert.ok(generated.payload.report.pdf_size_bytes > 1000);
+    assert.match(generated.payload.report.pdf_sha256, /^[a-f0-9]{64}$/);
+    assert.ok(Date.parse(generated.payload.report.pdf_generated_at));
+    assert.equal(generated.payload.report.pdf_template_version, "1.0.0");
+    assert.equal(generated.payload.report.error, null);
+    assert.deepEqual(generated.payload.report.validation_ids, [validationId]);
+    assert.deepEqual(generated.payload.report.agent_ids, [agentId]);
+
+    const pdfPath = generated.payload.report.pdf_artifact_path;
+    assert.ok(fs.existsSync(pdfPath));
+    const pdf = fs.readFileSync(pdfPath);
+    assert.equal(pdf.subarray(0, 5).toString("ascii"), "%PDF-");
+    assert.equal(crypto.createHash("sha256").update(pdf).digest("hex"), generated.payload.report.pdf_sha256);
+    assert.equal(pdf.length, generated.payload.report.pdf_size_bytes);
+    assert.match(pdf.toString("latin1"), /GPUValidator|Sabion|Confidential|Page/);
+
+    const downloaded = await fetch(`${baseUrl}/api/v1/reports/${reportId}/download/pdf`, { headers: authHeader });
+    const downloadedPdf = Buffer.from(await downloaded.arrayBuffer());
+    assert.equal(downloaded.status, 200);
+    assert.match(downloaded.headers.get("content-type") ?? "", /application\/pdf/);
+    assert.match(downloaded.headers.get("content-disposition") ?? "", /attachment; filename="gpuvalidator_executive-summary_cluster_runpod_a100_\d{8}_v3\.pdf"/);
+    assert.equal(downloadedPdf.subarray(0, 5).toString("ascii"), "%PDF-");
+    assert.equal(downloadedPdf.length, pdf.length);
+
+    const storeDoc = JSON.parse(fs.readFileSync(storePath, "utf8"));
+    const persisted = storeDoc.reports.find((report: any) => report.report_id === reportId);
+    assert.equal(persisted.pdf_artifact_path, pdfPath);
+    assert.equal(persisted.pdf_mime_type, "application/pdf");
+    assert.equal(persisted.pdf_size_bytes, pdf.length);
+    assert.equal(persisted.pdf_sha256, generated.payload.report.pdf_sha256);
+    assert.ok(Date.parse(persisted.pdf_generated_at));
+    assert.equal(persisted.pdf_template_version, "1.0.0");
+  });
+});
+
+test("reports API returns detailed PDF diagnostics when download or generation cannot complete", async () => {
+  await withServer(async (baseUrl) => {
+    const created = await jsonRequest(baseUrl, "POST", "/api/v1/reports", {
+      name: "PDF diagnostics",
+      report_type: "management-status",
+      scope_type: "cluster",
+      scope_id: "cluster-diag",
+    });
+    assert.equal(created.response.status, 201, JSON.stringify(created.payload));
+    const reportId = created.payload.report.report_id;
+
+    const missingDownload = await fetch(`${baseUrl}/api/v1/reports/${reportId}/download/pdf`, { headers: authHeader });
+    const missingPayload = await missingDownload.json();
+    assert.equal(missingDownload.status, 409);
+    assert.equal(missingPayload.error.code, "pdf_not_generated");
+    assert.match(missingPayload.error.message, /Generate the PDF/);
+    assert.deepEqual(missingPayload.error.details.map((item: any) => item.field), ["pdf_artifact_path"]);
+
+    const missingReport = await jsonRequest(baseUrl, "POST", "/api/v1/reports/not-a-report/generate/pdf");
+    assert.equal(missingReport.response.status, 404);
+    assert.equal(missingReport.payload.error.code, "report_not_found");
   });
 });

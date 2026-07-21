@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import type { EngagementStore } from "./engagements";
 import { deriveLiveGpuInventory } from "../portal/agents";
+import { generatePdfReport, PDF_MIME_TYPE, PDF_TEMPLATE_VERSION } from "./pdf-renderer";
 import { renderHtmlReport } from "./report-renderer";
 
 export const REPORT_SCHEMA_VERSION = "1.0.0";
@@ -100,6 +101,12 @@ export interface ReportRecord {
   html_artifact_path?: string | null;
   html_generated_at?: string | null;
   html_sha256?: string | null;
+  pdf_artifact_path?: string | null;
+  pdf_mime_type?: string | null;
+  pdf_size_bytes?: number | null;
+  pdf_sha256?: string | null;
+  pdf_generated_at?: string | null;
+  pdf_template_version?: string | null;
   version: number;
   created_at: string;
   updated_at: string;
@@ -170,6 +177,16 @@ function ensureDoc(store: EngagementStore): StoreDoc {
 function writeDoc(store: EngagementStore, doc: StoreDoc) { (store as any).write(doc); }
 function reportStorageRoot(): string { return process.env.AI_VALIDATOR_REPORT_STORAGE_DIR ?? path.join(process.cwd(), "artifacts", "reports"); }
 function safeReportHtmlPath(reportId: string): string { return path.join(reportStorageRoot(), reportId, `${reportId}.html`); }
+function safeFilenamePart(value: unknown, fallback: string, separator: "-" | "_" = "-"): string {
+  const cleaned = String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9-]+/g, separator).replace(new RegExp(`^${separator}+|${separator}+$`, "g"), "").slice(0, 80);
+  return cleaned || fallback;
+}
+function pdfFilename(report: ReportRecord, generatedAt: string): string {
+  const date = generatedAt.slice(0, 10).replace(/-/g, "") || new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const scope = safeFilenamePart(report.cluster_id ?? report.scope_id ?? report.scope_type, "scope", "_");
+  return `gpuvalidator_${safeFilenamePart(report.report_type, "report")}_${scope}_${date}_v${report.version}.pdf`;
+}
+function safeReportPdfPath(report: ReportRecord, generatedAt: string): string { return path.join(reportStorageRoot(), report.report_id, pdfFilename(report, generatedAt)); }
 function detailsError(code: string, message: string, details: ValidationIssue[] = []) {
   return { code, message, details };
 }
@@ -418,6 +435,71 @@ export function registerReportRoutes(app: express.Express, store: EngagementStor
     const report = (document.reports as ReportRecord[]).find((candidate) => candidate.report_id === req.params.reportId || (candidate as any).id === req.params.reportId);
     if (!report) return sendError(res, 404, "report_not_found", "Report not found.");
     return res.set("Cache-Control", "no-store").json({ report: publicReport(report) });
+  });
+
+  app.post("/api/v1/reports/:reportId/generate/pdf", async (req, res) => {
+    const document = ensureDoc(store);
+    const reports = document.reports as ReportRecord[];
+    const index = reports.findIndex((candidate) => candidate.report_id === req.params.reportId || (candidate as any).id === req.params.reportId);
+    if (index < 0) return sendError(res, 404, "report_not_found", "Report not found.");
+    const report = reports[index];
+    const generatedAt = nowIso();
+    const pdfPath = safeReportPdfPath(report, generatedAt);
+
+    try {
+      const metadata = await generatePdfReport(report, document, pdfPath, generatedAt);
+      reports[index] = {
+        ...report,
+        status: "generated",
+        generated_at: metadata.generated_at,
+        updated_at: metadata.generated_at,
+        html_sha256: metadata.html_sha256,
+        pdf_artifact_path: metadata.file_path,
+        pdf_mime_type: metadata.mime_type,
+        pdf_size_bytes: metadata.size_bytes,
+        pdf_sha256: metadata.sha256,
+        pdf_generated_at: metadata.generated_at,
+        pdf_template_version: metadata.template_version,
+        error: null,
+      };
+      writeDoc(store, document);
+      return res.status(200).set("Cache-Control", "no-store").json({ report: publicReport(reports[index]), pdf: metadata });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown PDF generation failure.";
+      const diagnostic = {
+        technology: "playwright-chromium",
+        report_id: report.report_id,
+        output_path: pdfPath,
+        template_version: PDF_TEMPLATE_VERSION,
+        message,
+      };
+      reports[index] = { ...report, status: "failed", updated_at: nowIso(), error: JSON.stringify(diagnostic).slice(0, 2000) };
+      writeDoc(store, document);
+      return sendError(res, 500, "pdf_generation_failed", "Server-side PDF generation failed.", [
+        { field: "technology", message: diagnostic.technology },
+        { field: "output_path", message: diagnostic.output_path },
+        { field: "template_version", message: diagnostic.template_version },
+        { field: "diagnostic", message: diagnostic.message.slice(0, 500) },
+      ]);
+    }
+  });
+
+  app.get("/api/v1/reports/:reportId/download/pdf", (req, res) => {
+    const document = ensureDoc(store);
+    const report = (document.reports as ReportRecord[]).find((candidate) => candidate.report_id === req.params.reportId || (candidate as any).id === req.params.reportId);
+    if (!report) return sendError(res, 404, "report_not_found", "Report not found.");
+    if (!report.pdf_artifact_path || !fs.existsSync(report.pdf_artifact_path)) {
+      return sendError(res, 409, "pdf_not_generated", "Generate the PDF before downloading it.", [
+        { field: "pdf_artifact_path", message: report.pdf_artifact_path ? "Persisted PDF artifact is missing from disk." : "No PDF artifact has been generated for this report." },
+      ]);
+    }
+    const filename = path.basename(report.pdf_artifact_path);
+    return res.status(200)
+      .type(report.pdf_mime_type ?? PDF_MIME_TYPE)
+      .set("Cache-Control", "no-store")
+      .set("Content-Disposition", `attachment; filename="${filename.replace(/[^a-zA-Z0-9._-]/g, "_" )}"`)
+      .set("Content-Length", String(fs.statSync(report.pdf_artifact_path).size))
+      .sendFile(path.resolve(report.pdf_artifact_path));
   });
 
   app.patch("/api/v1/reports/:reportId", (req, res) => {

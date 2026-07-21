@@ -18,7 +18,10 @@ test("reports workspace declares landing, new, and detail routes", () => {
 test("reports workspace links open report records to server-rendered HTML preview", () => {
   assert.match(reportsSource, /Preview HTML/);
   assert.match(reportsSource, /\/portal\/reports\/\$\{encodeURIComponent\(selectedReport\.report_id\)\}\/preview/);
-  assert.doesNotMatch(reportsSource, /Download PDF|Download DOCX|download\/pdf|download\/docx/i);
+  assert.match(reportsSource, /Download PDF/);
+  assert.match(reportsSource, /generateReportPdf\(selectedReport\)/);
+  assert.match(reportsSource, /\/api\/v1\/reports\/\$\{encodeURIComponent\(report\.report_id\)\}\/download\/pdf/);
+  assert.doesNotMatch(reportsSource, /Download DOCX|download\/docx/i);
 });
 
 test("reports workspace loads API reports and renders required metadata columns", () => {
@@ -49,8 +52,9 @@ test("reports workspace primary controls call real API or real navigation", () =
   assert.match(reportsSource, /method: "POST"/);
   assert.match(reportsSource, /method: "PATCH"/);
   assert.match(reportsSource, /method: "DELETE"/);
+  assert.match(reportsSource, /\/api\/v1\/reports\/\$\{encodeURIComponent\(report\.report_id\)\}\/generate\/pdf/);
   assert.doesNotMatch(reportsSource, /placeholder/i);
-  assert.doesNotMatch(reportsSource, /Download PDF|Download DOCX|download\/pdf|download\/docx/i);
+  assert.doesNotMatch(reportsSource, /Download DOCX|download\/docx/i);
 });
 
 test("new report route exposes the scoped report builder with all required fields", () => {
