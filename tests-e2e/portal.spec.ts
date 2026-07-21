@@ -121,6 +121,55 @@ test("healthy and degraded scenarios render expected classifications without sta
   await expect(page.getByText("97.01%")).toHaveCount(0);
 });
 
+
+
+test("live RunPod agent dashboard and GPU inventory use fixture API responses", async ({ page, isMobile }) => {
+  test.skip(isMobile, "desktop live agent workflow is covered in the desktop project");
+  const agent = { id: "agt_live", schema_version: "1.0.0", name: "runpod-4gpu-01", hostname: "runpod-node-01", status: "online", capabilities: [], gpu_count: 4, agent_version: "0.1.0", registered_at: "2026-07-20T14:59:00.000Z", last_heartbeat_at: "2026-07-20T15:00:00.000Z", last_error: null, metadata: {} };
+  const validation = { id: "val_live", schema_version: "1.0.0", profile: "hardware-discovery", agent_id: "agt_live", state: "completed", created_at: "2026-07-20T15:00:00.000Z", completed_at: "2026-07-20T15:02:00.000Z", error: null, job_ids: ["j1", "j2", "j3", "j4", "j5", "j6"] };
+  const baseResult = { schema_version: "1.0.0", validation_id: "val_live", agent_id: "agt_live", exit_code: 0, started_at: "2026-07-20T15:00:00.000Z", completed_at: "2026-07-20T15:00:01.000Z", duration_ms: 1000, stderr: "", output_truncated: false, result_hash: "hash" };
+  const validationsPayload = { validations: [{ validation, jobs: [], results: [
+    { ...baseResult, id: "r1", job_id: "j1", state: "completed", structured_result: { gpus: [0, 1, 2, 3].map((index) => ({ index, model: "NVIDIA A100-SXM4-40GB", uuid: `GPU-live-${index}` })) }, stdout: "GPU 0: NVIDIA A100-SXM4-40GB (UUID: GPU-live-0)", command_evidence: { command_type: "nvidia_smi_list", argv: ["nvidia-smi", "-L"], started_at: baseResult.started_at, completed_at: baseResult.completed_at, exit_code: 0, stdout_sha256: "sha", stderr_sha256: null, output_truncated: false } },
+    { ...baseResult, id: "r2", job_id: "j2", state: "completed", structured_result: { gpus: [0, 1, 2, 3].map((index) => ({ index, name: "NVIDIA A100-SXM4-40GB", uuid: `GPU-live-${index}`, memory_total: "40536 MiB", driver_version: "535.104.05", pci_bus_id: `00000000:${41 + index}1:00.0` })) }, stdout: "0,NVIDIA A100-SXM4-40GB,GPU-live-0,40536,535.104.05,00000000:41:00.0", command_evidence: { command_type: "nvidia_smi_inventory", argv: ["nvidia-smi"], started_at: baseResult.started_at, completed_at: baseResult.completed_at, exit_code: 0, stdout_sha256: "sha", stderr_sha256: null, output_truncated: false } },
+    { ...baseResult, id: "r3", job_id: "j3", state: "completed", structured_result: { driver_version: "535.104.05" }, stdout: "535.104.05", command_evidence: { command_type: "driver_version", argv: ["nvidia-smi"], started_at: baseResult.started_at, completed_at: baseResult.completed_at, exit_code: 0, stdout_sha256: "sha", stderr_sha256: null, output_truncated: false } },
+    { ...baseResult, id: "r4", job_id: "j4", state: "unavailable", exit_code: null, structured_result: { available: false }, stdout: "", stderr: "nvcc unavailable", command_evidence: { command_type: "cuda_version", argv: ["nvcc"], started_at: baseResult.started_at, completed_at: baseResult.completed_at, exit_code: null, stdout_sha256: null, stderr_sha256: "sha", output_truncated: false } },
+    { ...baseResult, id: "r5", job_id: "j5", state: "completed", structured_result: { topology: [] }, stdout: "GPU0 GPU1\nGPU0 X NV4", command_evidence: { command_type: "nvidia_smi_topology", argv: ["nvidia-smi", "topo", "-m"], started_at: baseResult.started_at, completed_at: baseResult.completed_at, exit_code: 0, stdout_sha256: "sha", stderr_sha256: null, output_truncated: false } },
+    { ...baseResult, id: "r6", job_id: "j6", state: "unavailable", exit_code: null, structured_result: { available: false }, stdout: "", stderr: "torch unavailable", command_evidence: { command_type: "pytorch_gpu_count", argv: ["python3"], started_at: baseResult.started_at, completed_at: baseResult.completed_at, exit_code: null, stdout_sha256: null, stderr_sha256: "sha", output_truncated: false } },
+  ] }] };
+  let createCalls = 0;
+  await page.route("**/api/v1/agents", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ agents: [agent], offline_threshold_seconds: 90 }) }));
+  await page.route("**/api/v1/validations?profile=hardware-discovery", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(validationsPayload) }));
+  await page.route("**/api/v1/validations", async (route) => {
+    if (route.request().method() === "POST") {
+      createCalls += 1;
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ validation: { ...validation, id: "val_queued", state: "queued" }, jobs: [] }) });
+      return;
+    }
+    await route.continue();
+  });
+  await login(page);
+  await expect(page.getByText("RunPod hardware discovery")).toBeVisible();
+  await expect(page.getByText("Selected agent: runpod-4gpu-01 / runpod-node-01")).toBeVisible();
+  await expect(page.getByLabel("Discovered GPUs: 4")).toBeVisible();
+  const runButton = page.getByRole("button", { name: "Run hardware validation" });
+  await runButton.click();
+  await expect(page.getByRole("button", { name: /Queueing validation/ })).toBeDisabled();
+  expect(createCalls).toBe(1);
+
+  await page.goto("/portal/inventory/gpus");
+  await expect(page.getByRole("heading", { name: "GPU Inventory" })).toBeVisible();
+  await expect(page.getByText("Live Agent GPUs")).toBeVisible();
+  const inventoryTable = page.locator("table").first();
+  await expect(inventoryTable).toContainText("NVIDIA A100-SXM4-40GB");
+  await expect(inventoryTable).toContainText("GPU-live-0");
+  await page.locator("tbody tr").first().click();
+  await expect(page.getByRole("dialog")).toContainText("Live Agent");
+  await expect(page.getByRole("dialog")).toContainText("Raw command evidence");
+  await expect(page.getByRole("dialog")).toContainText("CUDA unavailable");
+  await expect(page.getByRole("dialog")).toContainText("PyTorch unavailable");
+});
+
 test("protected routes remain unavailable before authentication", async ({ request }) => {
   await expectProtectedRoutesUnauthenticated(request);
 });

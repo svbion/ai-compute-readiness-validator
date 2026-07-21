@@ -110,11 +110,13 @@ Live results are accepted only when metadata marks them non-simulated and valid 
 
 ### GPU Inventory data flow
 
-`/portal/inventory/gpus` fetches all visible engagements and per-engagement node/evidence/comparison/findings/readiness data, then derives read-only GPU inventory in `src/portal/inventory.ts`. If no engagement GPU identity is available, it falls back to `/api/results?scenario=healthy` and labels that scope as simulated.
+`/portal/inventory/gpus` fetches live agent and validation data from `GET /api/v1/agents` and `GET /api/v1/validations?profile=hardware-discovery`, then derives live GPU rows from accepted hardware-discovery command results. It also fetches visible engagements and per-engagement node/evidence/comparison/findings/readiness data, then derives imported-evidence rows in `src/portal/inventory.ts`. If no live or engagement GPU identity is available, it falls back to `/api/results?scenario=healthy` and labels that scope as `Demo Fixture`.
+
+Live inventory rows display only fields provided by agent heartbeat or hardware-discovery command evidence: agent, node, GPU index, vendor, model, UUID, memory total, driver version, CUDA availability/version when reported, PCI bus ID, validation status, evidence completeness, last validated timestamp, topology evidence, raw bounded stdout/stderr evidence, source agent, and timestamps. Unsupported telemetry such as power, temperature, utilization, and ECC counters remains unavailable unless future backend evidence provides it.
 
 ### Dashboard data flow
 
-`/portal` uses `/api/evidence-sources` and `/api/results` to load scenario/live/imported validation payloads, then derives dashboard summaries in `src/portal/assessment.ts`. It does not invoke backend execution.
+`/portal` uses `/api/evidence-sources` and `/api/results` to load scenario/live/imported validation payloads, then derives dashboard summaries in `src/portal/assessment.ts`. It also polls same-origin reviewer APIs `GET /api/v1/agents` and `GET /api/v1/validations?profile=hardware-discovery` every 5 seconds through `src/portal/agents.ts` for connected agents, online agents, discovered nodes, discovered GPUs, latest hardware-discovery validation, validation state, and latest validation timestamp. The "Run hardware validation" action posts `POST /api/v1/validations` with explicit selected `agent_id` and profile `hardware-discovery`; the backend creates only allowlisted jobs, not arbitrary commands.
 
 ### Deployment architecture
 
@@ -214,6 +216,17 @@ Prepared but not externally verified from this session:
 - `scripts/stop-runpod-agent.sh` stops the tracked process without assuming systemd.
 
 The expected demo pod remains one node with four visible GPUs. The general agent does not hardcode four GPUs; only the smoke test defaults to `GPUVALIDATOR_EXPECTED_GPU_COUNT=4` for this demo workflow.
+
+## Step 5 live dashboard and inventory integration
+
+Implemented frontend integration for live RunPod agent state and hardware-discovery results:
+
+- `/portal` shows live infrastructure cards for connected agents, online agents, discovered nodes, discovered GPUs, latest hardware-discovery validation, validation state, and latest validation timestamp.
+- `/portal` supports an authenticated reviewer action, "Run hardware validation", requiring an explicit selected agent. It creates a `hardware-discovery` validation and shows queued state optimistically while polling refreshes progress. Duplicate clicks are blocked while creation is in flight.
+- `/portal/inventory/gpus` now combines `Live Agent`, `Imported Evidence`, and `Demo Fixture` origins, with origin labels kept explicit.
+- Live GPU rows are derived from uploaded command results and do not invent unavailable CUDA, PyTorch, ECC, temperature, utilization, power, or live health metrics. Missing fields render as `Not collected`; unavailable command results add warnings.
+- Polling is HTTP-only and uses a single 5-second interval in the dashboard component with `AbortController` cancellation on unmount. Inventory refresh is user-triggered and load-scoped, avoiding duplicate loops.
+- Deterministic fixture screenshots are stored under `design/implementation-screenshots/current/`; no live screenshots are committed.
 
 ## Smallest viable RunPod architecture
 

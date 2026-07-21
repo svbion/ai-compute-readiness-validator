@@ -186,6 +186,22 @@ export function registerAgentRoutes(app: express.Express, store: EngagementStore
     return res.status(201).set("Cache-Control", "no-store").json({ validation, jobs });
   });
 
+  app.get("/api/v1/validations", (req, res) => {
+    const document = ensureDoc(store);
+    maintainJobs(document);
+    writeDoc(store, document);
+    const profile = String(req.query.profile ?? "");
+    const validations = (document.validations as ValidationRecord[])
+      .filter((validation) => !profile || validation.profile === profile)
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+      .map((validation) => ({
+        validation,
+        jobs: (document.validation_jobs as ValidationJobRecord[]).filter((job) => job.validation_id === validation.id),
+        results: (document.validation_results as ValidationResultRecord[]).filter((result) => result.validation_id === validation.id),
+      }));
+    return res.set("Cache-Control", "no-store").json({ validations });
+  });
+
   app.get("/api/v1/validations/:validationId", (req, res) => {
     const document = ensureDoc(store);
     maintainJobs(document);

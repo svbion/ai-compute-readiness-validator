@@ -15,7 +15,8 @@ design/
 ├── implementation-screenshots/
 │   ├── baseline/
 │   ├── current/
-│   └── comparisons/
+│   ├── comparisons/
+│   └── live/              # optional uncommitted/strictly reviewed live captures
 ├── audits/
 ├── prompts/
 └── manifests/
@@ -71,3 +72,15 @@ Use `design/prompts/audit-design-drift.md`. Report drift with file path, compone
 - Phase 2 `/portal` dashboard redesign: see `docs/REDESIGN_CHANGELOG.md`.
 - Phase 3 `/portal/inventory/gpus` GPU inventory redesign: read-only derived inventory from engagement/node/evidence/comparison data with simulated scenario fallback labeling; see `docs/REDESIGN_CHANGELOG.md`.
 - Current-state audit before code changes: see `docs/REDESIGN_CURRENT_STATE.md`.
+
+
+## RunPod Step 5 screenshots
+
+Deterministic fixture screenshots for the live-agent integration are committed under `design/implementation-screenshots/current/`:
+
+- `runpod-agent-online.png`
+- `runpod-hardware-validation.png`
+- `runpod-gpu-inventory.png`
+- `runpod-agent-offline.png`
+
+These use fixture API responses and are not proof of live RunPod hardware. If live screenshots are captured later, store them under `design/implementation-screenshots/live/` and review/remove sensitive UUIDs, hostnames, IPs, tokens, URLs, and account identifiers before committing.

@@ -375,3 +375,47 @@ The scripts and documentation are prepared but not externally verified against t
 ### Next step
 
 Run `docs/RUNPOD_SETUP.md` on the existing RunPod pod, capture smoke-test output, start the agent, create the first hardware-discovery validation, and verify uploaded live GPU evidence in the backend.
+
+
+## Deadline Sprint Step 5 — Live Dashboard and GPU Inventory Integration
+
+Date: 2026-07-20
+Status: implemented and fixture-validated.
+
+### Routes updated
+
+- `/portal`
+- `/portal/inventory/gpus`
+
+### Data sources added
+
+- `GET /api/v1/agents` for registered/online agent state and heartbeat-discovered GPU counts.
+- `GET /api/v1/validations?profile=hardware-discovery` for latest validation state and uploaded command results.
+- `POST /api/v1/validations` for the explicit `hardware-discovery` action.
+
+### UI behavior added
+
+- Live Agent dashboard section with connected agents, online agents, discovered nodes, discovered GPUs, latest validation, validation state, timestamp, explicit agent selector, and "Run hardware validation" action.
+- Dashboard states for no agent configured, agent offline, agent online, validation queued, validation running, validation completed, validation failed, and validation partial.
+- GPU Inventory live derivation from hardware-discovery command results, with `Live Agent`, `Imported Evidence`, and `Demo Fixture` origin labels.
+- GPU detail drawer now includes source agent, validation ID, topology/raw command evidence, timestamps, and unavailable-field warnings.
+
+### Truthfulness constraints
+
+- The UI does not invent power, temperature, utilization, ECC counters, live health telemetry, CUDA, or PyTorch values.
+- Missing command evidence renders as `Not collected` or an unavailable warning.
+- The validation action creates only backend-defined hardware-discovery jobs; users cannot submit arbitrary commands.
+
+### Screenshots captured
+
+- `design/implementation-screenshots/current/runpod-agent-online.png`
+- `design/implementation-screenshots/current/runpod-hardware-validation.png`
+- `design/implementation-screenshots/current/runpod-gpu-inventory.png`
+- `design/implementation-screenshots/current/runpod-agent-offline.png`
+
+These are deterministic fixture screenshots, not live RunPod captures. No live screenshots were committed.
+
+### Tests added
+
+- `tests-portal/live-agent-integration.test.ts` covers live inventory derivation, dashboard states, permission failure, and validation API listing/creation.
+- `tests-e2e/portal.spec.ts` covers fixture-backed online agent dashboard, validation action duplicate prevention, live GPU inventory rows, detail drawer, raw evidence, partial result handling, missing CUDA, and missing PyTorch labels.

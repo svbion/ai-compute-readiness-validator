@@ -372,6 +372,33 @@ GET /api/v1/validations/<validation_id>
 - CUDA availability/version or unavailable state
 - PyTorch availability/GPU count or unavailable state
 
+## Portal dashboard and inventory after upload
+
+After the RunPod agent registers and uploads hardware-discovery results, the authenticated portal consumes the same-origin reviewer APIs:
+
+```text
+GET  /api/v1/agents
+GET  /api/v1/validations?profile=hardware-discovery
+POST /api/v1/validations
+```
+
+Open:
+
+```text
+/portal
+/portal/inventory/gpus
+```
+
+Expected live UI behavior:
+
+- `/portal` shows connected agents, online agents, discovered nodes, discovered GPUs, latest hardware-discovery validation, validation state, and latest validation timestamp.
+- The "Run hardware validation" button requires an authenticated reviewer session and an explicit selected agent. It creates a `hardware-discovery` validation only; users cannot submit arbitrary commands.
+- A queued state appears immediately after submission, then polling refreshes queued/running/completed/failed/partial states.
+- `/portal/inventory/gpus` labels rows as `Live Agent`, `Imported Evidence`, or `Demo Fixture`; do not mix fixture screenshots with live proof.
+- CUDA/PyTorch are shown only when command evidence reports them. Missing command results appear as unavailable warnings rather than fabricated values.
+
+The dashboard polling interval is 5 seconds for the deadline demo. It uses same-origin authenticated APIs and cancels in-flight requests when the dashboard unmounts.
+
 ## Troubleshooting
 
 ### Bad token

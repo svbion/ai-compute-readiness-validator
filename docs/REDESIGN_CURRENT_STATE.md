@@ -311,3 +311,31 @@ Implemented backend capabilities:
 Persistence remains repository-consistent file-backed JSON in the existing engagement store. New arrays are `validation_agents`, `validations`, `validation_jobs`, and `validation_results`. This is sufficient for the deadline MVP but should be replaced by transactional database-backed queue semantics before multi-agent production scale.
 
 Documentation added: `docs/AGENT_API.md`.
+
+
+## Deadline Sprint Step 5 — Live RunPod frontend integration
+
+Status: implemented with deterministic fixture testing; live RunPod verification depends on an externally accessible pod and uploaded hardware-discovery results.
+
+Routes updated:
+
+- `/portal` now includes a Live Agent section backed by `GET /api/v1/agents` and `GET /api/v1/validations?profile=hardware-discovery`.
+- `/portal/inventory/gpus` now consumes live hardware-discovery validation results before imported evidence and demo fixture fallbacks.
+
+Live fields displayed:
+
+- Connected agents, online agents, discovered nodes, discovered GPUs, latest hardware-discovery validation, validation state, latest validation timestamp.
+- GPU inventory fields: agent, node, GPU index, vendor, model, UUID, memory total, driver version, CUDA version/availability, PCI bus ID, validation status, evidence completeness, last validated timestamp, topology evidence, raw command evidence, source agent, and timestamps.
+
+Unavailable telemetry:
+
+- Power, temperature, utilization, fan speed, memory usage, ECC counters, and live health telemetry are not shown because the backend does not provide those metrics. CUDA and PyTorch remain `Not collected` unless command evidence reports them.
+
+Polling behavior:
+
+- Dashboard polling uses a single 5-second interval with request cancellation on unmount. Inventory loads on page entry and manual refresh.
+
+Screenshot policy:
+
+- Deterministic fixture screenshots are under `design/implementation-screenshots/current/`.
+- Live screenshots, if captured later, must go under `design/implementation-screenshots/live/` and be reviewed for UUIDs, hostnames, IPs, URLs, and credentials before committing.

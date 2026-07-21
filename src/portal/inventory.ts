@@ -14,7 +14,7 @@ import { getAllChecks, getCheck } from "./assessment";
 export type GpuInventoryValidationState = "passed" | "warning" | "failed" | "not_validated" | "unknown";
 export type GpuInventoryHealth = "failed" | "warning" | "unknown" | "not_collected";
 export type GpuInventoryCompleteness = "complete" | "partial" | "missing";
-export type GpuInventorySource = "engagement_node" | "engagement_evidence" | "scenario_cluster";
+export type GpuInventorySource = "engagement_node" | "engagement_evidence" | "scenario_cluster" | "live_agent";
 export type GpuInventoryAvailability = "available" | "not_collected" | "not_applicable" | "derived";
 export type GpuInventorySortKey =
   | "nodeName"
@@ -61,6 +61,9 @@ export interface GpuInventoryEvidenceSource {
   };
   warnings: string[];
   provenance: ProvenanceReference[];
+  rawEvidence?: string;
+  validationId?: string;
+  originLabel?: "Live Agent" | "Imported Evidence" | "Demo Fixture";
 }
 
 export interface GpuInventoryItem {
@@ -69,6 +72,9 @@ export interface GpuInventoryItem {
   clusterName: string | null;
   engagementId: string | null;
   engagementName: string | null;
+  agentId?: string | null;
+  agentName?: string | null;
+  validationId?: string | null;
   nodeId: string | null;
   nodeName: string;
   gpuIndex: number | null;
@@ -423,7 +429,7 @@ function includes(value: string | null | undefined, query: string): boolean {
 export function filterGpuInventory(items: GpuInventoryItem[], filters: GpuInventoryFilterState): GpuInventoryItem[] {
   const query = filters.query.trim().toLowerCase();
   return items.filter((item) => {
-    const queryMatch = !query || [item.nodeName, item.model, item.uuid, item.vendor, item.driverVersion, item.cudaVersion, item.engagementName, item.clusterName].some((value) => includes(value, query));
+    const queryMatch = !query || [item.nodeName, item.model, item.uuid, item.vendor, item.driverVersion, item.cudaVersion, item.engagementName, item.clusterName, item.agentName].some((value) => includes(value, query));
     return queryMatch
       && (filters.validationStatus === "all" || item.validationStatus === filters.validationStatus)
       && (filters.healthStatus === "all" || item.healthStatus === filters.healthStatus)
@@ -466,15 +472,18 @@ export function inventoryOptions(items: GpuInventoryItem[], field: "model" | "ve
 }
 
 export function exportGpuInventoryCsv(items: GpuInventoryItem[]): string {
-  const headers = ["node", "gpu_index", "vendor", "model", "uuid", "driver_version", "cuda_version", "validation_status", "evidence_completeness", "last_validated_at", "engagement", "evidence_source", "evidence_id"];
+  const headers = ["agent", "node", "gpu_index", "vendor", "model", "uuid", "memory_total", "driver_version", "cuda_version", "pci_bus_id", "validation_status", "evidence_completeness", "last_validated_at", "engagement", "evidence_source", "evidence_id"];
   const rows = items.map((item) => [
+    item.agentName ?? "",
     item.nodeName,
     item.gpuIndex ?? "",
     item.vendor ?? "",
     item.model ?? "",
     item.uuid ?? "",
+    item.memoryTotal ?? "",
     item.driverVersion ?? "",
     item.cudaVersion ?? "",
+    item.pciBusId ?? "",
     item.validationStatus,
     item.evidenceCompleteness,
     item.lastValidatedAt ?? "",

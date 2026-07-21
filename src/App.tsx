@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -67,6 +67,20 @@ import {
   type ProvenanceReference,
   type UploadTokenSummary,
 } from "./portal/engagements";
+import {
+  createHardwareValidation,
+  deriveLiveGpuInventory,
+  fetchAgents,
+  fetchValidations,
+  summarizeLiveAgentDashboard,
+  type AgentRecord,
+  type ValidationDetail,
+  type ValidationRecord,
+  type ValidationState,
+  type LiveDashboardSummary,
+  type ValidationListPayload,
+  type AgentListPayload,
+} from "./portal/agents";
 import {
   defaultGpuInventoryFilters,
   deriveGpuInventory,
@@ -574,6 +588,17 @@ function formatDate(value: string | null | undefined) {
   return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
+function liveStateTone(state: string): "healthy" | "warning" | "critical" | "neutral" {
+  if (state.includes("online") || state.includes("completed")) return "healthy";
+  if (state.includes("queued") || state.includes("running") || state.includes("partial")) return "warning";
+  if (state.includes("offline") || state.includes("failed")) return "critical";
+  return "neutral";
+}
+
+function validationStateLabel(state: ValidationState | null | undefined) {
+  return state ? formatStatusLabel(state) : "No validation run";
+}
+
 function EngagementListPage() {
   const [engagements, setEngagements] = useState<Engagement[]>([]);
   const [query, setQuery] = useState("");
@@ -874,7 +899,7 @@ function GpuDetailDrawer({ item, onClose }: { item: GpuInventoryItem | null; onC
           <Panel title="Software"><dl className="grid gap-4 sm:grid-cols-2"><Field label="Driver" value={item.driverVersion} /><Field label="CUDA" value={item.cudaVersion} /><Field label="MIG mode" value={item.migMode} /><Field label="ECC mode" value={item.eccMode} /></dl></Panel>
           <Panel title="Validation"><div className="space-y-3 text-sm text-slate-300"><div className="flex flex-wrap gap-2"><InventoryStatusBadge value={item.validationStatus} /><InventoryStatusBadge value={item.healthStatus} label={`Hardware health ${item.healthStatus.replace(/_/g, " ")}`} /></div><div>Hardware health is shown as unknown unless accepted findings explicitly report a GPU-affecting failure or warning.</div>{item.failures.length > 0 && <ul className="list-disc pl-5 text-red-100">{item.failures.map((failure) => <li key={failure}>{failure}</li>)}</ul>}{item.warnings.length > 0 && <ul className="list-disc pl-5 text-amber-100">{item.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}</div></Panel>
           <Panel title="Connectivity"><dl className="grid gap-4 sm:grid-cols-2"><Field label="NVLink" value={item.nvlinkState} /><Field label="NUMA" value={item.numaNode} /><Field label="PCIe" value={item.pciBusId} /><Field label="Fabric association" value={item.clusterName ?? item.engagementName} /></dl></Panel>
-          <Panel title="Evidence"><dl className="grid gap-4"><Field label="Evidence source" value={item.evidenceSource.source.replace(/_/g, " ")} /><Field label="Evidence ID" value={item.evidenceSource.evidenceId} /><Field label="Command" value={item.evidenceSource.command} /><Field label="Source file" value={item.evidenceSource.sourceFile} /><Field label="Collected" value={formatDate(item.evidenceSource.collectedAt)} /><Field label="Sanitized" value={item.evidenceSource.sanitized === null ? null : item.evidenceSource.sanitized ? "yes" : "no"} /><Field label="Simulated" value={item.evidenceSource.simulated ? "yes" : "no"} /><Field label="Commands" value={item.evidenceSource.commandCounts.total === null ? null : `${item.evidenceSource.commandCounts.collected}/${item.evidenceSource.commandCounts.total} collected, ${item.evidenceSource.commandCounts.failed ?? 0} failed, ${item.evidenceSource.commandCounts.missing ?? 0} missing`} /></dl>{item.evidenceSource.warnings.length > 0 && <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-100">{item.evidenceSource.warnings.join(" ")}</div>}</Panel>
+          <Panel title="Evidence"><dl className="grid gap-4"><Field label="Data origin" value={item.evidenceSource.originLabel ?? (item.evidenceSource.simulated ? "Demo Fixture" : item.evidenceSource.source === "engagement_evidence" ? "Imported Evidence" : "Imported Evidence")} /><Field label="Source agent" value={item.agentName} /><Field label="Validation ID" value={item.validationId ?? item.evidenceSource.validationId} /><Field label="Evidence source" value={item.evidenceSource.source.replace(/_/g, " ")} /><Field label="Evidence ID" value={item.evidenceSource.evidenceId} /><Field label="Command" value={item.evidenceSource.command} /><Field label="Source file" value={item.evidenceSource.sourceFile} /><Field label="Collected" value={formatDate(item.evidenceSource.collectedAt)} /><Field label="Sanitized" value={item.evidenceSource.sanitized === null ? null : item.evidenceSource.sanitized ? "yes" : "no"} /><Field label="Simulated" value={item.evidenceSource.simulated ? "yes" : "no"} /><Field label="Commands" value={item.evidenceSource.commandCounts.total === null ? null : `${item.evidenceSource.commandCounts.collected}/${item.evidenceSource.commandCounts.total} collected, ${item.evidenceSource.commandCounts.failed ?? 0} failed, ${item.evidenceSource.commandCounts.skipped ?? 0} unavailable`} /></dl>{item.evidenceSource.warnings.length > 0 && <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-100">{item.evidenceSource.warnings.join(" ")}</div>}{item.evidenceSource.rawEvidence && <details className="mt-4 rounded-xl border border-slate-800 bg-black/30 p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-200">Raw command evidence</summary><pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap text-[11px] text-slate-300">{item.evidenceSource.rawEvidence}</pre></details>}</Panel>
         </div>
       </aside>
     </div>
@@ -909,10 +934,17 @@ function GpuInventoryPage() {
         ]);
         return { engagement, nodes: Array.isArray(nodes.nodes) ? nodes.nodes : [], evidenceRecords: Array.isArray(evidence.evidence_records) ? evidence.evidence_records : [], comparison: comparison.comparison ?? null, findings: Array.isArray(findings.findings) ? findings.findings : [], readiness: readiness.readiness ?? null };
       }));
-      const derived = deriveGpuInventory(payloads);
+      const [agentPayload, validationPayload] = await Promise.all([
+        fetchAgents().catch((): AgentListPayload => ({ agents: [], offline_threshold_seconds: 90 })),
+        fetchValidations().catch((): ValidationListPayload => ({ validations: [] })),
+      ]);
+      const liveItems = deriveLiveGpuInventory(agentPayload.agents, validationPayload.validations);
+      const derived = [...liveItems, ...deriveGpuInventory(payloads)];
       if (derived.length > 0) {
         setItems(derived);
-        setScope(`${derived.length.toLocaleString()} GPUs across ${engagements.length.toLocaleString()} engagement${engagements.length === 1 ? "" : "s"}`);
+        setScope(liveItems.length
+          ? `${liveItems.length.toLocaleString()} Live Agent GPUs plus ${Math.max(0, derived.length - liveItems.length).toLocaleString()} imported/demo GPUs`
+          : `${derived.length.toLocaleString()} GPUs across ${engagements.length.toLocaleString()} engagement${engagements.length === 1 ? "" : "s"}`);
       } else {
         const scenarioResponse = await fetch("/api/results?scenario=healthy");
         const scenarioPayload = scenarioResponse.ok ? await scenarioResponse.json() : null;
@@ -1126,6 +1158,49 @@ function DashboardKpiCard({ label, value, description, tone = "neutral", icon: I
   );
 }
 
+function LiveAgentPanel({ summary, agents, selectedAgentId, onSelectAgent, onRunValidation, creatingValidation, error }: { summary: LiveDashboardSummary; agents: AgentRecord[]; selectedAgentId: string; onSelectAgent: (id: string) => void; onRunValidation: () => void; creatingValidation: boolean; error: string | null }) {
+  const latest = summary.latestValidation;
+  const selected = agents.find((agent) => agent.id === selectedAgentId) ?? agents.find((agent) => agent.status === "online") ?? null;
+  const canRun = Boolean(selected?.id && selected.status === "online" && !creatingValidation);
+  return (
+    <section className="gv-card p-5" aria-labelledby="live-agent-title">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="gv-eyebrow text-[var(--gv-accent-hover)]">Live Agent</div>
+          <h2 id="live-agent-title" className="mt-2 font-display text-lg font-semibold text-[var(--gv-text-primary)]">RunPod hardware discovery</h2>
+          <p className="mt-1 text-sm text-[var(--gv-text-muted)]">Outbound agent registration, heartbeat, hardware validation launch, and live discovery state.</p>
+        </div>
+        <span className={`gv-badge ${liveStateTone(summary.stateLabel) === "healthy" ? "gv-badge-success" : liveStateTone(summary.stateLabel) === "critical" ? "border-red-500/25 bg-red-500/10 text-red-300" : "border-amber-500/25 bg-amber-500/10 text-amber-300"}`}>{summary.stateLabel}</span>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <DashboardKpiCard label="Connected agents" value={summary.connectedAgents} description="Registered GPUValidator agents" tone="neutral" icon={Server} />
+        <DashboardKpiCard label="Online agents" value={summary.onlineAgents} description="Recent heartbeat and no active error" tone={summary.onlineAgents ? "healthy" : "critical"} icon={Activity} />
+        <DashboardKpiCard label="Discovered nodes" value={summary.discoveredNodes} description="Unique agent hostnames" tone="neutral" icon={Network} />
+        <DashboardKpiCard label="Discovered GPUs" value={summary.discoveredGpus} description="From agent heartbeat payloads" tone={summary.discoveredGpus ? "healthy" : "neutral"} icon={Cpu} />
+        <DashboardKpiCard label="Validation state" value={validationStateLabel(latest?.state)} description="Latest hardware-discovery run" tone={liveStateTone(summary.stateLabel)} icon={ShieldCheck} />
+        <DashboardKpiCard label="Latest validation" value={summary.latestValidationTimestamp ? formatDate(summary.latestValidationTimestamp) : "Not run"} description="Completion or queue timestamp" tone="neutral" icon={FileJson} />
+      </div>
+      <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+        <label className="block">
+          <span className="mb-2 block text-xs font-semibold text-[var(--gv-text-secondary)]">Select explicit agent scope</span>
+          <select aria-label="Select hardware validation agent" value={selectedAgentId} onChange={(event) => onSelectAgent(event.target.value)} className="gv-select w-full">
+            <option value="">No online agent selected</option>
+            {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name} / {agent.hostname} / {agent.status} / {agent.gpu_count ?? "unknown"} GPUs</option>)}
+          </select>
+        </label>
+        <button type="button" onClick={onRunValidation} disabled={!canRun} className="gv-button-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${creatingValidation ? "animate-spin" : ""}`} />{creatingValidation ? "Queueing validation..." : "Run hardware validation"}</button>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--gv-text-muted)]">
+        <span>Selected agent: {selected ? `${selected.name} / ${selected.hostname}` : "none"}</span>
+        <span>Latest validation ID: {latest?.id ?? "not created"}</span>
+        <span>State: {validationStateLabel(latest?.state)}</span>
+        <a className="text-[var(--gv-accent-hover)] hover:underline" href="/portal/inventory/gpus">Open GPU inventory results</a>
+      </div>
+      {error && <div role="alert" className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-100">{error}</div>}
+    </section>
+  );
+}
+
 function StatusProgressRow({ label, value, status }: { label: string; value: number; status: CheckStatus }) {
   const tone = status === "pass" ? "bg-[var(--gv-accent)]" : status === "warning" ? "bg-[var(--gv-warning)]" : status === "fail" ? "bg-[var(--gv-critical)]" : "bg-slate-600";
   return (
@@ -1195,6 +1270,12 @@ function PortalApp() {
   const [loadingMessage, setLoadingMessage] = useState<string>("Loading scenario evidence...");
   const [error, setError] = useState<string | null>(null);
   const [expandedChecks, setExpandedChecks] = useState<Record<string, boolean>>({});
+  const [agents, setAgents] = useState<AgentRecord[]>([]);
+  const [validations, setValidations] = useState<ValidationDetail[]>([]);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [creatingValidation, setCreatingValidation] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const creatingValidationRef = useRef(false);
 
   const fetchResults = async (source: EvidenceSourceOption) => {
     setLoading(true);
@@ -1239,6 +1320,45 @@ function PortalApp() {
     fetchResults(source);
   }, [selectedSourceId, evidenceSources]);
 
+  const loadLiveAgentState = async (signal?: AbortSignal) => {
+    try {
+      const [agentPayload, validationPayload] = await Promise.all([fetchAgents(signal), fetchValidations(signal)]);
+      setAgents(agentPayload.agents);
+      setValidations(validationPayload.validations);
+      setLiveError(null);
+      setSelectedAgentId((current) => current || agentPayload.agents.find((agent) => agent.status === "online")?.id || "");
+    } catch (err) {
+      if (signal?.aborted) return;
+      setLiveError(err instanceof Error ? err.message : "Failed to load live agent state.");
+    }
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadLiveAgentState(controller.signal);
+    const interval = window.setInterval(() => loadLiveAgentState(controller.signal), 5_000);
+    return () => { controller.abort(); window.clearInterval(interval); };
+  }, []);
+
+  const runHardwareValidation = async () => {
+    if (!selectedAgentId || creatingValidationRef.current) return;
+    creatingValidationRef.current = true;
+    setCreatingValidation(true);
+    setLiveError(null);
+    const optimistic: ValidationRecord = { id: "pending-hardware-validation", schema_version: "1.0.0", profile: "hardware-discovery", agent_id: selectedAgentId, state: "queued", created_at: new Date().toISOString(), completed_at: null, error: null, job_ids: [] };
+    setValidations((current) => [{ validation: optimistic, jobs: [], results: [] }, ...current]);
+    try {
+      await createHardwareValidation(selectedAgentId);
+      await loadLiveAgentState();
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "Failed to create hardware validation.");
+      setValidations((current) => current.filter((detail) => detail.validation.id !== optimistic.id));
+    } finally {
+      creatingValidationRef.current = false;
+      setCreatingValidation(false);
+    }
+  };
+
   const selectSimulatedScenario = (scenario: "healthy" | "degraded") => {
     setSelectedScenario(scenario);
     setSelectedSourceId(`simulated-${scenario}`);
@@ -1254,6 +1374,7 @@ function PortalApp() {
   const reportLinks = useMemo(() => buildArtifactLinks(selectedScenario), [selectedScenario]);
   const selectedSource = evidenceSources.find((source) => source.id === selectedSourceId) ?? fallbackSources[1];
   const sourceContext = useMemo(() => buildSourceContext(cluster, selectedSource), [cluster, selectedSource]);
+  const liveSummary = useMemo(() => summarizeLiveAgentDashboard(agents, validations), [agents, validations]);
   const simulated = isSimulatedScenario(cluster);
   const selectedNode = cluster?.nodes.find((node) => node.name === selectedNodeName) ?? cluster?.nodes[0] ?? null;
 
@@ -1375,6 +1496,8 @@ function PortalApp() {
 
       {cluster && (
         <div className="space-y-5">
+          <LiveAgentPanel summary={liveSummary} agents={agents} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} onRunValidation={runHardwareValidation} creatingValidation={creatingValidation} error={liveError} />
+
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5" aria-label="Dashboard KPI summary">
             <DashboardKpiCard label="Validation score" value={`${dashboardOverview.readinessScore.toFixed(2)}%`} description={`${dashboardOverview.passedChecks}/${dashboardOverview.totalChecks} checks passing`} tone={dashboardOverview.acceptanceApproved ? "healthy" : "warning"} icon={Gauge} />
             <DashboardKpiCard label="Evidence coverage" value={`${dashboardOverview.evidenceCoveragePercent}%`} description={`${dashboardOverview.totalChecks} checks carry command evidence`} tone="healthy" icon={ShieldCheck} />
