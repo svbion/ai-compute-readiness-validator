@@ -86,6 +86,14 @@ export interface ReportRecord {
   author_name: string;
   purpose: string;
   confidentiality: string;
+  time_range?: string | null;
+  finding_ids?: string[];
+  include_evidence?: boolean;
+  include_raw_logs?: boolean;
+  include_charts?: boolean;
+  include_appendices?: boolean;
+  reviewer?: string | null;
+  notes?: string | null;
   version: number;
   created_at: string;
   updated_at: string;
@@ -101,11 +109,14 @@ type Lineage = Pick<ReportRecord, "agent_ids" | "node_ids" | "gpu_ids" | "valida
 
 const fieldSet = new Set<string>(requiredReportFields);
 const serverOwnedPatchFields = new Set(["report_id", "created_at"]);
-const createOptionalFields = new Set(["status", "scope_id", "customer", "engagement_id", "cluster_id", "agent_ids", "node_ids", "gpu_ids", "validation_ids", "benchmark_ids", "evidence_ids", "author_name", "purpose", "confidentiality", "version", "generated_at", "checksum", "error"]);
-const patchableFields = new Set(["name", "report_type", "status", "scope_type", "scope_id", "customer", "engagement_id", "cluster_id", "agent_ids", "node_ids", "gpu_ids", "validation_ids", "benchmark_ids", "evidence_ids", "author_name", "purpose", "confidentiality", "version", "generated_at", "checksum", "error"]);
-const nullableStringFields = new Set(["scope_id", "customer", "engagement_id", "cluster_id", "generated_at", "error"]);
-const stringFields = new Set(["name", "scope_id", "customer", "engagement_id", "cluster_id", "author_name", "purpose", "confidentiality", "generated_at", "checksum", "error"]);
+const builderDraftFields = ["time_range", "finding_ids", "include_evidence", "include_raw_logs", "include_charts", "include_appendices", "reviewer", "notes"];
+const createOptionalFields = new Set(["status", "scope_id", "customer", "engagement_id", "cluster_id", "agent_ids", "node_ids", "gpu_ids", "validation_ids", "benchmark_ids", "evidence_ids", "author_name", "purpose", "confidentiality", "version", "generated_at", "checksum", "error", ...builderDraftFields]);
+const patchableFields = new Set(["name", "report_type", "status", "scope_type", "scope_id", "customer", "engagement_id", "cluster_id", "agent_ids", "node_ids", "gpu_ids", "validation_ids", "benchmark_ids", "evidence_ids", "author_name", "purpose", "confidentiality", "version", "generated_at", "checksum", "error", ...builderDraftFields]);
+const nullableStringFields = new Set(["scope_id", "customer", "engagement_id", "cluster_id", "generated_at", "error", "time_range", "reviewer", "notes"]);
+const stringFields = new Set(["name", "scope_id", "customer", "engagement_id", "cluster_id", "author_name", "purpose", "confidentiality", "generated_at", "checksum", "error", "time_range", "reviewer", "notes"]);
 const lineageFields: (keyof Lineage)[] = ["agent_ids", "node_ids", "gpu_ids", "validation_ids", "benchmark_ids", "evidence_ids"];
+const builderArrayFields = new Set(["finding_ids"]);
+const booleanFields = new Set(["include_evidence", "include_raw_logs", "include_charts", "include_appendices"]);
 
 function nowIso() { return new Date().toISOString(); }
 function id(prefix: string) { return `${prefix}_${crypto.randomUUID()}`; }
@@ -240,6 +251,7 @@ function createReport(document: StoreDoc, input: Record<string, unknown>): { rep
   const scope_type = isOneOf(scopeTypes, input.scope_type) ? input.scope_type : undefined;
   if (!scope_type) details.push({ field: "scope_type", message: `scope_type must be one of: ${scopeTypes.join(", ")}.` });
   const explicit = Object.fromEntries(lineageFields.map((field) => [field, validateStringArray(input, field, details)])) as Lineage;
+  if (input.finding_ids !== undefined && !Array.isArray(input.finding_ids)) details.push({ field: "finding_ids", message: "finding_ids must be an array of strings." });
   const version = validateVersion(input.version, details);
   const generated_at = validateIsoOrNull(input.generated_at, "generated_at", details) ?? (status === "generated" ? nowIso() : null);
   const requestedChecksum = validateChecksum(input.checksum, details);
@@ -264,6 +276,14 @@ function createReport(document: StoreDoc, input: Record<string, unknown>): { rep
     author_name: cleanRequiredString(input.author_name ?? "Sabion P Frazier", 120, "author_name", details),
     purpose: cleanRequiredString(input.purpose ?? "GPUValidator interview demonstration", 240, "purpose", details),
     confidentiality: cleanRequiredString(input.confidentiality ?? "Confidential", 120, "confidentiality", details),
+    time_range: cleanNullableString(input.time_range, 160),
+    finding_ids: Array.isArray(input.finding_ids) ? uniqueStrings(input.finding_ids).slice(0, 500) : [],
+    include_evidence: input.include_evidence === undefined ? true : Boolean(input.include_evidence),
+    include_raw_logs: Boolean(input.include_raw_logs),
+    include_charts: input.include_charts === undefined ? true : Boolean(input.include_charts),
+    include_appendices: input.include_appendices === undefined ? true : Boolean(input.include_appendices),
+    reviewer: cleanNullableString(input.reviewer, 120),
+    notes: cleanNullableString(input.notes, 2000),
     version,
     created_at: timestamp,
     updated_at: timestamp,
@@ -297,6 +317,12 @@ function patchReport(current: ReportRecord, input: Record<string, unknown>): { r
     } else if (lineageFields.includes(field as keyof Lineage)) {
       if (!Array.isArray(value)) details.push({ field, message: `${field} must be an array of strings.` });
       else (next as any)[field] = uniqueStrings(value).slice(0, 500);
+    } else if (builderArrayFields.has(field)) {
+      if (!Array.isArray(value)) details.push({ field, message: `${field} must be an array of strings.` });
+      else (next as any)[field] = uniqueStrings(value).slice(0, 500);
+    } else if (booleanFields.has(field)) {
+      if (typeof value !== "boolean") details.push({ field, message: `${field} must be a boolean.` });
+      else (next as any)[field] = value;
     } else if (field === "generated_at") {
       next.generated_at = validateIsoOrNull(value, field, details);
     } else if (field === "checksum") {

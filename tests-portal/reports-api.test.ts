@@ -86,6 +86,14 @@ test("reports API creates a schema-first draft record with lineage and required 
       engagement_id: "eng_demo",
       cluster_id: "cluster_runpod_a100",
       confidentiality: "Confidential",
+      time_range: "Last 24 hours",
+      finding_ids: ["finding-ecc-warning"],
+      include_evidence: true,
+      include_raw_logs: false,
+      include_charts: true,
+      include_appendices: true,
+      reviewer: "Technical reviewer",
+      notes: "Draft notes are preserved for the report builder.",
     });
 
     assert.equal(created.response.status, 201, JSON.stringify(created.payload));
@@ -104,6 +112,14 @@ test("reports API creates a schema-first draft record with lineage and required 
     assert.deepEqual(report.gpu_ids, ["GPU-live-0", "GPU-live-1", "GPU-live-2", "GPU-live-3"]);
     assert.equal(report.author_name, "Sabion P Frazier");
     assert.equal(report.purpose, "GPUValidator interview demonstration");
+    assert.equal(report.time_range, "Last 24 hours");
+    assert.deepEqual(report.finding_ids, ["finding-ecc-warning"]);
+    assert.equal(report.include_evidence, true);
+    assert.equal(report.include_raw_logs, false);
+    assert.equal(report.include_charts, true);
+    assert.equal(report.include_appendices, true);
+    assert.equal(report.reviewer, "Technical reviewer");
+    assert.equal(report.notes, "Draft notes are preserved for the report builder.");
     assert.equal(report.version, 1);
     assert.equal(report.generated_at, null);
     assert.equal(report.error, null);

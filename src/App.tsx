@@ -1346,12 +1346,75 @@ type PortalReportRecord = {
   evidence_ids?: string[];
   purpose?: string;
   confidentiality?: string;
+  time_range?: string | null;
+  finding_ids?: string[];
+  include_evidence?: boolean;
+  include_raw_logs?: boolean;
+  include_charts?: boolean;
+  include_appendices?: boolean;
+  reviewer?: string | null;
+  notes?: string | null;
 };
+
+type ReportBuilderBenchmark = { id: string; display_name?: string; name?: string; category?: string; enabled?: boolean };
+type ReportBuilderForm = {
+  name: string;
+  report_type: string;
+  customer: string;
+  engagement_id: string;
+  scope_type: string;
+  scope_id: string;
+  time_range: string;
+  validation_ids: string[];
+  benchmark_ids: string[];
+  finding_ids: string[];
+  include_evidence: boolean;
+  include_raw_logs: boolean;
+  include_charts: boolean;
+  include_appendices: boolean;
+  author_name: string;
+  purpose: string;
+  confidentiality: string;
+  version: string;
+  reviewer: string;
+  notes: string;
+  agent_ids: string[];
+  node_ids: string[];
+  gpu_ids: string[];
+};
+
+const reportBuilderScopeTypes = [
+  { label: "Organization", value: "organization" },
+  { label: "Customer", value: "customer" },
+  { label: "Engagement", value: "engagement" },
+  { label: "Cluster", value: "cluster" },
+  { label: "Agent", value: "agent" },
+  { label: "Node", value: "node" },
+  { label: "GPU", value: "gpu" },
+  { label: "Validation", value: "validation_run" },
+  { label: "Benchmark", value: "benchmark_run" },
+  { label: "Custom", value: "custom" },
+];
+
+const reportBuilderTypes = [
+  "executive-summary",
+  "customer-validation",
+  "technical-infrastructure",
+  "gpu-inventory",
+  "cluster-readiness",
+  "node-validation",
+  "individual-gpu",
+  "nccl-benchmark",
+  "management-status",
+];
 
 function ReportsPage() {
   const [pathName, setPathName] = useState(window.location.pathname);
   const isNewReportRoute = pathName === "/portal/reports/new";
   const selectedReportId = !isNewReportRoute && pathName.startsWith("/portal/reports/") ? decodeURIComponent(pathName.replace("/portal/reports/", "")) : null;
+  const { agents, validations } = useLiveAgentData(6000);
+  const liveGpus = deriveLiveGpuInventory(agents, validations);
+  const [benchmarkDefinitions, setBenchmarkDefinitions] = useState<ReportBuilderBenchmark[]>([]);
   const [reports, setReports] = useState<PortalReportRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1361,7 +1424,36 @@ function ReportsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [scopeFilter, setScopeFilter] = useState("all");
   const [customerFilter, setCustomerFilter] = useState("all");
-  const [newReport, setNewReport] = useState({ name: "GPUValidator Report", report_type: "customer-validation", scope_type: "cluster", scope_id: "", customer: "", author_name: "Sabion P Frazier", confidentiality: "Confidential" });
+  const [builderErrors, setBuilderErrors] = useState<string[]>([]);
+  const [previewSummary, setPreviewSummary] = useState<string | null>(null);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [builderForm, setBuilderForm] = useState<ReportBuilderForm>({
+    name: "GPUValidator Customer Validation Report",
+    report_type: "customer-validation",
+    customer: "",
+    engagement_id: "",
+    scope_type: "cluster",
+    scope_id: "",
+    time_range: "Current live records",
+    validation_ids: [],
+    benchmark_ids: [],
+    finding_ids: [],
+    include_evidence: true,
+    include_raw_logs: false,
+    include_charts: true,
+    include_appendices: true,
+    author_name: "Sabion P Frazier",
+    purpose: "GPUValidator interview demonstration",
+    confidentiality: "Confidential",
+    version: "1",
+    reviewer: "",
+    notes: "",
+    agent_ids: [],
+    node_ids: [],
+    gpu_ids: [],
+  });
+  const builderScopeLabelText = "Organization Customer Engagement Cluster Agent Node GPU Validation Benchmark Custom";
+  const builderReportTypeLabelText = "Executive Summary Customer Validation Report Technical Infrastructure GPU Inventory Cluster Readiness Node Validation Individual GPU NCCL Benchmark Management Status Report";
 
   const navigateReports = (target: string) => {
     window.history.pushState({}, "", target);
@@ -1381,14 +1473,41 @@ function ReportsPage() {
       setLoading(false);
     }
   };
-  useEffect(() => { loadReports(); }, []);
+  const loadBenchmarks = async () => {
+    try {
+      const response = await fetch("/api/v1/benchmark-definitions");
+      const payload = await response.json().catch(() => ({}));
+      setBenchmarkDefinitions(Array.isArray(payload.definitions) ? payload.definitions : []);
+    } catch {
+      setBenchmarkDefinitions([]);
+    }
+  };
+  useEffect(() => { loadReports(); loadBenchmarks(); }, []);
   useEffect(() => {
     const syncRoute = () => setPathName(window.location.pathname);
     window.addEventListener("popstate", syncRoute);
     return () => window.removeEventListener("popstate", syncRoute);
   }, []);
 
-  const reportTypes = [...new Set(reports.map((report) => report.report_type).filter(Boolean))].sort();
+  const validationOptions = validations.map((detail) => ({ id: detail.validation.id, label: `${detail.validation.profile} / ${detail.validation.id}`, state: detail.validation.state }));
+  const benchmarkOptions = benchmarkDefinitions.filter((definition) => definition.enabled !== false).map((definition) => ({ id: definition.id, label: definition.display_name ?? definition.name ?? definition.id, category: definition.category ?? "Benchmark" }));
+  const nodeOptions = [...new Set([
+    ...agents.map((agent) => agent.hostname).filter(Boolean),
+    ...validations.flatMap((detail) => detail.results.map((result) => result.structured_result?.node_id ?? result.agent_id).filter(Boolean).map(String)),
+    ...liveGpus.map((gpu) => gpu.nodeId ?? gpu.nodeName).filter(Boolean).map(String),
+  ])].map((id) => ({ id, label: id }));
+  const gpuOptions = liveGpus.map((gpu) => ({ id: gpu.uuid ?? gpu.id, label: `${gpu.nodeName} / GPU ${gpu.gpuIndex ?? "Not collected"} / ${gpu.uuid ?? "Not collected"}` }));
+  const findingOptions = validations.flatMap((detail) => [
+    ...(["failed", "timed_out", "cancelled"].includes(detail.validation.state) ? [{ id: detail.validation.id, label: `${detail.validation.profile} ${detail.validation.state}` }] : []),
+    ...detail.results.filter((result) => result.state !== "completed").map((result) => ({ id: result.id, label: `${result.command_evidence?.command_type ?? result.job_id}: ${result.state}` })),
+  ]);
+  const selectedScopeOptions = builderForm.scope_type === "agent" ? agents.map((agent) => ({ id: agent.id, label: `${agent.name} / ${agent.hostname}` }))
+    : builderForm.scope_type === "node" ? nodeOptions
+      : builderForm.scope_type === "gpu" ? gpuOptions
+        : builderForm.scope_type === "validation_run" ? validationOptions
+          : builderForm.scope_type === "benchmark_run" ? benchmarkOptions
+            : [];
+  const reportTypes = [...new Set([...reportBuilderTypes, ...reports.map((report) => report.report_type).filter(Boolean)])].sort();
   const statuses = [...new Set(reports.map((report) => report.status).filter(Boolean))].sort();
   const scopes = [...new Set(reports.map((report) => report.scope_type).filter(Boolean))].sort();
   const customers = [...new Set(reports.map((report) => report.customer || "Unassigned customer"))].sort();
@@ -1401,20 +1520,80 @@ function ReportsPage() {
       && (scopeFilter === "all" || report.scope_type === scopeFilter)
       && (customerFilter === "all" || (report.customer || "Unassigned customer") === customerFilter);
   });
-  const setNewField = (field: keyof typeof newReport, value: string) => setNewReport((current) => ({ ...current, [field]: value }));
-  const createReport = async () => {
+  const setBuilderField = (field: keyof ReportBuilderForm, value: string | boolean | string[]) => setBuilderForm((current) => ({ ...current, [field]: value }));
+  const selectedValues = (event: React.ChangeEvent<HTMLSelectElement>) => Array.from(event.currentTarget.selectedOptions as HTMLCollectionOf<HTMLOptionElement>).map((option) => option.value);
+  const validateReportBuilder = () => {
+    const errors: string[] = [];
+    if (!builderForm.name.trim()) errors.push("Report name is required.");
+    if (!builderForm.report_type) errors.push("Report type is required.");
+    if (!builderForm.customer.trim()) errors.push("Customer is required.");
+    if (!builderForm.engagement_id.trim()) errors.push("Engagement is required.");
+    if (!builderForm.scope_type) errors.push("Scope type is required.");
+    if (["agent", "node", "gpu", "validation_run", "benchmark_run", "custom"].includes(builderForm.scope_type) && !builderForm.scope_id.trim()) errors.push("Scope selector is required for the selected scope type.");
+    if (!builderForm.time_range.trim()) errors.push("Time range is required.");
+    if (!builderForm.author_name.trim()) errors.push("Author is required.");
+    if (!builderForm.purpose.trim()) errors.push("Purpose is required.");
+    if (!builderForm.confidentiality.trim()) errors.push("Confidentiality is required.");
+    if (!Number.isInteger(Number(builderForm.version)) || Number(builderForm.version) < 1) errors.push("Version must be a positive integer.");
+    return errors;
+  };
+  const reportPayload = (status: "draft" | "generating" = "draft") => {
+    const selectedEvidenceIds = builderForm.include_evidence || builderForm.include_raw_logs
+      ? validations.flatMap((detail) => detail.results.map((result) => result.id)).filter((id) => builderForm.validation_ids.length === 0 || validations.some((detail) => detail.validation.id && builderForm.validation_ids.includes(detail.validation.id)))
+      : [];
+    return {
+      name: builderForm.name,
+      report_type: builderForm.report_type,
+      status,
+      scope_type: builderForm.scope_type,
+      scope_id: builderForm.scope_id || null,
+      customer: builderForm.customer,
+      engagement_id: builderForm.engagement_id,
+      author_name: builderForm.author_name,
+      purpose: builderForm.purpose,
+      confidentiality: builderForm.confidentiality,
+      version: Number(builderForm.version),
+      time_range: builderForm.time_range,
+      finding_ids: builderForm.finding_ids,
+      include_evidence: builderForm.include_evidence,
+      include_raw_logs: builderForm.include_raw_logs,
+      include_charts: builderForm.include_charts,
+      include_appendices: builderForm.include_appendices,
+      reviewer: builderForm.reviewer || null,
+      notes: builderForm.notes || null,
+      validation_ids: builderForm.validation_ids,
+      benchmark_ids: builderForm.benchmark_ids,
+      agent_ids: builderForm.agent_ids,
+      node_ids: builderForm.node_ids,
+      gpu_ids: builderForm.gpu_ids,
+      evidence_ids: selectedEvidenceIds,
+    };
+  };
+  const saveDraft = async () => {
+    const errors = validateReportBuilder();
+    setBuilderErrors(errors);
+    setPreviewSummary(null);
+    if (errors.length) return;
+    setSavingDraft(true);
     setError(null);
-    setMessage(null);
     try {
-      const response = await fetch("/api/v1/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...newReport, scope_id: newReport.scope_id || null, customer: newReport.customer || null }) });
+      const response = await fetch("/api/v1/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reportPayload("draft")) });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error?.message ?? payload.error ?? "Report creation failed.");
+      if (!response.ok) throw new Error(payload.error?.message ?? payload.error ?? "Report draft save failed.");
       setReports((current) => [payload.report, ...current.filter((report) => report.report_id !== payload.report.report_id)]);
-      setMessage(`Created report ${payload.report.report_id}`);
+      setMessage(`Saved draft ${payload.report.report_id}`);
       navigateReports(`/portal/reports/${encodeURIComponent(payload.report.report_id)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Report creation failed.");
+      setError(err instanceof Error ? err.message : "Report draft save failed.");
+    } finally {
+      setSavingDraft(false);
     }
+  };
+  const generatePreview = () => {
+    const errors = validateReportBuilder();
+    setBuilderErrors(errors);
+    if (errors.length) return;
+    setPreviewSummary(`Preview ready from ${builderForm.validation_ids.length || "all available"} validations, ${builderForm.benchmark_ids.length || "all available"} benchmarks, ${builderForm.agent_ids.length || "all available"} agents, ${builderForm.node_ids.length || "all available"} nodes, and ${builderForm.gpu_ids.length || "all available"} GPUs. Missing sections will render as Not collected or Not available.`);
   };
   const duplicateReport = async (report: PortalReportRecord) => {
     setError(null);
@@ -1457,8 +1636,9 @@ function ReportsPage() {
     }
   };
   const reportRow = (report: PortalReportRecord) => <article key={report.report_id} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"><div className="grid gap-4 xl:grid-cols-[1fr_auto]"><div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5"><div><div className="gv-eyebrow text-slate-500">Report name</div><div className="mt-1 font-semibold text-slate-50">{report.name}</div></div><div><div className="gv-eyebrow text-slate-500">Report type</div><div className="mt-1 text-sm text-slate-300">{report.report_type}</div></div><div><div className="gv-eyebrow text-slate-500">Scope</div><div className="mt-1 text-sm text-slate-300">{report.scope_type}{report.scope_id ? ` / ${report.scope_id}` : ""}</div></div><div><div className="gv-eyebrow text-slate-500">Customer</div><div className="mt-1 text-sm text-slate-300">{report.customer || "Unassigned customer"}</div></div><div><div className="gv-eyebrow text-slate-500">Author</div><div className="mt-1 text-sm text-slate-300">{report.author_name}</div></div><div><div className="gv-eyebrow text-slate-500">Status</div><span className="gv-badge gv-badge-neutral mt-1">{report.status}</span></div><div><div className="gv-eyebrow text-slate-500">Version</div><div className="mt-1 text-sm text-slate-300">v{report.version}</div></div><div><div className="gv-eyebrow text-slate-500">Generated</div><div className="mt-1 text-sm text-slate-300">{formatDate(report.generated_at)}</div></div><div><div className="gv-eyebrow text-slate-500">Modified</div><div className="mt-1 text-sm text-slate-300">{formatDate(report.updated_at)}</div></div></div><div className="flex flex-wrap items-start gap-2"><button type="button" onClick={() => navigateReports(`/portal/reports/${encodeURIComponent(report.report_id)}`)} className="gv-button-secondary py-2 text-xs">Open</button><button type="button" onClick={() => duplicateReport(report)} className="gv-button-secondary py-2 text-xs">Duplicate</button><button type="button" onClick={() => archiveReport(report)} disabled={report.status === "archived"} className="gv-button-secondary py-2 text-xs disabled:opacity-50">Archive</button><button type="button" onClick={() => deleteReport(report)} className="gv-button-secondary py-2 text-xs">Delete</button></div></div></article>;
+  const optionList = (options: { id: string; label: string }[], empty: string) => options.length ? options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>) : <option value="" disabled>{empty}</option>;
 
-  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Reports</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Reports workspace</h1><p className="mt-3 max-w-4xl text-slate-400">Browse reporting metadata from the reporting API, open dedicated report routes, and manage report lifecycle while report generation, rich rendering, and document export remain future milestones. Generated by Sabion P Frazier. Purpose: GPUValidator interview demonstration.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => navigateReports("/portal/reports/new")} className="gv-button-primary">New Report</button><button type="button" onClick={loadReports} className="gv-button-secondary">Refresh</button></div></section>{error && <div role="alert" className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-100"><div className="font-semibold">Unable to load reports</div><div className="mt-1 text-sm">{error}</div><button type="button" onClick={loadReports} className="gv-button-secondary mt-3">Retry</button></div>}{message && <div role="status" className="mb-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-emerald-100">{message}</div>}<section className="gv-card mb-5 p-4"><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"><label><span className="mb-2 block text-sm text-slate-300">Search reports</span><input aria-label="Search reports" value={search} onChange={(event) => setSearch(event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Filter report type</span><select aria-label="Filter report type" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="gv-select w-full"><option value="all">All report types</option>{reportTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select></label><label><span className="mb-2 block text-sm text-slate-300">Filter status</span><select aria-label="Filter status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="gv-select w-full"><option value="all">All statuses</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label><label><span className="mb-2 block text-sm text-slate-300">Filter scope</span><select aria-label="Filter scope" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)} className="gv-select w-full"><option value="all">All scopes</option>{scopes.map((scope) => <option key={scope} value={scope}>{scope}</option>)}</select></label><label><span className="mb-2 block text-sm text-slate-300">Filter customer</span><select aria-label="Filter customer" value={customerFilter} onChange={(event) => setCustomerFilter(event.target.value)} className="gv-select w-full"><option value="all">All customers</option>{customers.map((customer) => <option key={customer} value={customer}>{customer}</option>)}</select></label></div></section>{isNewReportRoute && <section className="gv-card mb-5 p-5"><div className="gv-eyebrow text-emerald-300">New Report</div><h2 className="mt-2 font-display text-2xl font-semibold text-slate-50">Create report metadata</h2><div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3"><label><span className="mb-2 block text-sm text-slate-300">Report name</span><input value={newReport.name} onChange={(event) => setNewField("name", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Report type</span><select value={newReport.report_type} onChange={(event) => setNewField("report_type", event.target.value)} className="gv-select w-full"><option value="executive-summary">Executive Summary</option><option value="customer-validation">Customer Validation Report</option><option value="technical-infrastructure">Technical Infrastructure</option><option value="gpu-inventory">GPU Inventory</option><option value="cluster-readiness">Cluster Readiness</option><option value="node-validation">Node Validation</option><option value="individual-gpu">Individual GPU</option><option value="nccl-benchmark">NCCL Benchmark</option><option value="management-status">Management Status Report</option></select></label><label><span className="mb-2 block text-sm text-slate-300">Scope</span><select value={newReport.scope_type} onChange={(event) => setNewField("scope_type", event.target.value)} className="gv-select w-full"><option value="organization">organization</option><option value="customer">customer</option><option value="engagement">engagement</option><option value="cluster">cluster</option><option value="agent">agent</option><option value="node">node</option><option value="gpu">gpu</option><option value="validation_run">validation_run</option><option value="benchmark_run">benchmark_run</option><option value="custom">custom</option></select></label><label><span className="mb-2 block text-sm text-slate-300">Scope ID</span><input value={newReport.scope_id} onChange={(event) => setNewField("scope_id", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Customer</span><input value={newReport.customer} onChange={(event) => setNewField("customer", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Author</span><input value={newReport.author_name} onChange={(event) => setNewField("author_name", event.target.value)} className="gv-select w-full" /></label></div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={createReport} className="gv-button-primary">Create Report</button><button type="button" onClick={() => navigateReports("/portal/reports")} className="gv-button-secondary">Cancel</button></div></section>}{selectedReportId && !selectedReport && !loading && <div role="alert" className="mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-100">Report route {selectedReportId} was not found. Use Refresh to reload the reporting API.</div>}{selectedReport && <section className="gv-card mb-5 p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="gv-eyebrow text-emerald-300">Open report</div><h2 className="mt-2 font-display text-2xl font-semibold text-slate-50">{selectedReport.name}</h2><p className="mt-2 text-sm text-slate-400">{selectedReport.report_id}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => window.open(`/api/v1/reports/${encodeURIComponent(selectedReport.report_id)}`, "_blank")} className="gv-button-secondary">Open schema JSON</button><button type="button" onClick={() => navigator.clipboard?.writeText(selectedReport.report_id)} className="gv-button-secondary">Copy report ID</button><button type="button" onClick={() => navigateReports("/portal/reports")} className="gv-button-secondary">Close</button></div></div><div className="mt-4 text-sm text-slate-300">Report Provenance preserves validation IDs, benchmark IDs, agent IDs, node IDs, GPU IDs, evidence IDs, timestamps, checksum, and source scope.</div>{reportRow(selectedReport)}</section>}<section className="space-y-3">{loading && <div className="gv-card p-5 text-sm text-slate-300">Loading reports from /api/v1/reports...</div>}{!loading && reports.length === 0 && <EmptyState text="No reports yet. Use New Report to create the first reporting metadata record." />}{!loading && reports.length > 0 && filteredReports.length === 0 && <EmptyState text="No reports match the current filters. Clear search, report type, status, scope, or customer filters and retry." />}{!loading && filteredReports.map(reportRow)}</section></EngagementShell>;
+  return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Reports</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Reports workspace</h1><p className="mt-3 max-w-4xl text-slate-400">Browse reporting metadata from the reporting API, open dedicated report routes, and manage scoped drafts. Generated by Sabion P Frazier. Purpose: GPUValidator interview demonstration.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => navigateReports("/portal/reports/new")} className="gv-button-primary">New Report</button><button type="button" onClick={loadReports} className="gv-button-secondary">Refresh</button></div></section>{error && <div role="alert" className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-100"><div className="font-semibold">Unable to load reports</div><div className="mt-1 text-sm">{error}</div><button type="button" onClick={loadReports} className="gv-button-secondary mt-3">Retry</button></div>}{message && <div role="status" className="mb-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-emerald-100">{message}</div>}<section className="gv-card mb-5 p-4"><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"><label><span className="mb-2 block text-sm text-slate-300">Search reports</span><input aria-label="Search reports" value={search} onChange={(event) => setSearch(event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Filter report type</span><select aria-label="Filter report type" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="gv-select w-full"><option value="all">All report types</option>{reportTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select></label><label><span className="mb-2 block text-sm text-slate-300">Filter status</span><select aria-label="Filter status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="gv-select w-full"><option value="all">All statuses</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label><label><span className="mb-2 block text-sm text-slate-300">Filter scope</span><select aria-label="Filter scope" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)} className="gv-select w-full"><option value="all">All scopes</option>{scopes.map((scope) => <option key={scope} value={scope}>{scope}</option>)}</select></label><label><span className="mb-2 block text-sm text-slate-300">Filter customer</span><select aria-label="Filter customer" value={customerFilter} onChange={(event) => setCustomerFilter(event.target.value)} className="gv-select w-full"><option value="all">All customers</option>{customers.map((customer) => <option key={customer} value={customer}>{customer}</option>)}</select></label></div></section>{isNewReportRoute && <section className="gv-card mb-5 p-5"><div className="gv-eyebrow text-emerald-300">Report Builder</div><h2 className="mt-2 font-display text-2xl font-semibold text-slate-50">Create scoped report draft</h2><p className="mt-2 text-sm text-slate-400">Select only available live source records. Missing source sections are explicitly marked Not available or Not collected.</p>{builderErrors.length > 0 && <div role="alert" className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100"><div className="font-semibold">Fix required fields before saving.</div><ul className="mt-2 list-disc pl-5">{builderErrors.map((item) => <li key={item}>{item}</li>)}</ul></div>}{previewSummary && <div role="status" className="mt-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-100">{previewSummary}</div>}<div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3"><label><span className="mb-2 block text-sm text-slate-300">Report name</span><input value={builderForm.name} onChange={(event) => setBuilderField("name", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Report type</span><select value={builderForm.report_type} onChange={(event) => setBuilderField("report_type", event.target.value)} className="gv-select w-full">{reportBuilderTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select></label><label><span className="mb-2 block text-sm text-slate-300">Customer</span><input value={builderForm.customer} onChange={(event) => setBuilderField("customer", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Engagement</span><input value={builderForm.engagement_id} onChange={(event) => setBuilderField("engagement_id", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Scope type</span><select value={builderForm.scope_type} onChange={(event) => setBuilderField("scope_type", event.target.value)} className="gv-select w-full">{reportBuilderScopeTypes.map((scope) => <option key={scope.value} value={scope.value}>{scope.label}</option>)}</select></label><label><span className="mb-2 block text-sm text-slate-300">Scope selector</span><select value={builderForm.scope_id} onChange={(event) => setBuilderField("scope_id", event.target.value)} className="gv-select w-full"><option value="">{selectedScopeOptions.length ? "Select scope" : "Not available"}</option>{optionList(selectedScopeOptions, "Not available")}</select></label><label><span className="mb-2 block text-sm text-slate-300">Time range</span><input value={builderForm.time_range} onChange={(event) => setBuilderField("time_range", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Author</span><input value={builderForm.author_name} onChange={(event) => setBuilderField("author_name", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Purpose</span><input value={builderForm.purpose} onChange={(event) => setBuilderField("purpose", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Confidentiality</span><input value={builderForm.confidentiality} onChange={(event) => setBuilderField("confidentiality", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Version</span><input type="number" min="1" value={builderForm.version} onChange={(event) => setBuilderField("version", event.target.value)} className="gv-select w-full" /></label><label><span className="mb-2 block text-sm text-slate-300">Reviewer</span><input value={builderForm.reviewer} onChange={(event) => setBuilderField("reviewer", event.target.value)} className="gv-select w-full" /></label></div><div className="mt-5 grid gap-4 lg:grid-cols-2"><label><span className="mb-2 block text-sm text-slate-300">Included validations</span><select multiple value={builderForm.validation_ids} onChange={(event) => setBuilderField("validation_ids", selectedValues(event))} className="gv-select min-h-36 w-full">{optionList(validationOptions, "Not collected")}</select></label><label><span className="mb-2 block text-sm text-slate-300">Included benchmarks</span><select multiple value={builderForm.benchmark_ids} onChange={(event) => setBuilderField("benchmark_ids", selectedValues(event))} className="gv-select min-h-36 w-full">{optionList(benchmarkOptions, "Not available")}</select></label><label><span className="mb-2 block text-sm text-slate-300">Included findings</span><select multiple value={builderForm.finding_ids} onChange={(event) => setBuilderField("finding_ids", selectedValues(event))} className="gv-select min-h-32 w-full">{optionList(findingOptions, "Not collected")}</select></label><label><span className="mb-2 block text-sm text-slate-300">Available live agents</span><select multiple value={builderForm.agent_ids} onChange={(event) => setBuilderField("agent_ids", selectedValues(event))} className="gv-select min-h-32 w-full">{optionList(agents.map((agent) => ({ id: agent.id, label: `${agent.name} / ${agent.hostname}` })), "Not available")}</select></label><label><span className="mb-2 block text-sm text-slate-300">Available nodes</span><select multiple value={builderForm.node_ids} onChange={(event) => setBuilderField("node_ids", selectedValues(event))} className="gv-select min-h-32 w-full">{optionList(nodeOptions, "Not collected")}</select></label><label><span className="mb-2 block text-sm text-slate-300">Available GPUs</span><select multiple value={builderForm.gpu_ids} onChange={(event) => setBuilderField("gpu_ids", selectedValues(event))} className="gv-select min-h-32 w-full">{optionList(gpuOptions, "Not collected")}</select></label></div><div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4"><label className="rounded-2xl border border-slate-800 p-3 text-sm text-slate-300"><input type="checkbox" checked={builderForm.include_evidence} onChange={(event) => setBuilderField("include_evidence", event.target.checked)} className="mr-2" />Include evidence</label><label className="rounded-2xl border border-slate-800 p-3 text-sm text-slate-300"><input type="checkbox" checked={builderForm.include_raw_logs} onChange={(event) => setBuilderField("include_raw_logs", event.target.checked)} className="mr-2" />Include raw logs</label><label className="rounded-2xl border border-slate-800 p-3 text-sm text-slate-300"><input type="checkbox" checked={builderForm.include_charts} onChange={(event) => setBuilderField("include_charts", event.target.checked)} className="mr-2" />Include charts</label><label className="rounded-2xl border border-slate-800 p-3 text-sm text-slate-300"><input type="checkbox" checked={builderForm.include_appendices} onChange={(event) => setBuilderField("include_appendices", event.target.checked)} className="mr-2" />Include appendices</label></div><label className="mt-5 block"><span className="mb-2 block text-sm text-slate-300">Notes</span><textarea value={builderForm.notes} onChange={(event) => setBuilderField("notes", event.target.value)} className="gv-select min-h-28 w-full" /></label><div className="mt-5 grid gap-3 md:grid-cols-5"><DashboardKpiCard label="Available live agents" value={agents.length || "Not available"} description="Loaded from live agent API" icon={Server} /><DashboardKpiCard label="Available nodes" value={nodeOptions.length || "Not collected"} description="Derived from agents and validation evidence" icon={Network} /><DashboardKpiCard label="Available GPUs" value={gpuOptions.length || "Not collected"} description="Derived from live GPU inventory" icon={Cpu} /><DashboardKpiCard label="Available validations" value={validationOptions.length || "Not collected"} description="Loaded from validation API" icon={ShieldCheck} /><DashboardKpiCard label="Available benchmarks" value={benchmarkOptions.length || "Not available"} description="Loaded from benchmark catalog" icon={Gauge} /></div><div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={saveDraft} disabled={savingDraft} className="gv-button-primary">Save Draft</button><button type="button" onClick={generatePreview} className="gv-button-secondary">Generate Preview</button><button type="button" onClick={() => navigateReports("/portal/reports")} className="gv-button-secondary">Cancel</button></div></section>}{selectedReportId && !selectedReport && !loading && <div role="alert" className="mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-100">Report route {selectedReportId} was not found. Use Refresh to reload the reporting API.</div>}{selectedReport && <section className="gv-card mb-5 p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="gv-eyebrow text-emerald-300">Open report</div><h2 className="mt-2 font-display text-2xl font-semibold text-slate-50">{selectedReport.name}</h2><p className="mt-2 text-sm text-slate-400">{selectedReport.report_id}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => window.open(`/api/v1/reports/${encodeURIComponent(selectedReport.report_id)}`, "_blank")} className="gv-button-secondary">Open schema JSON</button><button type="button" onClick={() => navigator.clipboard?.writeText(selectedReport.report_id)} className="gv-button-secondary">Copy report ID</button><button type="button" onClick={() => navigateReports("/portal/reports")} className="gv-button-secondary">Close</button></div></div><div className="mt-4 text-sm text-slate-300">Report Provenance preserves validation IDs, benchmark IDs, agent IDs, node IDs, GPU IDs, evidence IDs, timestamps, checksum, and source scope.</div>{reportRow(selectedReport)}</section>}<section className="space-y-3">{loading && <div className="gv-card p-5 text-sm text-slate-300">Loading reports from /api/v1/reports...</div>}{!loading && reports.length === 0 && <EmptyState text="No reports yet. Use New Report to create the first reporting metadata record." />}{!loading && reports.length > 0 && filteredReports.length === 0 && <EmptyState text="No reports match the current filters. Clear search, report type, status, scope, or customer filters and retry." />}{!loading && filteredReports.map(reportRow)}</section></EngagementShell>;
 }
 function SettingsPage() {
   return <EngagementShell><section className="gv-page-header"><div><div className="gv-eyebrow text-emerald-300">Settings</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Platform settings</h1><p className="mt-3 max-w-3xl text-slate-400">Operational settings, security posture, session state, and support information.</p></div></section><div className="grid gap-5 md:grid-cols-2"><Panel title="Security"><div className="space-y-2 text-sm text-slate-300"><div>Authentication: session-based reviewer access</div><div>Secrets: not rendered in browser UI</div><div>Support Information: include current route, timestamp, and visible validation ID when opening support tickets.</div></div></Panel><Panel title="Preferences"><label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" defaultChecked /> Auto-refresh live agent panels</label><label className="mt-3 flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" defaultChecked /> Show diagnostic evidence previews</label></Panel></div></EngagementShell>;

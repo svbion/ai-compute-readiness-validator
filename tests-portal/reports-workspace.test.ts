@@ -45,3 +45,68 @@ test("reports workspace primary controls call real API or real navigation", () =
   assert.doesNotMatch(reportsSource, /placeholder/i);
   assert.doesNotMatch(reportsSource, /Download PDF|Download DOCX|download\/pdf|download\/docx/i);
 });
+
+test("new report route exposes the scoped report builder with all required fields", () => {
+  for (const label of [
+    "Report name",
+    "Report type",
+    "Customer",
+    "Engagement",
+    "Scope type",
+    "Scope selector",
+    "Time range",
+    "Included validations",
+    "Included benchmarks",
+    "Included findings",
+    "Include evidence",
+    "Include raw logs",
+    "Include charts",
+    "Include appendices",
+    "Author",
+    "Purpose",
+    "Confidentiality",
+    "Version",
+    "Reviewer",
+    "Notes",
+  ]) {
+    assert.match(reportsSource, new RegExp(label), `${label} should be rendered by the builder`);
+  }
+  for (const scope of ["Organization", "Customer", "Engagement", "Cluster", "Agent", "Node", "GPU", "Validation", "Benchmark", "Custom"]) {
+    assert.match(reportsSource, new RegExp(scope), `${scope} scope should be available`);
+  }
+  assert.match(reportsSource, /Sabion P Frazier/);
+  assert.match(reportsSource, /GPUValidator interview demonstration/);
+});
+
+test("report builder loads live source data and never fabricates missing sources", () => {
+  assert.match(reportsSource, /useLiveAgentData\(/);
+  assert.match(reportsSource, /deriveLiveGpuInventory\(/);
+  assert.match(reportsSource, /fetch\("\/api\/v1\/benchmark-definitions"/);
+  for (const text of ["Available live agents", "Available nodes", "Available GPUs", "Available validations", "Available benchmarks", "Not available", "Not collected"]) {
+    assert.match(reportsSource, new RegExp(text), `${text} should be visible for source selection`);
+  }
+  assert.match(reportsSource, /multiple/);
+});
+
+test("report builder validates required fields and saves drafts through the report API", () => {
+  assert.match(reportsSource, /builderErrors/);
+  assert.match(reportsSource, /validateReportBuilder/);
+  assert.match(reportsSource, /setBuilderErrors/);
+  assert.match(reportsSource, /status: "draft"/);
+  assert.match(reportsSource, /validation_ids/);
+  assert.match(reportsSource, /benchmark_ids/);
+  assert.match(reportsSource, /agent_ids/);
+  assert.match(reportsSource, /node_ids/);
+  assert.match(reportsSource, /gpu_ids/);
+  assert.match(reportsSource, /time_range: builderForm\.time_range/);
+  assert.match(reportsSource, /finding_ids: builderForm\.finding_ids/);
+  assert.match(reportsSource, /include_evidence: builderForm\.include_evidence/);
+  assert.match(reportsSource, /include_raw_logs: builderForm\.include_raw_logs/);
+  assert.match(reportsSource, /include_charts: builderForm\.include_charts/);
+  assert.match(reportsSource, /include_appendices: builderForm\.include_appendices/);
+  assert.match(reportsSource, /reviewer: builderForm\.reviewer/);
+  assert.match(reportsSource, /notes: builderForm\.notes/);
+  for (const action of ["Save Draft", "Generate Preview", "Cancel"]) {
+    assert.match(reportsSource, new RegExp(action), `${action} action should be rendered`);
+  }
+});
