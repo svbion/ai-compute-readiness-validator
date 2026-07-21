@@ -124,6 +124,46 @@ test("report builder validates required fields and saves drafts through the repo
   }
 });
 
+test("report builder Generate Preview persists draft, invokes HTML generation, and navigates to returned report ID", () => {
+  const handler = reportsSource.slice(reportsSource.indexOf("const generatePreview"), reportsSource.indexOf("const duplicateReport"));
+  assert.match(handler, /setPreviewStep\("validating"\)/);
+  assert.match(handler, /setPreviewStep\("saving"\)/);
+  assert.match(handler, /setPreviewStep\("generating"\)/);
+  assert.match(handler, /setPreviewStep\("ready"\)/);
+  assert.match(handler, /setPreviewStep\("failed"\)/);
+  assert.match(handler, /method: selectedReport \? "PATCH" : "POST"/);
+  assert.match(handler, /\/api\/v1\/reports\/\$\{encodeURIComponent\(selectedReport\.report_id\)\}/);
+  assert.match(handler, /\/api\/v1\/reports\//);
+  assert.match(handler, /\/generate\/html/);
+  assert.match(handler, /window\.location\.assign\(`\/portal\/reports\/\$\{encodeURIComponent\(generatedReportId\)\}\/preview`\)/);
+  assert.match(handler, /payload\.report\.report_id/);
+  assert.doesNotMatch(handler, /setPreviewSummary\(`Preview ready from/);
+});
+
+test("report builder preview UI exposes async states, retry, diagnostics copy, and duplicate-click protection", () => {
+  for (const state of ["Validating", "Saving draft", "Generating preview", "Preview ready", "Failed"]) {
+    assert.match(reportsSource, new RegExp(state), `${state} state should be visible`);
+  }
+  assert.match(reportsSource, /previewBusy/);
+  assert.match(reportsSource, /disabled=\{previewBusy/);
+  assert.match(reportsSource, /animate-spin/);
+  assert.match(reportsSource, /Retry preview/);
+  assert.match(reportsSource, /Copy diagnostics/);
+  assert.match(reportsSource, /previewDiagnostics/);
+  assert.match(reportsSource, /Generate Preview/);
+  assert.match(reportsSource, /type="button" onClick=\{generatePreview\}/);
+});
+
+test("report builder supports editing existing draft previews without losing selected scope and sources", () => {
+  assert.match(reportsSource, /isReportBuilderRoute/);
+  assert.match(reportsSource, /selectedReport && selectedReport\.status === "draft"/);
+  assert.match(reportsSource, /setBuilderForm\(reportToBuilderForm\(selectedReport\)\)/);
+  assert.match(reportsSource, /status: "generating"/);
+  for (const field of ["scope_id", "validation_ids", "benchmark_ids", "agent_ids", "node_ids", "gpu_ids", "evidence_ids"]) {
+    assert.match(reportsSource, new RegExp(field), `${field} should be preserved through preview generation`);
+  }
+});
+
 test("executive summary actions are available from dashboard, reports, and validation detail using live source selection", () => {
   assert.match(appSource, /function generateExecutiveSummaryReport/);
   assert.match(appSource, /report_type: "executive-summary"/);
