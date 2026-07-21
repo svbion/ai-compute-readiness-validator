@@ -7,7 +7,7 @@ from typing import Callable
 
 from .commands import CommandDefinition, command_for, UnsupportedCommand
 from .models import ExecutionResult
-from .parsers import parse_result
+from .parsers import parse_nccl_all_reduce_smoke, parse_result
 
 def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -28,6 +28,8 @@ class CommandExecutor:
     def execute(self, definition: CommandDefinition) -> ExecutionResult:
         started=iso_now(); start=time.monotonic()
         try:
+            if definition.type == "nccl_all_reduce_smoke" and definition.argv == ["all_reduce_perf"]:
+                raise FileNotFoundError("all_reduce_perf unavailable or fewer than two visible GPUs")
             completed = self.runner(definition.argv, timeout=definition.timeout_seconds)
             raw_stdout = getattr(completed, "stdout", "") or ""
             raw_stderr = getattr(completed, "stderr", "") or ""
@@ -44,7 +46,11 @@ class CommandExecutor:
         finished=iso_now(); duration=int((time.monotonic()-start)*1000)
         stdout, st = truncate(str(raw_stdout), definition.max_stdout_bytes)
         stderr, et = truncate(str(raw_stderr), definition.max_stderr_bytes)
-        structured, warnings = parse_result(definition.type, stdout, stderr, state)
+        if definition.type == "nccl_all_reduce_smoke":
+            structured = parse_nccl_all_reduce_smoke(stdout, stderr, state, exit_code)
+            warnings = list(structured.pop("warnings", []))
+        else:
+            structured, warnings = parse_result(definition.type, stdout, stderr, state)
         return ExecutionResult(command_type=definition.type, argv=definition.argv, state=state, exit_code=exit_code, stdout=stdout, stderr=stderr, output_truncated=st or et, started_at=started, completed_at=finished, duration_ms=duration, structured_result=structured, parser_warnings=warnings)
 
 def execute_job(job: dict, executor: CommandExecutor | None = None) -> ExecutionResult:

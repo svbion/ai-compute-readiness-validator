@@ -82,7 +82,62 @@ def parse_pytorch_gpu_count(text: str) -> dict[str, Any]:
     except Exception:
         return {"gpu_count": None, "warnings": ["Unable to parse PyTorch GPU count"]}
 
+def parse_nccl_all_reduce_smoke(stdout: str, stderr: str, state: str, exit_code: int | None) -> dict[str, Any]:
+    text = f"{stdout or ''}\n{stderr or ''}"
+    rows=[]; warnings=[]
+    for line_no, raw in enumerate((stdout or "").splitlines(), 1):
+        line=raw.strip()
+        if not line or line.startswith("#") or not re.match(r"^\d+\s+\d+\s+\w+\s+\w+\s+", line):
+            continue
+        parts=line.split()
+        try:
+            row={
+                "line": line_no,
+                "message_size": int(parts[0]),
+                "count": int(parts[1]),
+                "datatype": parts[2],
+                "operation": parts[3],
+                "time": float(parts[5]),
+                "algorithm_bandwidth": float(parts[6]),
+                "bus_bandwidth": float(parts[7]),
+                "validation_errors": int(float(parts[8])) if len(parts) > 8 and re.match(r"^[0-9.]+$", parts[8]) else None,
+            }
+        except Exception:
+            warnings.append(f"Malformed NCCL row {line_no}")
+            continue
+        rows.append(row)
+    if not rows:
+        warnings.append("No NCCL all_reduce_perf data rows parsed")
+    if state != "completed" or exit_code not in (0, None):
+        warnings.append(f"NCCL command state {state} exit_code {exit_code}")
+    alg=[row["algorithm_bandwidth"] for row in rows]
+    bus=[row["bus_bandwidth"] for row in rows]
+    errors=sum((row.get("validation_errors") or 0) for row in rows)
+    out_of_bounds_match=re.search(r"out of bounds values\s*:?\s*(\d+)", text, re.I)
+    version_match=re.search(r"NCCL(?:\s+version)?\s*[:=]?\s*([0-9][\w.+\-]*)", text, re.I)
+    return {
+        "command_type": "nccl_all_reduce_smoke",
+        "nccl_version": version_match.group(1) if version_match else None,
+        "rows": rows,
+        "message_size": rows[-1]["message_size"] if rows else None,
+        "count": rows[-1]["count"] if rows else None,
+        "datatype": rows[-1]["datatype"] if rows else None,
+        "operation": rows[-1]["operation"] if rows else None,
+        "time": rows[-1]["time"] if rows else None,
+        "algorithm_bandwidth": max(alg) if alg else None,
+        "bus_bandwidth": max(bus) if bus else None,
+        "validation_errors": errors,
+        "out_of_bounds_values": int(out_of_bounds_match.group(1)) if out_of_bounds_match else None,
+        "exit_code": exit_code,
+        "warnings": warnings,
+        "raw_output": text.strip(),
+    }
+
 def parse_result(command_type: str, stdout: str, stderr: str, state: str) -> tuple[dict[str, Any], list[str]]:
+    if command_type == "nccl_all_reduce_smoke":
+        parsed = parse_nccl_all_reduce_smoke(stdout, stderr, state, 0 if state == "completed" else None)
+        warnings=list(parsed.pop("warnings", []))
+        return parsed, warnings
     if state != "completed":
         return ({"error": stderr.strip()} if stderr.strip() else {}, [])
     try:

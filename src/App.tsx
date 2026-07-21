@@ -69,6 +69,7 @@ import {
 } from "./portal/engagements";
 import {
   createHardwareValidation,
+  createNcclSmokeValidation,
   deriveHardwareDiscoveryValidationView,
   deriveLiveGpuInventory,
   fetchAgents,
@@ -1027,6 +1028,7 @@ function CommandEvidenceCard({ command }: { command: HardwareDiscoveryCommandVie
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"><div><h3 className="font-display text-lg font-semibold text-slate-50">{command.label}</h3><p className="mt-1 text-sm text-slate-400">{command.parsedSummary}</p></div><div className="flex flex-wrap gap-2"><InventoryStatusBadge value={command.status} label={command.status.replace(/_/g, " ")} />{command.truncated && <span className="gv-badge border-amber-500/25 bg-amber-500/10 text-amber-300">truncated</span>}<button type="button" onClick={copy} className="gv-button-secondary text-xs">Copy evidence</button></div></div>
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-4"><div><dt className="gv-eyebrow">Exit code</dt><dd>{command.exitCode ?? "Not collected"}</dd></div><div><dt className="gv-eyebrow">Duration</dt><dd>{command.durationMs === null ? "Not collected" : `${command.durationMs} ms`}</dd></div><div><dt className="gv-eyebrow">Evidence timestamp</dt><dd>{formatDate(command.evidenceTimestamp)}</dd></div><div><dt className="gv-eyebrow">Command</dt><dd className="break-all">{command.argv.join(" ") || "Not collected"}</dd></div></dl>
       {command.parserWarnings.length > 0 && <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-amber-100">{command.parserWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}
+      {command.bandwidthRows && command.bandwidthRows.length > 0 && <div className="mt-4 overflow-x-auto rounded-xl border border-slate-800"><table className="min-w-full text-left text-xs"><thead className="bg-slate-950 text-slate-400"><tr><th className="px-3 py-2">Message size</th><th className="px-3 py-2">Count</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Op</th><th className="px-3 py-2">Time</th><th className="px-3 py-2">Alg BW</th><th className="px-3 py-2">Bus BW</th><th className="px-3 py-2">Errors</th></tr></thead><tbody>{command.bandwidthRows.map((row, index) => <tr key={`${row.messageSize}-${index}`} className="border-t border-slate-800"><td className="px-3 py-2 font-mono">{row.messageSize ?? "—"}</td><td className="px-3 py-2 font-mono">{row.count ?? "—"}</td><td className="px-3 py-2">{row.datatype ?? "—"}</td><td className="px-3 py-2">{row.operation ?? "—"}</td><td className="px-3 py-2 font-mono">{row.time ?? "—"}</td><td className="px-3 py-2 font-mono">{row.algorithmBandwidth ?? "—"} GB/s</td><td className="px-3 py-2 font-mono">{row.busBandwidth ?? "—"} GB/s</td><td className="px-3 py-2 font-mono">{row.validationErrors ?? "—"}</td></tr>)}</tbody></table><div className="grid h-20 grid-cols-6 items-end gap-1 border-t border-slate-800 p-3" role="img" aria-label="Compact NCCL bus bandwidth chart">{command.bandwidthRows.slice(-6).map((row, index) => { const max = Math.max(...command.bandwidthRows!.map((item) => item.busBandwidth ?? 0), 1); return <div key={index} className="rounded-t bg-emerald-400/70" style={{ height: `${Math.max(8, ((row.busBandwidth ?? 0) / max) * 100)}%` }} title={`${row.busBandwidth ?? 0} GB/s`} />; })}</div></div>}
       <details className="mt-4 rounded-xl border border-slate-800 bg-black/30 p-3"><summary className="cursor-pointer text-sm font-semibold text-slate-200">Expandable evidence: stdout / stderr</summary><div className="mt-3 grid gap-3 lg:grid-cols-2"><pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-slate-950 p-3 text-xs text-slate-300">{command.stdout || "stdout empty"}</pre><pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-slate-950 p-3 text-xs text-slate-300">{command.stderr || "stderr empty"}</pre></div></details>
     </article>
   );
@@ -1200,7 +1202,7 @@ function DashboardKpiCard({ label, value, description, tone = "neutral", icon: I
   );
 }
 
-function LiveAgentPanel({ summary, agents, selectedAgentId, onSelectAgent, onRunValidation, creatingValidation, error }: { summary: LiveDashboardSummary; agents: AgentRecord[]; selectedAgentId: string; onSelectAgent: (id: string) => void; onRunValidation: () => void; creatingValidation: boolean; error: string | null }) {
+function LiveAgentPanel({ summary, agents, selectedAgentId, onSelectAgent, onRunValidation, onRunNcclSmoke, creatingValidation, error }: { summary: LiveDashboardSummary; agents: AgentRecord[]; selectedAgentId: string; onSelectAgent: (id: string) => void; onRunValidation: () => void; onRunNcclSmoke: () => void; creatingValidation: boolean; error: string | null }) {
   const latest = summary.latestValidation;
   const selected = agents.find((agent) => agent.id === selectedAgentId) ?? agents.find((agent) => agent.status === "online") ?? null;
   const canRun = Boolean(selected?.id && selected.status === "online" && !creatingValidation);
@@ -1230,7 +1232,7 @@ function LiveAgentPanel({ summary, agents, selectedAgentId, onSelectAgent, onRun
             {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name} / {agent.hostname} / {agent.status} / {agent.gpu_count ?? "unknown"} GPUs</option>)}
           </select>
         </label>
-        <button type="button" onClick={onRunValidation} disabled={!canRun} className="gv-button-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${creatingValidation ? "animate-spin" : ""}`} />{creatingValidation ? "Queueing validation..." : "Run hardware validation"}</button>
+        <div className="flex flex-wrap gap-2"><button type="button" onClick={onRunValidation} disabled={!canRun} className="gv-button-primary min-h-11 disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${creatingValidation ? "animate-spin" : ""}`} />{creatingValidation ? "Queueing validation..." : "Run hardware validation"}</button><button type="button" onClick={onRunNcclSmoke} disabled={!canRun} className="gv-button-secondary min-h-11 disabled:cursor-not-allowed disabled:opacity-50"><ArrowUpDown className="h-4 w-4" />NCCL smoke test</button></div>
       </div>
       <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--gv-text-muted)]">
         <span>Selected agent: {selected ? `${selected.name} / ${selected.hostname}` : "none"}</span>
@@ -1401,6 +1403,25 @@ function PortalApp() {
     }
   };
 
+  const runNcclSmokeValidation = async () => {
+    if (!selectedAgentId || creatingValidationRef.current) return;
+    creatingValidationRef.current = true;
+    setCreatingValidation(true);
+    setLiveError(null);
+    const optimistic: ValidationRecord = { id: "pending-nccl-smoke-validation", schema_version: "1.0.0", profile: "nccl-smoke", agent_id: selectedAgentId, state: "queued", created_at: new Date().toISOString(), completed_at: null, error: null, job_ids: [] };
+    setValidations((current) => [{ validation: optimistic, jobs: [], results: [] }, ...current]);
+    try {
+      await createNcclSmokeValidation(selectedAgentId);
+      await loadLiveAgentState();
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "Failed to create NCCL smoke validation.");
+      setValidations((current) => current.filter((detail) => detail.validation.id !== optimistic.id));
+    } finally {
+      creatingValidationRef.current = false;
+      setCreatingValidation(false);
+    }
+  };
+
   const selectSimulatedScenario = (scenario: "healthy" | "degraded") => {
     setSelectedScenario(scenario);
     setSelectedSourceId(`simulated-${scenario}`);
@@ -1538,7 +1559,7 @@ function PortalApp() {
 
       {cluster && (
         <div className="space-y-5">
-          <LiveAgentPanel summary={liveSummary} agents={agents} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} onRunValidation={runHardwareValidation} creatingValidation={creatingValidation} error={liveError} />
+          <LiveAgentPanel summary={liveSummary} agents={agents} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} onRunValidation={runHardwareValidation} onRunNcclSmoke={runNcclSmokeValidation} creatingValidation={creatingValidation} error={liveError} />
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5" aria-label="Dashboard KPI summary">
             <DashboardKpiCard label="Validation score" value={`${dashboardOverview.readinessScore.toFixed(2)}%`} description={`${dashboardOverview.passedChecks}/${dashboardOverview.totalChecks} checks passing`} tone={dashboardOverview.acceptanceApproved ? "healthy" : "warning"} icon={Gauge} />

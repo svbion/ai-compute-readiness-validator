@@ -62,6 +62,7 @@ async function registerAgent(baseUrl: string, patch: Record<string, unknown> = {
       { name: "cuda_version", available: true, version: "12.2" },
       { name: "driver_version", available: true, version: "535.104" },
       { name: "pytorch_gpu_count", available: true, version: "2.4" },
+      { name: "nccl_all_reduce_smoke", available: true, version: "2.25.1", details: { executable_path: "/usr/local/nccl-tests/build/all_reduce_perf", visible_gpu_count: 4, at_least_two_gpus: true } },
     ],
     metadata: { runpod_pod_id: "pod-123" },
     ...patch,

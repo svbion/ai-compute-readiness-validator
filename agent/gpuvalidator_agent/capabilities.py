@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from typing import Callable
 
 from . import __version__
-from .commands import COMMANDS
+from .commands import COMMANDS, detect_nccl_all_reduce
 from .models import Capability, CapabilitySnapshot
 from .parsers import parse_cuda_version, parse_driver_version, parse_nvidia_smi_list
 
@@ -54,6 +54,7 @@ def discover_capabilities(runner: Callable | None = None) -> CapabilitySnapshot:
     caps.append(Capability("cuda_version", bool(cuda_version), cuda_version))
     torch=_run(COMMANDS["pytorch_gpu_count"].argv, runner)
     caps.append(Capability("pytorch_gpu_count", torch.returncode == 0, None))
-    nccl=_run(["all_reduce_perf", "--help"], runner)
-    caps.append(Capability("nccl_tests", nccl.returncode == 0, None))
+    nccl=detect_nccl_all_reduce(runner=runner)
+    caps.append(Capability("nccl_tests", bool(nccl.get("available")), nccl.get("nccl_version"), nccl))
+    caps.append(Capability("nccl_all_reduce_smoke", bool(nccl.get("available")) and bool(nccl.get("at_least_two_gpus")), nccl.get("nccl_version"), nccl))
     return CapabilitySnapshot(hostname=socket.gethostname(), operating_system=f"{platform.system()} {platform.release()}", agent_version=__version__, gpu_count=gpu_count, capabilities=caps, gpu_models=gpu_models)

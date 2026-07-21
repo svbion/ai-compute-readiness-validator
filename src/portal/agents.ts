@@ -3,7 +3,8 @@ import type { GpuInventoryItem, GpuInventoryValidationState } from "./inventory"
 export type AgentStatus = "online" | "offline" | "degraded";
 export type ValidationState = "queued" | "running" | "completed" | "failed" | "timed_out" | "cancelled";
 export type ValidationResultState = "completed" | "failed" | "unavailable" | "timed_out";
-export type ValidationCommandType = "nvidia_smi_list" | "nvidia_smi_inventory" | "nvidia_smi_topology" | "cuda_version" | "driver_version" | "pytorch_gpu_count";
+export type ValidationCommandType = "nvidia_smi_list" | "nvidia_smi_inventory" | "nvidia_smi_topology" | "cuda_version" | "driver_version" | "pytorch_gpu_count" | "nccl_all_reduce_smoke";
+export type ValidationProfile = "hardware-discovery" | "nccl-smoke";
 
 export interface AgentCapability { name: string; available: boolean; version: string | null; details?: Record<string, unknown> }
 export interface AgentRecord {
@@ -20,7 +21,7 @@ export interface AgentRecord {
   last_error: string | null;
   metadata: Record<string, unknown>;
 }
-export interface ValidationRecord { id: string; schema_version: string; profile: "hardware-discovery"; agent_id: string; state: ValidationState; created_at: string; completed_at: string | null; error: string | null; job_ids: string[] }
+export interface ValidationRecord { id: string; schema_version: string; profile: ValidationProfile; agent_id: string; state: ValidationState; created_at: string; completed_at: string | null; error: string | null; job_ids: string[] }
 export interface ValidationJobRecord { id: string; validation_id: string; agent_id: string; state: string; command_type: ValidationCommandType; command?: { argv?: string[] } }
 export interface ValidationResultRecord {
   id: string;
@@ -57,6 +58,7 @@ export interface HardwareDiscoveryCommandView {
   truncated: boolean;
   evidenceTimestamp: string | null;
   argv: string[];
+  bandwidthRows?: Array<{ messageSize: number | null; count: number | null; datatype: string | null; operation: string | null; time: number | null; algorithmBandwidth: number | null; busBandwidth: number | null; validationErrors: number | null }>;
 }
 export interface HardwareDiscoveryRuleView { id: string; label: string; status: "passed" | "warning" | "failed" | "unavailable"; detail: string }
 export interface HardwareDiscoveryValidationView {
@@ -147,8 +149,10 @@ const commandLabels: Record<ValidationCommandType, string> = {
   driver_version: "Driver version",
   cuda_version: "CUDA version",
   pytorch_gpu_count: "PyTorch GPU count",
+  nccl_all_reduce_smoke: "NCCL all-reduce smoke",
 };
 const hardwareCommandOrder: ValidationCommandType[] = ["nvidia_smi_list", "nvidia_smi_inventory", "nvidia_smi_topology", "driver_version", "cuda_version", "pytorch_gpu_count"];
+const ncclCommandOrder: ValidationCommandType[] = ["nccl_all_reduce_smoke"];
 
 function commandSummary(commandType: ValidationCommandType, result: ValidationResultRecord | undefined): string {
   if (!result) return "No result uploaded.";
@@ -165,6 +169,12 @@ function commandSummary(commandType: ValidationCommandType, result: ValidationRe
   if (commandType === "driver_version") return (str(result.structured_result?.driver_version) ?? result.stdout.trim() ?? "Driver version not parsed.") || "Driver version not parsed.";
   if (commandType === "cuda_version") return (str(result.structured_result?.cuda_version) ?? str(result.structured_result?.version) ?? result.stdout.trim() ?? "CUDA toolkit state collected.") || "CUDA toolkit state collected.";
   if (commandType === "pytorch_gpu_count") return (str(result.structured_result?.gpu_count) ?? result.stdout.trim() ?? "PyTorch GPU count collected.") || "PyTorch GPU count collected.";
+  if (commandType === "nccl_all_reduce_smoke") {
+    const alg = num(result.structured_result?.algorithm_bandwidth);
+    const bus = num(result.structured_result?.bus_bandwidth);
+    const errors = num(result.structured_result?.validation_errors ?? result.structured_result?.errors);
+    return `AllReduce smoke ${result.state}; AlgBW ${alg ?? "not parsed"} GB/s, BusBW ${bus ?? "not parsed"} GB/s, errors ${errors ?? "not parsed"}.`;
+  }
   return "Command evidence collected.";
 }
 
@@ -174,6 +184,7 @@ function parserWarnings(commandType: ValidationCommandType, result: ValidationRe
   if (result.output_truncated || result.command_evidence.output_truncated) warnings.push("Output was truncated before storage.");
   if (result.state === "unavailable") warnings.push(`${commandLabels[commandType]} unavailable on the selected agent.`);
   if (result.state === "failed" || result.state === "timed_out") warnings.push(`${commandLabels[commandType]} reported ${result.state}.`);
+  if (commandType === "nccl_all_reduce_smoke" && num(result.structured_result?.validation_errors ?? result.structured_result?.errors) && num(result.structured_result?.validation_errors ?? result.structured_result?.errors)! > 0) warnings.push("NCCL validation errors were reported.");
   const rows = asArray(result.structured_result?.gpus);
   if ((commandType === "nvidia_smi_list" || commandType === "nvidia_smi_inventory") && result.state === "completed" && rows.length === 0) warnings.push("Parser did not find GPU rows in command output.");
   if (commandType === "nvidia_smi_inventory" && rows.some((row) => !str(row.uuid) || !(str(row.pci_bus_id) ?? str(row["pci.bus_id"])))) warnings.push("One or more inventory rows are missing UUID or PCI bus ID.");
@@ -185,10 +196,18 @@ function rule(id: string, label: string, status: HardwareDiscoveryRuleView["stat
 export function deriveHardwareDiscoveryValidationView(detail: ValidationDetail, agents: AgentRecord[]): HardwareDiscoveryValidationView {
   const agent = agents.find((candidate) => candidate.id === detail.validation.agent_id) ?? null;
   const byType = new Map(detail.results.map((result) => [result.command_evidence.command_type, result]));
-  const commands = hardwareCommandOrder.map((commandType): HardwareDiscoveryCommandView => {
+  const order = detail.validation.profile === "nccl-smoke" ? ncclCommandOrder : hardwareCommandOrder;
+  const commands = order.map((commandType): HardwareDiscoveryCommandView => {
     const result = byType.get(commandType);
-    return { commandType, label: commandLabels[commandType], status: result?.state ?? "missing", exitCode: result?.exit_code ?? null, durationMs: result?.duration_ms ?? null, parsedSummary: commandSummary(commandType, result), parserWarnings: parserWarnings(commandType, result), stdout: result?.stdout ?? "", stderr: result?.stderr ?? "", truncated: Boolean(result?.output_truncated || result?.command_evidence.output_truncated), evidenceTimestamp: result?.command_evidence.completed_at ?? result?.completed_at ?? null, argv: result?.command_evidence.argv ?? [] };
+    const rows = asArray(result?.structured_result?.rows).map((row) => ({ messageSize: num(row.message_size), count: num(row.count), datatype: str(row.datatype), operation: str(row.operation), time: num(row.time), algorithmBandwidth: num(row.algorithm_bandwidth), busBandwidth: num(row.bus_bandwidth), validationErrors: num(row.validation_errors) }));
+    return { commandType, label: commandLabels[commandType], status: result?.state ?? "missing", exitCode: result?.exit_code ?? null, durationMs: result?.duration_ms ?? null, parsedSummary: commandSummary(commandType, result), parserWarnings: parserWarnings(commandType, result), stdout: result?.stdout ?? "", stderr: result?.stderr ?? "", truncated: Boolean(result?.output_truncated || result?.command_evidence.output_truncated), evidenceTimestamp: result?.command_evidence.completed_at ?? result?.completed_at ?? null, argv: result?.command_evidence.argv ?? [], bandwidthRows: rows.length ? rows : undefined };
   });
+  if (detail.validation.profile === "nccl-smoke") {
+    const nccl = byType.get("nccl_all_reduce_smoke");
+    const failedChecks = nccl?.state === "completed" && !(num(nccl.structured_result?.validation_errors ?? nccl.structured_result?.errors) ?? 0) ? 0 : nccl ? 1 : 0;
+    const unavailableChecks = nccl?.state === "unavailable" ? 1 : 0;
+    return { validationId: detail.validation.id, profile: detail.validation.profile, agentId: detail.validation.agent_id, agentName: agent?.name ?? detail.validation.agent_id, node: agent?.hostname ?? "Not collected", createdAt: detail.validation.created_at, startedAt: nccl?.started_at ?? null, completedAt: detail.validation.completed_at, durationMs: nccl?.duration_ms ?? null, overallState: detail.validation.state, gpuCount: agent?.gpu_count ?? 0, passedChecks: failedChecks === 0 && unavailableChecks === 0 && nccl?.state === "completed" ? 1 : 0, warnings: commands.reduce((sum, command) => sum + command.parserWarnings.length, 0) + unavailableChecks, failedChecks, unavailableChecks, partial: false, commands, rules: [rule("nccl-smoke-result", "NCCL all-reduce smoke result", failedChecks ? "failed" : unavailableChecks ? "unavailable" : "passed", commandSummary("nccl_all_reduce_smoke", nccl))] };
+  }
   const listRows = asArray(byType.get("nvidia_smi_list")?.structured_result?.gpus);
   const inventoryRows = asArray(byType.get("nvidia_smi_inventory")?.structured_result?.gpus);
   const discoveredGpuCount = inventoryRows.length || listRows.length || agent?.gpu_count || 0;
@@ -327,8 +346,12 @@ async function json<T>(url: string, init?: RequestInit, signal?: AbortSignal): P
 }
 
 export function fetchAgents(signal?: AbortSignal) { return json<AgentListPayload>("/api/v1/agents", undefined, signal); }
-export function fetchValidations(signal?: AbortSignal) { return json<ValidationListPayload>("/api/v1/validations?profile=hardware-discovery", undefined, signal); }
+export function fetchValidations(signal?: AbortSignal) { return json<ValidationListPayload>("/api/v1/validations", undefined, signal); }
 export function fetchValidation(validationId: string, signal?: AbortSignal) { return json<ValidationDetail>(`/api/v1/validations/${encodeURIComponent(validationId)}`, undefined, signal); }
 export function createHardwareValidation(agentId: string, signal?: AbortSignal) {
   return json<{ validation: ValidationRecord; jobs: ValidationJobRecord[] }>("/api/v1/validations", { method: "POST", body: JSON.stringify({ profile: "hardware-discovery", agent_id: agentId }) }, signal);
+}
+
+export function createNcclSmokeValidation(agentId: string, signal?: AbortSignal) {
+  return json<{ validation: ValidationRecord; jobs: ValidationJobRecord[] }>("/api/v1/validations", { method: "POST", body: JSON.stringify({ profile: "nccl-smoke", agent_id: agentId }) }, signal);
 }

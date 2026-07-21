@@ -46,6 +46,67 @@ def test_command_lookup_and_unsupported_command():
         command_for("rm_rf")
 
 
+def test_nccl_smoke_executable_unavailable(monkeypatch):
+    from gpuvalidator_agent.commands import command_for
+
+    monkeypatch.delenv("GPUVALIDATOR_NCCL_TESTS_PATH", raising=False)
+    result = command_for("nccl_all_reduce_smoke", detector=lambda: {"available": False, "visible_gpu_count": 4})
+    assert result.argv == ["all_reduce_perf"]
+    assert result.timeout_seconds <= 180
+
+
+def test_nccl_smoke_four_gpu_and_two_gpu_command_construction(monkeypatch, tmp_path):
+    from gpuvalidator_agent.commands import command_for
+
+    exe = tmp_path / "all_reduce_perf"
+    exe.write_text("#!/bin/sh\n", encoding="utf-8")
+    exe.chmod(0o755)
+    monkeypatch.setenv("GPUVALIDATOR_NCCL_TESTS_PATH", str(tmp_path))
+    four = command_for("nccl_all_reduce_smoke", detector=lambda: {"available": True, "executable_path": str(exe), "visible_gpu_count": 4})
+    assert four.argv == [str(exe), "-b", "8M", "-e", "256M", "-f", "2", "-g", "4"]
+    two = command_for("nccl_all_reduce_smoke", detector=lambda: {"available": True, "executable_path": str(exe), "visible_gpu_count": 2})
+    assert two.argv[-2:] == ["-g", "2"]
+
+
+def test_nccl_parser_success_malformed_nonzero_and_raw_evidence():
+    from gpuvalidator_agent.parsers import parse_nccl_all_reduce_smoke
+
+    output = """NCCL version 2.25.1+cuda12.8
+# size count type redop root time algbw busbw #wrong
+8388608 2097152 float sum -1 0.210 39.95 59.12 0
+268435456 67108864 float sum -1 5.111 52.52 78.78 0
+Out of bounds values : 0 OK
+"""
+    parsed = parse_nccl_all_reduce_smoke(output, "", "completed", 0)
+    assert parsed["nccl_version"] == "2.25.1+cuda12.8"
+    assert parsed["rows"][-1]["message_size"] == 268435456
+    assert parsed["rows"][-1]["count"] == 67108864
+    assert parsed["rows"][-1]["datatype"] == "float"
+    assert parsed["rows"][-1]["operation"] == "sum"
+    assert parsed["algorithm_bandwidth"] == 52.52
+    assert parsed["bus_bandwidth"] == 78.78
+    assert parsed["validation_errors"] == 0
+    assert parsed["out_of_bounds_values"] == 0
+    assert parsed["exit_code"] == 0
+    assert "raw_output" in parsed
+    malformed = parse_nccl_all_reduce_smoke("bad row only", "", "completed", 0)
+    assert malformed["warnings"]
+    nonzero = parse_nccl_all_reduce_smoke(output, "boom", "failed", 7)
+    assert nonzero["exit_code"] == 7
+    assert nonzero["warnings"]
+
+
+def test_nccl_executor_timeout_and_unavailable_states():
+    from gpuvalidator_agent.commands import CommandDefinition
+    from gpuvalidator_agent.executor import CommandExecutor
+
+    timed = CommandExecutor(runner=lambda argv, **kwargs: (_ for _ in ()).throw(TimeoutError("timeout"))).execute(CommandDefinition("nccl_all_reduce_smoke", ["all_reduce_perf", "-b", "8M", "-e", "256M", "-f", "2", "-g", "4"], 1, 8192, 8192))
+    assert timed.state == "timed_out"
+    assert timed.structured_result["command_type"] == "nccl_all_reduce_smoke"
+    missing = CommandExecutor().execute(CommandDefinition("nccl_all_reduce_smoke", ["all_reduce_perf"], 1, 8192, 8192))
+    assert missing.state == "unavailable"
+
+
 def test_executor_handles_timeout_unavailable_and_truncation():
     from gpuvalidator_agent.commands import CommandDefinition
     from gpuvalidator_agent.executor import CommandExecutor

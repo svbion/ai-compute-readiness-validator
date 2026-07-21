@@ -4,12 +4,14 @@ import type { EngagementStore } from "./engagements";
 
 export const AGENT_API_SCHEMA_VERSION = "1.0.0";
 export const HARDWARE_DISCOVERY_PROFILE = "hardware-discovery";
+export const NCCL_SMOKE_PROFILE = "nccl-smoke";
 
 export type AgentStatus = "online" | "offline" | "degraded";
 export type ValidationState = "queued" | "running" | "completed" | "failed" | "timed_out" | "cancelled";
 export type ValidationJobState = "queued" | "claimed" | "running" | "completed" | "failed" | "timed_out" | "cancelled";
 export type ValidationResultState = "completed" | "failed" | "unavailable" | "timed_out";
-export type ValidationCommandType = "nvidia_smi_list" | "nvidia_smi_inventory" | "nvidia_smi_topology" | "cuda_version" | "driver_version" | "pytorch_gpu_count";
+export type ValidationProfile = typeof HARDWARE_DISCOVERY_PROFILE | typeof NCCL_SMOKE_PROFILE;
+export type ValidationCommandType = "nvidia_smi_list" | "nvidia_smi_inventory" | "nvidia_smi_topology" | "cuda_version" | "driver_version" | "pytorch_gpu_count" | "nccl_all_reduce_smoke";
 
 export type AgentCapability = { name: string; available: boolean; version: string | null; details?: Record<string, string | number | boolean | null> };
 export type AgentRecord = {
@@ -29,8 +31,8 @@ export type AgentRecord = {
   token_hash: string;
 };
 export type ValidationCommand = { type: ValidationCommandType; argv: string[]; timeout_seconds: number; max_stdout_bytes: number; max_stderr_bytes: number };
-export type ValidationRecord = { id: string; schema_version: string; profile: typeof HARDWARE_DISCOVERY_PROFILE; agent_id: string; state: ValidationState; created_at: string; completed_at: string | null; error: string | null; job_ids: string[] };
-export type ValidationJobRecord = { id: string; schema_version: string; validation_id: string; agent_id: string; profile: typeof HARDWARE_DISCOVERY_PROFILE; state: ValidationJobState; command_type: ValidationCommandType; command: ValidationCommand; timeout_seconds: number; created_at: string; claimed_at: string | null; started_at: string | null; completed_at: string | null; error: string | null };
+export type ValidationRecord = { id: string; schema_version: string; profile: ValidationProfile; agent_id: string; state: ValidationState; created_at: string; completed_at: string | null; error: string | null; job_ids: string[] };
+export type ValidationJobRecord = { id: string; schema_version: string; validation_id: string; agent_id: string; profile: ValidationProfile; state: ValidationJobState; command_type: ValidationCommandType; command: ValidationCommand; timeout_seconds: number; created_at: string; claimed_at: string | null; started_at: string | null; completed_at: string | null; error: string | null };
 export type CommandEvidence = { command_type: ValidationCommandType; argv: string[]; started_at: string | null; completed_at: string | null; exit_code: number | null; stdout_sha256: string | null; stderr_sha256: string | null; output_truncated: boolean };
 export type ValidationResultRecord = { id: string; schema_version: string; job_id: string; validation_id: string; agent_id: string; state: ValidationResultState; exit_code: number | null; started_at: string | null; completed_at: string; duration_ms: number | null; structured_result: Record<string, unknown>; stdout: string; stderr: string; output_truncated: boolean; command_evidence: CommandEvidence; result_hash: string };
 
@@ -48,8 +50,11 @@ const commandDefinitions: Record<ValidationCommandType, ValidationCommand> = {
   cuda_version: { type: "cuda_version", argv: ["nvcc", "--version"], timeout_seconds: 10, max_stdout_bytes: 8_192, max_stderr_bytes: 8_192 },
   driver_version: { type: "driver_version", argv: ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"], timeout_seconds: 10, max_stdout_bytes: 8_192, max_stderr_bytes: 8_192 },
   pytorch_gpu_count: { type: "pytorch_gpu_count", argv: ["python3", "-c", "import torch; print(torch.cuda.device_count())"], timeout_seconds: 20, max_stdout_bytes: 8_192, max_stderr_bytes: 8_192 },
+  nccl_all_reduce_smoke: { type: "nccl_all_reduce_smoke", argv: ["all_reduce_perf", "-b", "8M", "-e", "256M", "-f", "2", "-g", "auto"], timeout_seconds: 120, max_stdout_bytes: maxStdoutBytes, max_stderr_bytes: maxStderrBytes },
 };
 const hardwareDiscoveryCommands = Object.keys(commandDefinitions) as ValidationCommandType[];
+const hardwareDiscoveryCommandTypes: ValidationCommandType[] = ["nvidia_smi_list", "nvidia_smi_inventory", "nvidia_smi_topology", "cuda_version", "driver_version", "pytorch_gpu_count"];
+const ncclSmokeCommandTypes: ValidationCommandType[] = ["nccl_all_reduce_smoke"];
 
 function nowIso() { return new Date().toISOString(); }
 function id(prefix: string) { return `${prefix}_${crypto.randomUUID()}`; }
@@ -60,6 +65,12 @@ function offlineThresholdSeconds() { return Number(process.env.GPUVALIDATOR_AGEN
 function tokenDigest() { const token = process.env.GPUVALIDATOR_AGENT_TOKEN?.trim(); return token ? hash(token, "agent-token") : null; }
 function normalizeCapabilities(value: unknown): AgentCapability[] { return Array.isArray(value) ? value.map((cap) => ({ name: String((cap as any)?.name ?? "").trim(), available: (cap as any)?.available === true, version: (cap as any)?.version === undefined || (cap as any)?.version === null ? null : String((cap as any).version), details: typeof (cap as any)?.details === "object" && (cap as any)?.details ? (cap as any).details : undefined })).filter((cap) => cap.name) : []; }
 function hasCapability(agent: AgentRecord, command: ValidationCommandType) { return agent.capabilities.some((cap) => cap.name === command && cap.available === true); }
+function capability(agent: AgentRecord, name: string) { return agent.capabilities.find((cap) => cap.name === name); }
+function ncclCommandForAgent(agent: AgentRecord): ValidationCommand {
+  const details = capability(agent, "nccl_all_reduce_smoke")?.details ?? {};
+  const gpuCount = Number(details.visible_gpu_count ?? agent.gpu_count ?? 0);
+  return { ...commandDefinitions.nccl_all_reduce_smoke, argv: ["all_reduce_perf", "-b", "8M", "-e", "256M", "-f", "2", "-g", String(Math.max(0, gpuCount))] };
+}
 function publicAgent(agent: AgentRecord): Omit<AgentRecord, "token_hash" | "stable_key"> { const { token_hash: _tokenHash, stable_key: _stableKey, ...safe } = { ...agent, status: deriveStatus(agent) }; return safe; }
 function deriveStatus(agent: AgentRecord): AgentStatus { const age = Date.now() - new Date(agent.last_heartbeat_at).getTime(); if (!Number.isFinite(age) || age > offlineThresholdSeconds() * 1000) return "offline"; return agent.last_error ? "degraded" : agent.status === "degraded" ? "degraded" : "online"; }
 function truncate(text: unknown, limit: number) { const value = String(text ?? "").replace(/Authorization:\s*Bearer\s+[^\s]+/gi, "Authorization: Bearer ***").replace(/GPUVALIDATOR_AGENT_TOKEN=([^\s]+)/g, "GPUVALIDATOR_AGENT_TOKEN=[redacted]"); return { value: value.slice(0, limit), truncated: value.length > limit }; }
@@ -165,18 +176,25 @@ export function registerAgentRoutes(app: express.Express, store: EngagementStore
   });
 
   app.post("/api/v1/validations", (req, res) => {
-    if (String(req.body?.profile ?? "") !== HARDWARE_DISCOVERY_PROFILE) return err(res, 400, "Unsupported validation profile.");
+    const profile = String(req.body?.profile ?? "") as ValidationProfile;
+    if (![HARDWARE_DISCOVERY_PROFILE, NCCL_SMOKE_PROFILE].includes(profile)) return err(res, 400, "Unsupported validation profile.");
     const document = ensureDoc(store);
     maintainJobs(document);
     const agent = (document.validation_agents as AgentRecord[]).find((item) => item.id === String(req.body?.agent_id ?? ""));
     if (!agent) return err(res, 404, "Agent not found.");
     if (deriveStatus(agent) !== "online") return err(res, 400, "Agent must be online to create validation.");
-    const missing = hardwareDiscoveryCommands.find((command) => !hasCapability(agent, command));
-    if (missing) return err(res, 400, `Unsupported command for agent capability: ${missing}.`);
-    const validation: ValidationRecord = { id: id("val"), schema_version: AGENT_API_SCHEMA_VERSION, profile: HARDWARE_DISCOVERY_PROFILE, agent_id: agent.id, state: "queued", created_at: nowIso(), completed_at: null, error: null, job_ids: [] };
-    const jobs = hardwareDiscoveryCommands.map((commandType): ValidationJobRecord => {
-      const command = commandDefinitions[commandType];
-      const job: ValidationJobRecord = { id: id("vjob"), schema_version: AGENT_API_SCHEMA_VERSION, validation_id: validation.id, agent_id: agent.id, profile: HARDWARE_DISCOVERY_PROFILE, state: "queued", command_type: commandType, command, timeout_seconds: command.timeout_seconds, created_at: validation.created_at, claimed_at: null, started_at: null, completed_at: null, error: null };
+    const commands = profile === NCCL_SMOKE_PROFILE ? ncclSmokeCommandTypes : hardwareDiscoveryCommandTypes;
+    if (profile === HARDWARE_DISCOVERY_PROFILE) {
+      const missing = commands.find((command) => !hasCapability(agent, command));
+      if (missing) return err(res, 400, `Unsupported command for agent capability: ${missing}.`);
+    } else {
+      const cap = capability(agent, "nccl_all_reduce_smoke");
+      if (!cap?.available || Number(cap.details?.visible_gpu_count ?? agent.gpu_count ?? 0) < 2) return err(res, 400, "NCCL smoke test unavailable: all_reduce_perf and at least two visible GPUs are required.");
+    }
+    const validation: ValidationRecord = { id: id("val"), schema_version: AGENT_API_SCHEMA_VERSION, profile, agent_id: agent.id, state: "queued", created_at: nowIso(), completed_at: null, error: null, job_ids: [] };
+    const jobs = commands.map((commandType): ValidationJobRecord => {
+      const command = commandType === "nccl_all_reduce_smoke" ? ncclCommandForAgent(agent) : commandDefinitions[commandType];
+      const job: ValidationJobRecord = { id: id("vjob"), schema_version: AGENT_API_SCHEMA_VERSION, validation_id: validation.id, agent_id: agent.id, profile, state: "queued", command_type: commandType, command, timeout_seconds: command.timeout_seconds, created_at: validation.created_at, claimed_at: null, started_at: null, completed_at: null, error: null };
       validation.job_ids.push(job.id);
       return job;
     });
