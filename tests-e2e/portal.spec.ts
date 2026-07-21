@@ -150,7 +150,7 @@ test("live RunPod agent dashboard and GPU inventory use fixture API responses", 
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ validation: { ...validation, id: "val_queued", state: "queued" }, jobs: [] }) });
       return;
     }
-    await route.continue();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(validationsPayload) });
   });
   await login(page);
   await expect(page.getByText("RunPod hardware discovery")).toBeVisible();

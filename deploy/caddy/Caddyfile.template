@@ -20,5 +20,8 @@
 		-Server
 	}
 
+	@root path /
+	redir @root /login 302
+
 	reverse_proxy 127.0.0.1:{{PORT}}
 }

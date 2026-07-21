@@ -60,15 +60,16 @@ assert_contains "${TMP_DIR}/login.html" '<div id="root"|GPU Validator|script'
 
 if is_auth_required; then
   log "Checking unauthenticated protection"
+  request_without_auth GET / 302 "${TMP_DIR}/unauth-root.html"
   request_without_auth GET /api/results?scenario=healthy 401 "${TMP_DIR}/unauth-api.json"
   request_without_auth GET /reports/degraded/json 401 "${TMP_DIR}/unauth-report.json"
   request_without_auth GET /portal 302 "${TMP_DIR}/unauth-portal.html"
   [[ -n "${AUTH_TEST_TOKEN}" ]] || fail "AI_FACTORY_AUTH_TEST_BYPASS_TOKEN is required for authenticated deployment verification when auth is required."
 fi
 
-log "Checking authenticated portal root"
-request GET / 200 "${TMP_DIR}/root.html"
-assert_contains "${TMP_DIR}/root.html" '<div id="root"|GPU Validator|script'
+log "Checking authenticated portal direct load"
+request GET /portal 200 "${TMP_DIR}/portal.html"
+assert_contains "${TMP_DIR}/portal.html" '<div id="root"|GPU Validator|script'
 
 for scenario in healthy degraded; do
   log "Checking API results for ${scenario}"

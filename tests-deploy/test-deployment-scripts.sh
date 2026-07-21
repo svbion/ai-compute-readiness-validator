@@ -144,7 +144,7 @@ class H(http.server.BaseHTTPRequestHandler):
         elif self.path == '/login':
             self.send_response(200); self.end_headers(); self.wfile.write(b'<div id="root">GPU Validator</div>')
         elif self.path == '/':
-            self.send_response(200); self.end_headers(); self.wfile.write(b'<div id="root">GPU Validator</div>')
+            self.send_response(302); self.send_header('Location', '/login'); self.end_headers()
         elif self.path == '/portal':
             if self.authed(): self.send_response(200); self.end_headers(); self.wfile.write(b'<div id="root">GPU Validator</div>')
             else: self.send_response(302); self.send_header('Location', '/login'); self.end_headers()
