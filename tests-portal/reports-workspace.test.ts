@@ -117,3 +117,21 @@ test("report builder validates required fields and saves drafts through the repo
     assert.match(reportsSource, new RegExp(action), `${action} action should be rendered`);
   }
 });
+
+test("executive summary actions are available from dashboard, reports, and validation detail using live source selection", () => {
+  assert.match(appSource, /function generateExecutiveSummaryReport/);
+  assert.match(appSource, /report_type: "executive-summary"/);
+  assert.match(appSource, /purpose: "GPUValidator interview demonstration"/);
+  assert.match(appSource, /author_name: "Sabion P Frazier"/);
+  assert.match(appSource, /scope_type: "validation_run"/);
+  assert.match(appSource, /scope_type: "cluster"/);
+  assert.match(appSource, /validation_ids: .*latest.*id/s);
+  assert.match(appSource, /agent_ids: .*selectedAgentId/s);
+  assert.match(appSource, /node_ids: .*agents\.map/s);
+  assert.match(appSource, /gpu_ids: .*liveGpus\.map/s);
+  assert.match(appSource, /Generate Executive Summary/);
+  assert.match(reportsSource, /Generate Executive Summary/);
+  assert.match(appSource.slice(appSource.indexOf("function ValidationResultsPage"), appSource.indexOf("function OperationsLibraryPage")), /Generate Executive Summary/);
+  assert.match(appSource, /\/portal\/reports\/\$\{encodeURIComponent\(payload\.report\.report_id\)\}\/preview/);
+  assert.match(appSource, /Reports history/);
+});

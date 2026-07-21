@@ -161,6 +161,76 @@ export function renderHtmlReport(report: ReportRecord, document: StoreDoc, gener
     footer { margin-top: 24px; color: #6b7280; font-size: 11px; display: flex; justify-content: space-between; }
     @media print { body { background: white; } .report-page { box-shadow: none; margin: 0; width: 100%; min-height: 100vh; } a { color: inherit; text-decoration: none; } }
     /* page counter */`;
+  if (report.report_type === "executive-summary") {
+    const completedValidations = validations.filter((detail) => detail.validation.state === "completed").length;
+    const failedValidations = validations.filter((detail) => ["failed", "timed_out", "cancelled"].includes(detail.validation.state)).length;
+    const warningResults = validations.flatMap((detail) => detail.results).filter((result) => result.state === "unavailable" || result.state === "timed_out");
+    const latestValidation = validations.slice().sort((left, right) => String(right.validation.completed_at ?? right.validation.created_at).localeCompare(String(left.validation.completed_at ?? left.validation.created_at)))[0] ?? null;
+    const validationCoverage = validations.length ? `${completedValidations}/${validations.length} completed` : missing.validationNotRun;
+    const readinessScore = validations.length ? `${Math.round((completedValidations / validations.length) * 100)}%` : missing.notAvailable;
+    const benchmarkStatus = benchmarks.length ? unique(benchmarks.map((run) => run.status ?? missing.notAvailable)).join(", ") : missing.notAvailable;
+    const trendDirection = validations.length < 2 ? missing.notAvailable : failedValidations ? "Needs attention" : "Stable";
+    const criticalFindings = failedValidations + validations.flatMap((detail) => detail.results).filter((result) => result.state === "failed" || result.state === "timed_out").length;
+    const warnings = warningResults.length + validations.filter((detail) => detail.validation.state === "queued" || detail.validation.state === "running").length;
+    const topRisks = [
+      ...(criticalFindings ? [`${criticalFindings} validation failure or timeout finding(s) require management attention.`] : []),
+      ...(benchmarks.length ? [] : ["Benchmark status is not available for the selected live scope."]),
+      ...(gpuIds.length ? [] : ["GPU inventory count is not available from selected live records."]),
+      ...(warnings ? [`${warnings} warning or unavailable result(s) need follow-up evidence review.`] : []),
+    ];
+    const remediation = [
+      ...(criticalFindings ? ["Resolve failed or timed-out validation evidence before acceptance." ] : []),
+      ...(benchmarks.length ? [] : ["Collect benchmark evidence before making performance claims."]),
+      ...(warningResults.length ? ["Re-run unavailable commands or document unsupported tools." ] : []),
+    ];
+    const finalRecommendation = criticalFindings ? "Do not approve final readiness until critical validation findings are remediated." : validations.length ? "Proceed with management review; preserve limitations for unavailable benchmark or telemetry fields." : "Collect live validation evidence before making a readiness recommendation.";
+    const dataLimitations = [
+      "Unavailable metrics are explicitly labeled; no simulated or fabricated measurements are used.",
+      ...(benchmarks.length ? [] : ["Benchmark status is Not available." ]),
+      ...(gpuIds.length ? [] : ["GPU count is Not collected from selected live evidence." ]),
+      ...(validations.length ? [] : ["Validation status is Validation not run." ]),
+    ];
+    const itemList = (items: string[], emptyText: string) => `<ul>${(items.length ? items : [emptyText]).slice(0, 3).map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`;
+    const metric = (label: string, value: string | number) => `<div class="metric"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
+    const executiveCss = `${css}
+      .one-page-executive-summary { page-break-after: auto; padding: 34px; min-height: auto; }
+      .exec-header { display: flex; justify-content: space-between; gap: 18px; border-bottom: 3px solid #76b900; padding-bottom: 12px; }
+      .exec-title { margin: 6px 0 0; font-size: 34px; }
+      .exec-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+      .metric { border: 1px solid #d1d5db; border-radius: 10px; padding: 8px; background: #f9fafb; min-height: 60px; }
+      .metric span { display: block; color: #475569; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; }
+      .metric strong { display: block; margin-top: 4px; color: #0f172a; font-size: 14px; }
+      .exec-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+      .exec-panel { border: 1px solid #d1d5db; border-radius: 12px; padding: 10px; background: white; }
+      .exec-panel h3 { margin: 0 0 6px; font-size: 13px; color: #14532d; }
+      .exec-panel ul { margin: 0; padding-left: 18px; font-size: 11px; line-height: 1.45; }
+      .exec-footer { margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 8px; font-size: 10px; color: #64748b; }
+      @media print { .one-page-executive-summary { padding: 0; } .exec-title { font-size: 30px; } .exec-grid { gap: 6px; } .metric { min-height: 52px; } }`;
+    const executivePage = `<section class="report-page one-page-executive-summary"><div class="exec-header"><div><div class="brand">GPUValidator</div><h1 class="exec-title">GPUValidator Executive Summary</h1><p><strong>Generated by Sabion P Frazier</strong><br><strong>Purpose: GPUValidator interview demonstration</strong></p></div><div><p><strong>Customer or engagement</strong><br>${present(report.customer ?? report.engagement_id, missing.notAvailable)}</p><p><strong>Selected cluster</strong><br>${present(report.cluster_id ?? report.scope_id, missing.notAvailable)}</p><p><strong>Generated date</strong><br>${esc(iso(generatedAt))}</p></div></div><div class="exec-grid">${[
+      metric("Overall readiness score", readinessScore),
+      metric("Connected agents", agents.length || missing.notAvailable),
+      metric("Online agents", agents.filter((agent) => agent.status === "online").length || missing.notAvailable),
+      metric("Node count", nodeIds.length || missing.notCollected),
+      metric("GPU count", gpuIds.length || missing.notCollected),
+      metric("Validation coverage", validationCoverage),
+      metric("Latest validation status", latestValidation ? latestValidation.validation.state : missing.validationNotRun),
+      metric("Benchmark status", benchmarkStatus),
+      metric("Critical findings", criticalFindings),
+      metric("Warnings", warnings),
+      metric("Trend direction", trendDirection),
+      metric("Report status", report.status),
+    ].join("")}</div><div class="exec-columns"><div class="exec-panel"><h3>Top risks</h3>${itemList(topRisks, "No critical risks identified in selected live records.")}</div><div class="exec-panel"><h3>Outstanding remediation</h3>${itemList(remediation, "No outstanding remediation recorded in selected live records.")}</div><div class="exec-panel"><h3>Final recommendation</h3><ul><li>${esc(finalRecommendation)}</li></ul></div><div class="exec-panel"><h3>Data limitations</h3>${itemList(dataLimitations, "No data limitations recorded.")}</div></div><div class="exec-footer">Live source lineage: agents ${agentIds.map(esc).join(", ") || missing.notAvailable}; validations ${validationIds.map(esc).join(", ") || missing.validationNotRun}; benchmarks ${benchmarkIds.map(esc).join(", ") || missing.notAvailable}; GPUs ${gpuIds.map(esc).join(", ") || missing.notCollected}.</div></section>`;
+    const executiveHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${present(report.name)} | GPUValidator</title><style>${executiveCss}</style></head><body>${executivePage}</body></html>`;
+    return {
+      html: executiveHtml,
+      metadata: {
+        report_id: report.report_id,
+        generated_at: generatedAt,
+        html_sha256: crypto.createHash("sha256").update(executiveHtml).digest("hex"),
+        source_lineage: { agent_ids: agentIds, node_ids: nodeIds, gpu_ids: gpuIds, validation_ids: validationIds, benchmark_ids: benchmarkIds, evidence_ids: evidenceIds },
+      },
+    };
+  }
   const pages = [
     section("Cover Page", `<div class="brand">GPUValidator</div><h1>${present(report.name)}</h1><p><strong>Generated by Sabion P Frazier</strong></p><p><strong>Purpose: GPUValidator interview demonstration</strong></p><p>Customer: ${present(report.customer, missing.notAvailable)}</p><p>Confidentiality: ${present(report.confidentiality)}</p><footer><span>${present(report.report_id)}</span><span>Generated ${esc(iso(generatedAt))}</span></footer>`),
     section("Document Control", `<div class="meta-grid"><div class="meta-card"><strong>Version</strong><br>${present(report.version)}</div><div class="meta-card"><strong>Reviewer</strong><br>${present(report.reviewer, missing.notAvailable)}</div><div class="meta-card"><strong>Status</strong><br>${present(report.status)}</div><div class="meta-card"><strong>Time range</strong><br>${present(report.time_range)}</div></div>`),
