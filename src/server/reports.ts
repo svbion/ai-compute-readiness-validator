@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import type { EngagementStore } from "./engagements";
 import { deriveLiveGpuInventory } from "../portal/agents";
+import { DOCX_MIME_TYPE, DOCX_TEMPLATE_VERSION, generateDocxReport } from "./docx-renderer";
 import { generatePdfReport, PDF_MIME_TYPE, PDF_TEMPLATE_VERSION } from "./pdf-renderer";
 import { renderHtmlReport } from "./report-renderer";
 
@@ -107,6 +108,12 @@ export interface ReportRecord {
   pdf_sha256?: string | null;
   pdf_generated_at?: string | null;
   pdf_template_version?: string | null;
+  docx_artifact_path?: string | null;
+  docx_mime_type?: string | null;
+  docx_size_bytes?: number | null;
+  docx_sha256?: string | null;
+  docx_generated_at?: string | null;
+  docx_template_version?: string | null;
   version: number;
   created_at: string;
   updated_at: string;
@@ -187,6 +194,8 @@ function pdfFilename(report: ReportRecord, generatedAt: string): string {
   return `gpuvalidator_${safeFilenamePart(report.report_type, "report")}_${scope}_${date}_v${report.version}.pdf`;
 }
 function safeReportPdfPath(report: ReportRecord, generatedAt: string): string { return path.join(reportStorageRoot(), report.report_id, pdfFilename(report, generatedAt)); }
+function docxFilename(report: ReportRecord, generatedAt: string): string { return pdfFilename(report, generatedAt).replace(/\.pdf$/, ".docx"); }
+function safeReportDocxPath(report: ReportRecord, generatedAt: string): string { return path.join(reportStorageRoot(), report.report_id, docxFilename(report, generatedAt)); }
 function detailsError(code: string, message: string, details: ValidationIssue[] = []) {
   return { code, message, details };
 }
@@ -500,6 +509,64 @@ export function registerReportRoutes(app: express.Express, store: EngagementStor
       .set("Content-Disposition", `attachment; filename="${filename.replace(/[^a-zA-Z0-9._-]/g, "_" )}"`)
       .set("Content-Length", String(fs.statSync(report.pdf_artifact_path).size))
       .sendFile(path.resolve(report.pdf_artifact_path));
+  });
+
+  app.post("/api/v1/reports/:reportId/generate/docx", (req, res) => {
+    const document = ensureDoc(store);
+    const reports = document.reports as ReportRecord[];
+    const index = reports.findIndex((candidate) => candidate.report_id === req.params.reportId || (candidate as any).id === req.params.reportId);
+    if (index < 0) return sendError(res, 404, "report_not_found", "Report not found.");
+    const report = reports[index];
+    const generatedAt = nowIso();
+    const docxPath = safeReportDocxPath(report, generatedAt);
+
+    try {
+      const metadata = generateDocxReport(report, document, docxPath, generatedAt);
+      reports[index] = {
+        ...report,
+        status: "generated",
+        generated_at: metadata.generated_at,
+        updated_at: metadata.generated_at,
+        docx_artifact_path: metadata.file_path,
+        docx_mime_type: metadata.mime_type,
+        docx_size_bytes: metadata.size_bytes,
+        docx_sha256: metadata.sha256,
+        docx_generated_at: metadata.generated_at,
+        docx_template_version: metadata.template_version,
+        error: null,
+      };
+      writeDoc(store, document);
+      return res.status(200).set("Cache-Control", "no-store").json({ report: publicReport(reports[index]), docx: metadata });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown DOCX generation failure.";
+      const diagnostic = { technology: "openxml-zip", report_id: report.report_id, output_path: docxPath, template_version: DOCX_TEMPLATE_VERSION, message };
+      reports[index] = { ...report, status: "failed", updated_at: nowIso(), error: JSON.stringify(diagnostic).slice(0, 2000) };
+      writeDoc(store, document);
+      return sendError(res, 500, "docx_generation_failed", "Server-side DOCX generation failed.", [
+        { field: "technology", message: diagnostic.technology },
+        { field: "output_path", message: diagnostic.output_path },
+        { field: "template_version", message: diagnostic.template_version },
+        { field: "diagnostic", message: diagnostic.message.slice(0, 500) },
+      ]);
+    }
+  });
+
+  app.get("/api/v1/reports/:reportId/download/docx", (req, res) => {
+    const document = ensureDoc(store);
+    const report = (document.reports as ReportRecord[]).find((candidate) => candidate.report_id === req.params.reportId || (candidate as any).id === req.params.reportId);
+    if (!report) return sendError(res, 404, "report_not_found", "Report not found.");
+    if (!report.docx_artifact_path || !fs.existsSync(report.docx_artifact_path)) {
+      return sendError(res, 409, "docx_not_generated", "Generate the DOCX before downloading it.", [
+        { field: "docx_artifact_path", message: report.docx_artifact_path ? "Persisted DOCX artifact is missing from disk." : "No DOCX artifact has been generated for this report." },
+      ]);
+    }
+    const filename = path.basename(report.docx_artifact_path);
+    return res.status(200)
+      .type(report.docx_mime_type ?? DOCX_MIME_TYPE)
+      .set("Cache-Control", "no-store")
+      .set("Content-Disposition", `attachment; filename="${filename.replace(/[^a-zA-Z0-9._-]/g, "_" )}"`)
+      .set("Content-Length", String(fs.statSync(report.docx_artifact_path).size))
+      .sendFile(path.resolve(report.docx_artifact_path));
   });
 
   app.patch("/api/v1/reports/:reportId", (req, res) => {
