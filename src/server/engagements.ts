@@ -177,6 +177,7 @@ interface StoreDocument {
   validations?: any[];
   validation_jobs?: any[];
   validation_results?: any[];
+  reports?: any[];
 }
 
 export interface EngagementStoreOptions {
@@ -282,6 +283,7 @@ function validateDocument(document: StoreDocument): StoreDocument {
   const validations = Array.isArray((document as any).validations) ? (document as any).validations : [];
   const validationJobs = Array.isArray((document as any).validation_jobs) ? (document as any).validation_jobs : [];
   const validationResults = Array.isArray((document as any).validation_results) ? (document as any).validation_results : [];
+  const reports = Array.isArray((document as any).reports) ? (document as any).reports : [];
   return {
     schema_version: ENGAGEMENT_SCHEMA_VERSION,
     engagements: engagements.map((engagement) => deriveCounts({ ...engagement, schema_version: engagement.schema_version ?? ENGAGEMENT_SCHEMA_VERSION }, nodes)),
@@ -297,6 +299,7 @@ function validateDocument(document: StoreDocument): StoreDocument {
     validations,
     validation_jobs: validationJobs,
     validation_results: validationResults,
+    reports,
   };
 }
 
@@ -321,13 +324,13 @@ export class EngagementStore {
 
   read(): StoreDocument {
     if (!fs.existsSync(this.filePath)) {
-      return { schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: [], nodes: [], upload_tokens: [], evidence_records: [], benchmark_runs: [], activity_entries: [], benchmark_jobs: [], runner_tokens: [], node_runners: [], validation_agents: [], validations: [], validation_jobs: [], validation_results: [] };
+      return { schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: [], nodes: [], upload_tokens: [], evidence_records: [], benchmark_runs: [], activity_entries: [], benchmark_jobs: [], runner_tokens: [], node_runners: [], validation_agents: [], validations: [], validation_jobs: [], validation_results: [], reports: [] };
     }
     const parsed = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
     if (parsed.schema_version && parsed.schema_version !== ENGAGEMENT_SCHEMA_VERSION) {
       throw new Error(`Unsupported engagement store schema_version ${parsed.schema_version}`);
     }
-    return validateDocument({ schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: parsed.engagements ?? [], nodes: parsed.nodes ?? [], upload_tokens: parsed.upload_tokens ?? [], evidence_records: parsed.evidence_records ?? [], benchmark_runs: parsed.benchmark_runs ?? [], activity_entries: parsed.activity_entries ?? [], benchmark_jobs: parsed.benchmark_jobs ?? [], runner_tokens: parsed.runner_tokens ?? [], node_runners: parsed.node_runners ?? [], validation_agents: parsed.validation_agents ?? [], validations: parsed.validations ?? [], validation_jobs: parsed.validation_jobs ?? [], validation_results: parsed.validation_results ?? [] });
+    return validateDocument({ schema_version: ENGAGEMENT_SCHEMA_VERSION, engagements: parsed.engagements ?? [], nodes: parsed.nodes ?? [], upload_tokens: parsed.upload_tokens ?? [], evidence_records: parsed.evidence_records ?? [], benchmark_runs: parsed.benchmark_runs ?? [], activity_entries: parsed.activity_entries ?? [], benchmark_jobs: parsed.benchmark_jobs ?? [], runner_tokens: parsed.runner_tokens ?? [], node_runners: parsed.node_runners ?? [], validation_agents: parsed.validation_agents ?? [], validations: parsed.validations ?? [], validation_jobs: parsed.validation_jobs ?? [], validation_results: parsed.validation_results ?? [], reports: parsed.reports ?? [] });
   }
 
   write(document: StoreDocument): void {

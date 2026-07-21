@@ -15,6 +15,7 @@ import { registerIntelligenceRoutes } from "./src/server/intelligence";
 import { registerBenchmarkRoutes } from "./src/server/benchmarks";
 import { registerExecutionRoutes } from "./src/server/execution";
 import { registerAgentRoutes } from "./src/server/agents";
+import { registerReportRoutes } from "./src/server/reports";
 import { registerUserRoutes, UserStore, type PublicUser } from "./src/server/users";
 
 const repoRoot = process.cwd();
@@ -348,6 +349,7 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
   registerBenchmarkRoutes(app, engagementStore);
   registerExecutionRoutes(app, engagementStore);
   registerAgentRoutes(app, engagementStore);
+  registerReportRoutes(app, engagementStore);
   registerIntelligenceRoutes(app, engagementStore);
 
   // 1. API: Get validation results by scenario or live source

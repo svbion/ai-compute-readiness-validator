@@ -7,8 +7,8 @@ export const HARDWARE_DISCOVERY_PROFILE = "hardware-discovery";
 export const NCCL_SMOKE_PROFILE = "nccl-smoke";
 
 export type AgentStatus = "online" | "offline" | "degraded";
-export type ValidationState = "queued" | "running" | "completed" | "failed" | "timed_out" | "cancelled";
-export type ValidationJobState = "queued" | "claimed" | "running" | "completed" | "failed" | "timed_out" | "cancelled";
+export type ValidationState = "requested" | "queued" | "assigned" | "claimed" | "running" | "collecting" | "uploading" | "processing" | "completed" | "failed" | "timed_out" | "cancelled";
+export type ValidationJobState = "requested" | "queued" | "assigned" | "claimed" | "running" | "collecting" | "uploading" | "processing" | "completed" | "failed" | "timed_out" | "cancelled";
 export type ValidationResultState = "completed" | "failed" | "unavailable" | "timed_out";
 export type ValidationProfile = typeof HARDWARE_DISCOVERY_PROFILE | typeof NCCL_SMOKE_PROFILE;
 export type ValidationCommandType = "nvidia_smi_list" | "nvidia_smi_inventory" | "nvidia_smi_topology" | "cuda_version" | "driver_version" | "pytorch_gpu_count" | "nccl_all_reduce_smoke";
@@ -31,8 +31,8 @@ export type AgentRecord = {
   token_hash: string;
 };
 export type ValidationCommand = { type: ValidationCommandType; argv: string[]; timeout_seconds: number; max_stdout_bytes: number; max_stderr_bytes: number };
-export type ValidationRecord = { id: string; schema_version: string; profile: ValidationProfile; agent_id: string; state: ValidationState; created_at: string; completed_at: string | null; error: string | null; job_ids: string[] };
-export type ValidationJobRecord = { id: string; schema_version: string; validation_id: string; agent_id: string; profile: ValidationProfile; state: ValidationJobState; command_type: ValidationCommandType; command: ValidationCommand; timeout_seconds: number; created_at: string; claimed_at: string | null; started_at: string | null; completed_at: string | null; error: string | null };
+export type ValidationRecord = { id: string; schema_version: string; profile: ValidationProfile; agent_id: string; state: ValidationState; created_at: string; queued_at: string | null; assigned_at: string | null; claimed_at: string | null; started_at: string | null; last_progress_at: string | null; upload_started_at: string | null; completed_at: string | null; failed_at: string | null; error: string | null; timeout_reason: string | null; job_ids: string[] };
+export type ValidationJobRecord = { id: string; schema_version: string; validation_id: string; agent_id: string; profile: ValidationProfile; state: ValidationJobState; command_type: ValidationCommandType; command: ValidationCommand; timeout_seconds: number; queue_timeout_seconds: number; upload_timeout_seconds: number; created_at: string; queued_at: string | null; assigned_at: string | null; claimed_at: string | null; started_at: string | null; last_progress_at: string | null; upload_started_at: string | null; completed_at: string | null; failed_at: string | null; error: string | null; timeout_reason: string | null; diagnostics: Record<string, unknown> };
 export type CommandEvidence = { command_type: ValidationCommandType; argv: string[]; started_at: string | null; completed_at: string | null; exit_code: number | null; stdout_sha256: string | null; stderr_sha256: string | null; output_truncated: boolean };
 export type ValidationResultRecord = { id: string; schema_version: string; job_id: string; validation_id: string; agent_id: string; state: ValidationResultState; exit_code: number | null; started_at: string | null; completed_at: string; duration_ms: number | null; structured_result: Record<string, unknown>; stdout: string; stderr: string; output_truncated: boolean; command_evidence: CommandEvidence; result_hash: string };
 
@@ -40,6 +40,8 @@ type StoreDoc = Record<string, any>;
 
 const heartbeatIntervalSeconds = 30;
 const pollIntervalSeconds = 5;
+const queueTimeoutSeconds = 120;
+const uploadTimeoutSeconds = 120;
 const maxStdoutBytes = 65_536;
 const maxStderrBytes = 16_384;
 
@@ -88,12 +90,18 @@ function writeDoc(store: EngagementStore, document: StoreDoc) { (store as any).w
 function maintainJobs(document: StoreDoc) {
   const now = Date.now();
   for (const job of document.validation_jobs as ValidationJobRecord[]) {
-    if (["queued", "claimed", "running"].includes(job.state)) {
-      const base = job.started_at ?? job.claimed_at ?? job.created_at;
-      if (now - new Date(base).getTime() > job.timeout_seconds * 1000) {
+    if (["queued", "assigned", "claimed", "running", "collecting", "uploading", "processing"].includes(job.state)) {
+      job.queue_timeout_seconds ??= queueTimeoutSeconds;
+      job.upload_timeout_seconds ??= uploadTimeoutSeconds;
+      const phase = job.upload_started_at ? "upload" : job.started_at ? "command" : "queue";
+      const base = phase === "queue" ? job.created_at : (job.last_progress_at ?? job.upload_started_at ?? job.started_at ?? job.claimed_at ?? job.queued_at ?? job.created_at);
+      const timeoutSeconds = phase === "queue" ? job.queue_timeout_seconds : phase === "upload" ? job.upload_timeout_seconds : job.timeout_seconds;
+      if (now - new Date(base).getTime() > timeoutSeconds * 1000) {
         job.state = "timed_out";
         job.completed_at = job.completed_at ?? nowIso();
-        job.error = job.error ?? "Validation job timed out.";
+        job.failed_at = job.failed_at ?? job.completed_at;
+        job.timeout_reason = job.timeout_reason ?? `${phase} timeout after ${timeoutSeconds} seconds without progress.`;
+        job.error = job.error ?? job.timeout_reason;
       }
     }
   }
@@ -104,10 +112,19 @@ function deriveValidationState(document: StoreDoc, validation: ValidationRecord)
   if (!jobs.length) return validation;
   if (jobs.some((job) => ["failed", "timed_out"].includes(job.state))) validation.state = jobs.some((job) => job.state === "timed_out") ? "timed_out" : "failed";
   else if (jobs.every((job) => job.state === "completed")) validation.state = "completed";
-  else if (jobs.some((job) => ["claimed", "running"].includes(job.state))) validation.state = "running";
+  else if (jobs.some((job) => ["uploading"].includes(job.state))) validation.state = "uploading";
+  else if (jobs.some((job) => ["running", "collecting", "processing"].includes(job.state))) validation.state = "running";
+  else if (jobs.some((job) => ["claimed"].includes(job.state))) validation.state = "claimed";
+  else if (jobs.some((job) => ["assigned"].includes(job.state))) validation.state = "assigned";
   else if (jobs.every((job) => job.state === "cancelled")) validation.state = "cancelled";
   else validation.state = "queued";
+  validation.claimed_at ??= jobs.map((job) => job.claimed_at).filter(Boolean).sort()[0] as string | undefined ?? null;
+  validation.started_at ??= jobs.map((job) => job.started_at).filter(Boolean).sort()[0] as string | undefined ?? null;
+  validation.last_progress_at = jobs.map((job) => job.last_progress_at ?? job.completed_at ?? job.started_at ?? job.claimed_at).filter(Boolean).sort().at(-1) as string | undefined ?? validation.last_progress_at ?? null;
+  validation.upload_started_at ??= jobs.map((job) => job.upload_started_at).filter(Boolean).sort()[0] as string | undefined ?? null;
   if (["completed", "failed", "timed_out", "cancelled"].includes(validation.state)) validation.completed_at ??= nowIso();
+  if (["failed", "timed_out"].includes(validation.state)) validation.failed_at ??= validation.completed_at;
+  validation.timeout_reason ??= jobs.find((job) => job.timeout_reason)?.timeout_reason ?? null;
   return validation;
 }
 function requireAgent(req: express.Request, res: express.Response): boolean {
@@ -191,10 +208,13 @@ export function registerAgentRoutes(app: express.Express, store: EngagementStore
       const cap = capability(agent, "nccl_all_reduce_smoke");
       if (!cap?.available || Number(cap.details?.visible_gpu_count ?? agent.gpu_count ?? 0) < 2) return err(res, 400, "NCCL smoke test unavailable: all_reduce_perf and at least two visible GPUs are required.");
     }
-    const validation: ValidationRecord = { id: id("val"), schema_version: AGENT_API_SCHEMA_VERSION, profile, agent_id: agent.id, state: "queued", created_at: nowIso(), completed_at: null, error: null, job_ids: [] };
+    const active = (document.validations as ValidationRecord[]).find((item) => item.agent_id === agent.id && item.profile === profile && !["completed", "failed", "timed_out", "cancelled"].includes(item.state));
+    if (active && req.body?.allow_duplicate !== true) return err(res, 409, `Active ${profile} validation already exists for this agent: ${active.id}. Cancel or retry after it completes.`);
+    const createdAt = nowIso();
+    const validation: ValidationRecord = { id: id("val"), schema_version: AGENT_API_SCHEMA_VERSION, profile, agent_id: agent.id, state: "queued", created_at: createdAt, queued_at: createdAt, assigned_at: createdAt, claimed_at: null, started_at: null, last_progress_at: createdAt, upload_started_at: null, completed_at: null, failed_at: null, error: null, timeout_reason: null, job_ids: [] };
     const jobs = commands.map((commandType): ValidationJobRecord => {
       const command = commandType === "nccl_all_reduce_smoke" ? ncclCommandForAgent(agent) : commandDefinitions[commandType];
-      const job: ValidationJobRecord = { id: id("vjob"), schema_version: AGENT_API_SCHEMA_VERSION, validation_id: validation.id, agent_id: agent.id, profile, state: "queued", command_type: commandType, command, timeout_seconds: command.timeout_seconds, created_at: validation.created_at, claimed_at: null, started_at: null, completed_at: null, error: null };
+      const job: ValidationJobRecord = { id: id("vjob"), schema_version: AGENT_API_SCHEMA_VERSION, validation_id: validation.id, agent_id: agent.id, profile, state: "queued", command_type: commandType, command, timeout_seconds: command.timeout_seconds, queue_timeout_seconds: queueTimeoutSeconds, upload_timeout_seconds: uploadTimeoutSeconds, created_at: validation.created_at, queued_at: validation.queued_at, assigned_at: validation.assigned_at, claimed_at: null, started_at: null, last_progress_at: validation.last_progress_at, upload_started_at: null, completed_at: null, failed_at: null, error: null, timeout_reason: null, diagnostics: { api_endpoint: "/api/v1/validations", backend_job_id: null, agent_id: agent.id, command_type: commandType, retry_count: 0 } };
       validation.job_ids.push(job.id);
       return job;
     });
@@ -266,6 +286,8 @@ export function registerAgentRoutes(app: express.Express, store: EngagementStore
     if (job.state !== "queued") return err(res, 409, "Validation job is not claimable.");
     job.state = "claimed";
     job.claimed_at = nowIso();
+    job.last_progress_at = job.claimed_at;
+    job.diagnostics = { ...job.diagnostics, backend_job_id: job.id, agent_job_id: job.id, last_progress: job.last_progress_at };
     deriveValidationState(document, (document.validations as ValidationRecord[]).find((item) => item.id === job.validation_id)!);
     writeDoc(store, document);
     return res.set("Cache-Control", "no-store").json({ job });
@@ -280,6 +302,8 @@ export function registerAgentRoutes(app: express.Express, store: EngagementStore
     if (job.state !== "claimed" && job.state !== "running") return err(res, 409, "Validation job cannot enter running state.");
     job.state = "running";
     job.started_at ??= nowIso();
+    job.last_progress_at = nowIso();
+    job.diagnostics = { ...job.diagnostics, command_being_executed: job.command.argv.join(" "), command_timeout: job.timeout_seconds, last_progress: job.last_progress_at };
     deriveValidationState(document, (document.validations as ValidationRecord[]).find((item) => item.id === job.validation_id)!);
     writeDoc(store, document);
     return res.set("Cache-Control", "no-store").json({ job });
@@ -304,11 +328,18 @@ export function registerAgentRoutes(app: express.Express, store: EngagementStore
     if (duplicate) return res.set("Cache-Control", "no-store").json({ result: duplicate, duplicate: true });
     if (!["claimed", "running"].includes(job.state)) return err(res, 409, "Validation job is not accepting results.");
     if ((document.validation_results as ValidationResultRecord[]).some((result) => result.job_id === job.id)) return err(res, 409, "Validation job already has a different result.");
+    job.upload_started_at ??= nowIso();
+    job.state = "uploading";
+    job.last_progress_at = job.upload_started_at;
     const result: ValidationResultRecord = { id: id("vres"), schema_version: AGENT_API_SCHEMA_VERSION, job_id: job.id, validation_id: job.validation_id, agent_id: job.agent_id, state, exit_code: req.body?.exit_code === undefined || req.body?.exit_code === null ? null : Number(req.body.exit_code), started_at: startedAt, completed_at: completedAt, duration_ms: startedAt ? Math.max(0, new Date(completedAt).getTime() - new Date(startedAt).getTime()) : null, structured_result: structured, stdout: stdout.value, stderr: stderr.value, output_truncated: stdout.truncated || stderr.truncated || req.body?.output_truncated === true, command_evidence: { command_type: job.command_type, argv: job.command.argv, started_at: startedAt, completed_at: completedAt, exit_code: req.body?.exit_code === undefined || req.body?.exit_code === null ? null : Number(req.body.exit_code), stdout_sha256: stdout.value ? crypto.createHash("sha256").update(stdout.value).digest("hex") : null, stderr_sha256: stderr.value ? crypto.createHash("sha256").update(stderr.value).digest("hex") : null, output_truncated: stdout.truncated || stderr.truncated || req.body?.output_truncated === true }, result_hash: fingerprint };
     document.validation_results.push(result);
     job.state = state === "completed" ? "completed" : state === "timed_out" ? "timed_out" : "failed";
     job.completed_at = completedAt;
+    job.last_progress_at = completedAt;
+    if (job.state === "failed" || job.state === "timed_out") job.failed_at = completedAt;
+    if (job.state === "timed_out") job.timeout_reason = job.timeout_reason ?? (stderr.value || "Agent reported command timeout.").slice(0, 512);
     job.error = state === "completed" ? null : (stderr.value || String((structured as any)?.error ?? `${state} result reported.`)).slice(0, 512);
+    job.diagnostics = { ...job.diagnostics, exit_code: result.exit_code, stderr: result.stderr, exception: (structured as any)?.exception ?? null, final_error_reason: job.error, last_progress: job.last_progress_at };
     deriveValidationState(document, (document.validations as ValidationRecord[]).find((item) => item.id === job.validation_id)!);
     writeDoc(store, document);
     return res.set("Cache-Control", "no-store").json({ result, duplicate: false });
