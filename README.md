@@ -198,12 +198,21 @@ Production `.env.production` is dotenv data, not an arbitrary shell script. Depl
 
 ```dotenv
 AI_VALIDATOR_USER_STORE=/opt/ai-factory-validator/shared/users/store.json
+GPUVALIDATOR_INITIAL_ADMIN_PASSWORD='<set-once-operator-supplied-password-or-omit-for-generated-temporary-password>'
 AI_FACTORY_REVIEWER_USERNAME=
 AI_FACTORY_REVIEWER_PASSWORD_HASH=
 AI_FACTORY_AUTH_TEST_BYPASS_TOKEN='token$with$dollar-signs'
 ```
 
-Authentication uses username as the only login identifier. Email remains optional user profile metadata and is ignored during authentication. Production should bootstrap the administrator `sfrazier` into `/opt/ai-factory-validator/shared/users/store.json` with `ai-validator users bootstrap-admin`; environment reviewer credentials are only a temporary fallback.
+Authentication uses username as the only login identifier. Email remains optional user profile metadata and is ignored during authentication. When production authentication is enabled and `AI_VALIDATOR_USER_STORE` is configured, server bootstrap idempotently seeds the initial Platform Administrator account only if username `mechavarria` is absent:
+
+- name: Michael Echavarria
+- username: `mechavarria`
+- role: Platform Administrator (`administrator`)
+- first-login posture: `must_change_password=true`
+- permissions: full platform administration, user management, organization management, agent management, cluster management, validation management, benchmark management, reports, monitoring, alerts, settings, audit logs, API keys, AI Copilot, licensing, and integrations
+
+Do not hardcode a password in source. Set `GPUVALIDATOR_INITIAL_ADMIN_PASSWORD` for deterministic first bootstrap, or omit it and the server will generate a secure temporary password and print it once to the service logs during the creation run. Reruns do not create duplicate users and do not reprint or rotate credentials for an existing `mechavarria` account. Environment reviewer credentials are only a temporary fallback.
 
 The public UI is login-only. `/` always redirects to `/login`; legacy marketing/documentation paths redirect unauthenticated users to `/login`; authenticated `/login` redirects to `/portal`. Protected `/portal` routes remain unavailable without authentication.
 

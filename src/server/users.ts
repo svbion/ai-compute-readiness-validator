@@ -11,6 +11,43 @@ export const userStatuses = ["active", "disabled", "expired", "locked"] as const
 export type UserRole = typeof userRoles[number];
 export type UserStatus = typeof userStatuses[number];
 
+export const INITIAL_PLATFORM_ADMIN = {
+  display_name: "Michael Echavarria",
+  username: "mechavarria",
+  role_label: "Platform Administrator",
+} as const;
+
+export const platformAdminPermissions = [
+  "platform:admin",
+  "users:manage",
+  "organizations:manage",
+  "agents:manage",
+  "clusters:manage",
+  "validations:manage",
+  "benchmarks:manage",
+  "reports:manage",
+  "monitoring:manage",
+  "alerts:manage",
+  "settings:manage",
+  "audit_logs:read",
+  "api_keys:manage",
+  "ai_copilot:use",
+  "licensing:manage",
+  "integrations:manage",
+] as const;
+
+export type PlatformPermission = typeof platformAdminPermissions[number];
+
+export const rolePermissions: Record<UserRole, readonly PlatformPermission[]> = {
+  administrator: platformAdminPermissions,
+  reviewer: ["reports:manage", "monitoring:manage"],
+  temporary_reviewer: ["reports:manage"],
+};
+
+export function roleHasPermission(role: UserRole, permission: PlatformPermission): boolean {
+  return rolePermissions[role]?.includes(permission) ?? false;
+}
+
 export interface UserRecord {
   id: string;
   schema_version: string;
@@ -144,6 +181,35 @@ export class UserStore {
     const created = this.createUserInternal(document, { username: input.username, display_name: input.display_name, email: null, role: "administrator", password: input.password, expires_at: null, must_change_password: false, notes: "Initial administrator bootstrap", tags: ["bootstrap"] }, input.actor ?? "bootstrap");
     this.write(document);
     return safeUser(created);
+  }
+
+  seedInitialPlatformAdmin(input: { password?: string; passwordSource?: "environment" | "generated"; reporter?: (message: string) => void } = {}): { created: boolean; user: PublicUser; temporary_password?: string } {
+    const document = this.read();
+    const username = normalizeUsername(INITIAL_PLATFORM_ADMIN.username);
+    const existing = document.users.find((user) => user.username === username);
+    if (existing) return { created: false, user: safeUser({ ...existing, status: effectiveStatus(existing, this.clock) }) };
+
+    const password = input.password ?? generateTemporaryPassword();
+    validatePasswordComplexity(password);
+    const created = this.createUserInternal(document, {
+      username,
+      display_name: INITIAL_PLATFORM_ADMIN.display_name,
+      email: null,
+      role: "administrator",
+      password,
+      expires_at: null,
+      must_change_password: true,
+      notes: `${INITIAL_PLATFORM_ADMIN.role_label} seeded by application bootstrap.`,
+      tags: ["bootstrap", "platform-administrator"],
+    }, "bootstrap");
+    this.write(document);
+
+    if (!input.password && input.reporter) {
+      input.reporter(`GPUValidator initial administrator temporary password for ${username}: ${password}`);
+      input.reporter("This password is shown once during bootstrap. Store it securely and change it on first login.");
+    }
+
+    return { created: true, user: safeUser(created), temporary_password: input.password ? undefined : password };
   }
 
   createUser(input: { username?: string; display_name: string; email?: string | null; role: UserRole; password?: string; expires_at?: string | null; must_change_password?: boolean; notes?: string; tags?: string[] }, actor: string): { user: PublicUser; temporary_password?: string } {

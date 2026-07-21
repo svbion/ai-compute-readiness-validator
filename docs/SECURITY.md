@@ -49,6 +49,18 @@ The project currently uses environment-driven invite-only portal authentication 
 - external auth flows
 - database persistence
 
+## Bootstrap administrator
+
+Production server startup seeds the initial Platform Administrator only when authentication is required and a persistent user store is configured. The seeded account is:
+
+- Michael Echavarria / `mechavarria`
+- role: Platform Administrator (`administrator`)
+- `must_change_password=true`
+
+The source tree never contains a plaintext password. Operators may set `GPUVALIDATOR_INITIAL_ADMIN_PASSWORD` for first bootstrap, or omit it so the server generates a secure temporary password and prints it once to service logs. Subsequent startups are idempotent: if `mechavarria` already exists, the seed step leaves the account and password hash unchanged and does not print a credential.
+
+The administrator role has full RBAC coverage for current product areas: platform administration, users, organizations, agents, clusters, validations, benchmarks, reports, monitoring, alerts, settings, audit logs, API keys, AI Copilot, licensing, and integrations.
+
 ## Threat model boundaries
 
 This is not a hardened remote execution platform. Current intentional boundaries:

@@ -16,7 +16,7 @@ import { registerBenchmarkRoutes } from "./src/server/benchmarks";
 import { registerExecutionRoutes } from "./src/server/execution";
 import { registerAgentRoutes } from "./src/server/agents";
 import { registerReportRoutes } from "./src/server/reports";
-import { registerUserRoutes, UserStore, type PublicUser } from "./src/server/users";
+import { INITIAL_PLATFORM_ADMIN, registerUserRoutes, UserStore, type PublicUser } from "./src/server/users";
 
 const repoRoot = process.cwd();
 const artifactsDir = path.join(repoRoot, "artifacts");
@@ -169,6 +169,14 @@ export async function createPortalServerApp(options: { mountFrontend?: boolean }
   const mountFrontend = options.mountFrontend ?? true;
   const engagementStore = new EngagementStore();
   const userStore = new UserStore();
+
+  if (authConfig.required && (process.env.AI_VALIDATOR_USER_STORE || process.env.GPUVALIDATOR_INITIAL_ADMIN_PASSWORD)) {
+    const password = process.env.GPUVALIDATOR_INITIAL_ADMIN_PASSWORD?.trim() || undefined;
+    const seeded = userStore.seedInitialPlatformAdmin({ password, passwordSource: password ? "environment" : "generated", reporter: (message) => console.info(message) });
+    if (seeded.created && password) {
+      console.info(`GPUValidator initial administrator ${INITIAL_PLATFORM_ADMIN.username} seeded from GPUVALIDATOR_INITIAL_ADMIN_PASSWORD.`);
+    }
+  }
 
   app.use(express.json());
 

@@ -6,7 +6,7 @@ import path from "node:path";
 import type { AddressInfo } from "node:net";
 
 import { createPortalServerApp } from "../server";
-import { UserStore } from "../src/server/users";
+import { INITIAL_PLATFORM_ADMIN, UserStore } from "../src/server/users";
 
 const authHeader = { "x-ai-factory-test-auth": "test-bypass-token" };
 
@@ -19,8 +19,7 @@ async function withServer(fn: (baseUrl: string, userStorePath: string) => Promis
   process.env.AI_FACTORY_AUTH_TEST_BYPASS_TOKEN = "test-bypass-token";
   process.env.AI_VALIDATOR_ENGAGEMENT_STORE = path.join(dir, "engagements.json");
   process.env.AI_VALIDATOR_USER_STORE = path.join(dir, "users.json");
-  const store = new UserStore({ filePath: process.env.AI_VALIDATOR_USER_STORE });
-  store.bootstrapAdmin({ username: "admin", display_name: "Admin User", password: "StrongBootstrap-123!" });
+  process.env.GPUVALIDATOR_INITIAL_ADMIN_PASSWORD = "StrongBootstrap-123!";
   const app = await createPortalServerApp({ mountFrontend: false });
   const server = await new Promise<ReturnType<typeof app.listen>>((resolve) => {
     const instance = app.listen(0, "127.0.0.1", () => resolve(instance));
@@ -170,7 +169,7 @@ test("public UI is login-only and login redirects authenticated sessions to port
     assert.equal(portal.status, 302);
     assert.equal(portal.headers.get("location"), "/login");
 
-    const login = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: "admin", password: "StrongBootstrap-123!" }, false);
+    const login = await jsonRequest(baseUrl, "POST", "/api/auth/login", { username: INITIAL_PLATFORM_ADMIN.username, password: "StrongBootstrap-123!" }, false);
     assert.equal(login.response.status, 200, JSON.stringify(login.payload));
     const authedLogin = await fetch(`${baseUrl}/login`, { redirect: "manual", headers: { Accept: "text/html", Cookie: login.cookie } });
     assert.equal(authedLogin.status, 302);
