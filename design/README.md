@@ -84,3 +84,10 @@ Deterministic fixture screenshots for the live-agent integration are committed u
 - `runpod-agent-offline.png`
 
 These use fixture API responses and are not proof of live RunPod hardware. If live screenshots are captured later, store them under `design/implementation-screenshots/live/` and review/remove sensitive UUIDs, hostnames, IPs, tokens, URLs, and account identifiers before committing.
+
+
+Step 6 validation-result screenshot:
+
+- `design/implementation-screenshots/current/runpod-validation-results.png`
+
+This is fixture-backed. Live validation screenshots, if captured later, must go under `design/implementation-screenshots/live/` after reviewing UUIDs, hostnames, IPs, URLs, and credentials.

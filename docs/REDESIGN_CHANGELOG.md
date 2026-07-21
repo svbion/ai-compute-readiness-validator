@@ -419,3 +419,53 @@ These are deterministic fixture screenshots, not live RunPod captures. No live s
 
 - `tests-portal/live-agent-integration.test.ts` covers live inventory derivation, dashboard states, permission failure, and validation API listing/creation.
 - `tests-e2e/portal.spec.ts` covers fixture-backed online agent dashboard, validation action duplicate prevention, live GPU inventory rows, detail drawer, raw evidence, partial result handling, missing CUDA, and missing PyTorch labels.
+
+
+## Deadline Sprint Step 6 — Validation Results and Evidence Viewer
+
+Date: 2026-07-20
+Status: implemented and fixture-validated.
+
+### Route added
+
+- `/portal/validations/:validationId`
+
+### Summary fields
+
+- validation ID
+- profile
+- selected agent
+- node
+- created time
+- started time
+- completed time
+- duration
+- overall state
+- GPU count
+- passed checks
+- warnings
+- failed checks
+- unavailable checks
+
+### Command evidence UI
+
+Structured cards render `nvidia-smi GPU list`, `GPU inventory`, `GPU topology`, `Driver version`, `CUDA version`, and `PyTorch GPU count`. Each card shows status, exit code, duration, parsed summary, parser warnings, stdout, stderr, truncation state, copy evidence action, and evidence timestamp. Raw stdout/stderr are expandable.
+
+### Validation rules
+
+Rules cover agent online state, nvidia-smi execution, GPU discovery, stable UUID collection, inventory row count match, driver version collection, PCI bus IDs, topology, PyTorch count match when available, and CUDA toolkit state collected or explicitly unavailable.
+
+### Partial-state behavior
+
+Unavailable CUDA toolkit files, unavailable `nvcc`, and missing PyTorch are warnings/unavailable states when core NVIDIA driver and GPU discovery results succeed. Core malformed, failed, missing, or timed-out discovery commands produce failed rules.
+
+### Screenshots captured
+
+- `design/implementation-screenshots/current/runpod-validation-results.png`
+
+The screenshot is deterministic fixture data, not a live RunPod capture.
+
+### Tests added
+
+- `tests-portal/validation-result.test.ts` covers completed, partial, failed, timed-out, unavailable CUDA, unavailable PyTorch, malformed output, and truncation rule derivation.
+- `tests-e2e/portal.spec.ts` covers route navigation, missing validation ID, evidence expand/collapse, stdout/stderr display, and rerun action availability with fixture API responses.

@@ -372,6 +372,27 @@ GET /api/v1/validations/<validation_id>
 - CUDA availability/version or unavailable state
 - PyTorch availability/GPU count or unavailable state
 
+## View one hardware-discovery validation
+
+After a hardware-discovery validation is created, open the protected result route:
+
+```text
+/portal/validations/<validation_id>
+```
+
+The page shows validation ID, profile, selected agent, node, created/started/completed timestamps, duration, overall state, GPU count, passed checks, warnings, failed checks, unavailable checks, validation rules, and per-command evidence cards.
+
+Use this route for the first live RunPod proof review before presenting inventory:
+
+1. Confirm the validation state is completed or clearly partial/failed.
+2. Expand each command evidence panel and review stdout/stderr.
+3. Confirm `nvidia-smi -L`, inventory, topology, and driver evidence are present.
+4. Treat unavailable `nvcc` or PyTorch as warnings/unavailable unless GPU discovery itself failed.
+5. Use Back to GPU Inventory to verify per-GPU rows derived from the same validation evidence.
+6. Use Rerun validation only for the same selected agent when a fresh hardware-discovery run is required.
+
+No real token, secret, or arbitrary command input is displayed or accepted on this page.
+
 ## Portal dashboard and inventory after upload
 
 After the RunPod agent registers and uploads hardware-discovery results, the authenticated portal consumes the same-origin reviewer APIs:

@@ -339,3 +339,27 @@ Screenshot policy:
 
 - Deterministic fixture screenshots are under `design/implementation-screenshots/current/`.
 - Live screenshots, if captured later, must go under `design/implementation-screenshots/live/` and be reviewed for UUIDs, hostnames, IPs, URLs, and credentials before committing.
+
+
+## Deadline Sprint Step 6 — Hardware-discovery validation results
+
+Status: implemented with deterministic fixture testing.
+
+Route added:
+
+- `/portal/validations/:validationId`
+
+The route renders one hardware-discovery validation using authenticated same-origin API data. It displays validation identity, selected agent, node, timing, duration, overall state, GPU count, rule totals, detailed rule outcomes, and structured evidence cards for each hardware-discovery command.
+
+Command evidence cards include status, exit code, duration, parsed summary, parser warnings, stdout, stderr, truncation indicator, copy action, and evidence timestamp. Raw evidence is expandable and bounded to the result payload already accepted by the backend.
+
+Partial-state behavior:
+
+- CUDA toolkit absence and PyTorch absence are unavailable/warning states, not validation-wide failures when NVIDIA driver and GPU discovery succeeded.
+- Timed-out, failed, malformed, or missing core discovery results produce failed rules.
+
+Screenshot captured:
+
+- `design/implementation-screenshots/current/runpod-validation-results.png`
+
+The screenshot is fixture-backed and contains no live RunPod secrets.

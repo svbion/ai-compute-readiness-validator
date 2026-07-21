@@ -16,6 +16,8 @@ async function expectProtectedRoutesUnauthenticated(request: APIRequestContext) 
     const response = await request.get(path);
     expect(response.status(), `${path} should stay protected`).toBe(401);
   }
+  const validationRoute = await request.get("/portal/validations/val_live", { maxRedirects: 0 });
+  expect([302, 401]).toContain(validationRoute.status());
 }
 
 test("root redirects unauthenticated visitors to the login page", async ({ page, request }) => {
@@ -138,6 +140,8 @@ test("live RunPod agent dashboard and GPU inventory use fixture API responses", 
   ] }] };
   let createCalls = 0;
   await page.route("**/api/v1/agents", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ agents: [agent], offline_threshold_seconds: 90 }) }));
+  await page.route("**/api/v1/validations/val_live", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(validationsPayload.validations[0]) }));
+  await page.route("**/api/v1/validations/missing-validation", async (route) => route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "Validation not found." }) }));
   await page.route("**/api/v1/validations?profile=hardware-discovery", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(validationsPayload) }));
   await page.route("**/api/v1/validations", async (route) => {
     if (route.request().method() === "POST") {
@@ -152,6 +156,24 @@ test("live RunPod agent dashboard and GPU inventory use fixture API responses", 
   await expect(page.getByText("RunPod hardware discovery")).toBeVisible();
   await expect(page.getByText("Selected agent: runpod-4gpu-01 / runpod-node-01")).toBeVisible();
   await expect(page.getByLabel("Discovered GPUs: 4")).toBeVisible();
+  await page.getByRole("link", { name: "val_live" }).click();
+  await expect(page).toHaveURL(/\/portal\/validations\/val_live$/);
+  await expect(page.getByRole("heading", { name: "Validation results" })).toBeVisible();
+  await expect(page.getByText("hardware-discovery").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "nvidia-smi GPU list" })).toBeVisible();
+  await expect(page.getByText("GPU inventory").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "GPU topology" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Driver version" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CUDA version" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "PyTorch GPU count" })).toBeVisible();
+  await page.getByText("Expandable evidence: stdout / stderr").first().click();
+  await expect(page.getByText("GPU 0: NVIDIA A100-SXM4-40GB")).toBeVisible();
+  await expect(page.getByText("nvcc unavailable").first()).toBeVisible();
+  await expect(page.getByText("torch unavailable").first()).toBeVisible();
+  await expect(page.getByText("validation partial")).toBeVisible();
+  await page.goto("/portal/validations/missing-validation");
+  await expect(page.getByRole("alert")).toContainText("Validation not found");
+  await page.goto("/portal");
   const runButton = page.getByRole("button", { name: "Run hardware validation" });
   await runButton.click();
   await expect(page.getByRole("button", { name: /Queueing validation/ })).toBeDisabled();

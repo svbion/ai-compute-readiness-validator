@@ -69,14 +69,19 @@ import {
 } from "./portal/engagements";
 import {
   createHardwareValidation,
+  deriveHardwareDiscoveryValidationView,
   deriveLiveGpuInventory,
   fetchAgents,
+  fetchValidation,
   fetchValidations,
   summarizeLiveAgentDashboard,
   type AgentRecord,
   type ValidationDetail,
   type ValidationRecord,
   type ValidationState,
+  type HardwareDiscoveryValidationView,
+  type HardwareDiscoveryCommandView,
+  type HardwareDiscoveryRuleView,
   type LiveDashboardSummary,
   type ValidationListPayload,
   type AgentListPayload,
@@ -1008,6 +1013,43 @@ function GpuInventoryPage() {
   );
 }
 
+function ruleTone(status: HardwareDiscoveryRuleView["status"]) {
+  if (status === "passed") return "gv-badge-success";
+  if (status === "failed") return "border-red-500/25 bg-red-500/10 text-red-300";
+  if (status === "unavailable") return "border-slate-500/25 bg-slate-500/10 text-slate-300";
+  return "border-amber-500/25 bg-amber-500/10 text-amber-300";
+}
+
+function CommandEvidenceCard({ command }: { command: HardwareDiscoveryCommandView }) {
+  const copy = () => navigator.clipboard?.writeText([`$ ${command.argv.join(" ")}`, command.stdout, command.stderr ? `stderr:\n${command.stderr}` : ""].filter(Boolean).join("\n")).catch(() => null);
+  return (
+    <article className="rounded-2xl border border-slate-800 bg-slate-950/45 p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"><div><h3 className="font-display text-lg font-semibold text-slate-50">{command.label}</h3><p className="mt-1 text-sm text-slate-400">{command.parsedSummary}</p></div><div className="flex flex-wrap gap-2"><InventoryStatusBadge value={command.status} label={command.status.replace(/_/g, " ")} />{command.truncated && <span className="gv-badge border-amber-500/25 bg-amber-500/10 text-amber-300">truncated</span>}<button type="button" onClick={copy} className="gv-button-secondary text-xs">Copy evidence</button></div></div>
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-4"><div><dt className="gv-eyebrow">Exit code</dt><dd>{command.exitCode ?? "Not collected"}</dd></div><div><dt className="gv-eyebrow">Duration</dt><dd>{command.durationMs === null ? "Not collected" : `${command.durationMs} ms`}</dd></div><div><dt className="gv-eyebrow">Evidence timestamp</dt><dd>{formatDate(command.evidenceTimestamp)}</dd></div><div><dt className="gv-eyebrow">Command</dt><dd className="break-all">{command.argv.join(" ") || "Not collected"}</dd></div></dl>
+      {command.parserWarnings.length > 0 && <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-amber-100">{command.parserWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}
+      <details className="mt-4 rounded-xl border border-slate-800 bg-black/30 p-3"><summary className="cursor-pointer text-sm font-semibold text-slate-200">Expandable evidence: stdout / stderr</summary><div className="mt-3 grid gap-3 lg:grid-cols-2"><pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-slate-950 p-3 text-xs text-slate-300">{command.stdout || "stdout empty"}</pre><pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-slate-950 p-3 text-xs text-slate-300">{command.stderr || "stderr empty"}</pre></div></details>
+    </article>
+  );
+}
+
+function ValidationResultsPage({ validationId }: { validationId: string }) {
+  const [detail, setDetail] = useState<ValidationDetail | null>(null);
+  const [agents, setAgents] = useState<AgentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const view: HardwareDiscoveryValidationView | null = useMemo(() => detail ? deriveHardwareDiscoveryValidationView(detail, agents) : null, [detail, agents]);
+  const load = async (signal?: AbortSignal) => { setLoading(true); setError(null); try { const [validationDetail, agentPayload] = await Promise.all([fetchValidation(validationId, signal), fetchAgents(signal)]); setDetail(validationDetail); setAgents(agentPayload.agents); } catch (err) { if (!signal?.aborted) setError(err instanceof Error ? err.message : "Failed to load validation result."); } finally { if (!signal?.aborted) setLoading(false); } };
+  useEffect(() => { const controller = new AbortController(); load(controller.signal); return () => controller.abort(); }, [validationId]);
+  const rerun = async () => { if (!view || creating) return; setCreating(true); setError(null); try { const created = await createHardwareValidation(view.agentId); window.location.assign(`/portal/validations/${encodeURIComponent(created.validation.id)}`); } catch (err) { setError(err instanceof Error ? err.message : "Failed to rerun hardware validation."); } finally { setCreating(false); } };
+  return (
+    <EngagementShell><div className="space-y-5"><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><header><div className="gv-eyebrow text-emerald-300">Hardware discovery</div><h1 className="mt-3 font-display text-4xl font-semibold text-slate-50">Validation results</h1><p className="mt-3 max-w-3xl leading-7 text-slate-300">Structured RunPod hardware-discovery command evidence and rule outcomes.</p></header><div className="flex flex-wrap gap-2"><a className="gv-button-secondary" href="/portal">Back to Dashboard</a><a className="gv-button-secondary" href="/portal/inventory/gpus">Back to GPU Inventory</a><button type="button" onClick={rerun} disabled={!view || creating} className="gv-button-primary disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${creating ? "animate-spin" : ""}`} />Rerun validation</button></div></div>
+      {loading && <div className="cyber-panel rounded-2xl border border-slate-800 p-6 text-slate-300">Loading validation result evidence...</div>}{error && <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-100">{error}</div>}{!loading && !error && !view && <EmptyState text="Validation not found. Check the validation ID and try again." />}
+      {view && <><section className="gv-card p-5"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><div className="gv-eyebrow">Validation ID</div><h2 className="mt-2 font-display text-2xl font-semibold text-slate-50">{view.validationId}</h2></div><InventoryStatusBadge value={view.partial ? "validation partial" : view.overallState} label={view.partial ? "validation partial" : view.overallState.replace(/_/g, " ")} /></div><dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div><dt className="gv-eyebrow">Profile</dt><dd>{view.profile}</dd></div><div><dt className="gv-eyebrow">Selected agent</dt><dd>{view.agentName}</dd></div><div><dt className="gv-eyebrow">Node</dt><dd>{view.node}</dd></div><div><dt className="gv-eyebrow">Duration</dt><dd>{view.durationMs === null ? "Not collected" : `${view.durationMs} ms`}</dd></div><div><dt className="gv-eyebrow">Created</dt><dd>{formatDate(view.createdAt)}</dd></div><div><dt className="gv-eyebrow">Started</dt><dd>{formatDate(view.startedAt)}</dd></div><div><dt className="gv-eyebrow">Completed</dt><dd>{formatDate(view.completedAt)}</dd></div><div><dt className="gv-eyebrow">GPU count</dt><dd>{view.gpuCount}</dd></div></dl></section><section className="grid gap-4 md:grid-cols-4"><InventorySummaryCard label="Passed checks" value={view.passedChecks} description="Rules that passed" /><InventorySummaryCard label="Warnings" value={view.warnings} description="Parser and unavailable warnings" /><InventorySummaryCard label="Failed checks" value={view.failedChecks} description="Blocking hardware-discovery rules" /><InventorySummaryCard label="Unavailable checks" value={view.unavailableChecks} description="Optional tools marked unavailable" /></section><Panel title="Validation rules"><div className="grid gap-3 md:grid-cols-2">{view.rules.map((item) => <div key={item.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><div className="mb-2 flex items-center justify-between gap-2"><strong className="text-sm text-slate-100">{item.label}</strong><span className={`gv-badge ${ruleTone(item.status)}`}>{item.status}</span></div><p className="text-sm text-slate-400">{item.detail}</p></div>)}</div></Panel><section className="space-y-4"><h2 className="font-display text-xl font-semibold text-slate-50">Command results</h2>{view.commands.map((command) => <div key={command.commandType}><CommandEvidenceCard command={command} /></div>)}</section></>}
+    </div></EngagementShell>
+  );
+}
+
 function OperationsLibraryPage({ slug }: { slug?: string }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
@@ -1192,7 +1234,7 @@ function LiveAgentPanel({ summary, agents, selectedAgentId, onSelectAgent, onRun
       </div>
       <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--gv-text-muted)]">
         <span>Selected agent: {selected ? `${selected.name} / ${selected.hostname}` : "none"}</span>
-        <span>Latest validation ID: {latest?.id ?? "not created"}</span>
+        <span>Latest validation ID: {latest ? <a className="text-[var(--gv-accent-hover)] hover:underline" href={`/portal/validations/${encodeURIComponent(latest.id)}`}>{latest.id}</a> : "not created"}</span>
         <span>State: {validationStateLabel(latest?.state)}</span>
         <a className="text-[var(--gv-accent-hover)] hover:underline" href="/portal/inventory/gpus">Open GPU inventory results</a>
       </div>
@@ -2102,6 +2144,7 @@ export default function App() {
   if (pathName === "/portal/admin/system") return <AdminSystemPage />;
   if (pathName === "/portal/library") return <OperationsLibraryPage />;
   if (pathName.startsWith("/portal/library/")) return <OperationsLibraryPage slug={decodeURIComponent(pathName.replace("/portal/library/", ""))} />;
+  if (pathName.startsWith("/portal/validations/")) return <ValidationResultsPage validationId={decodeURIComponent(pathName.replace("/portal/validations/", ""))} />;
   if (pathName === "/portal/inventory/gpus") return <GpuInventoryPage />;
   if (pathName === "/portal/engagements") return <EngagementListPage />;
   if (pathName === "/portal/engagements/new") return <NewEngagementPage />;

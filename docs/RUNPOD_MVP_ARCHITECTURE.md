@@ -571,3 +571,28 @@ Implement the agent API scaffold and persistence models behind tests:
 5. Add tests for auth, online/offline/degraded state, claim locking, duplicate results, output limits, and timeout transitions.
 
 Do not begin additional visual redesign phases until this backend/agent path is working.
+
+## Step 6 hardware-discovery validation result workflow
+
+Implemented a protected validation result experience at:
+
+```text
+/portal/validations/:validationId
+```
+
+The page fetches `GET /api/v1/validations/:validationId` plus `GET /api/v1/agents` and renders one hardware-discovery validation with summary metadata, selected agent/node context, timing, GPU count, rule outcomes, and structured command evidence. It uses the same authenticated reviewer session as the dashboard and inventory pages; unauthenticated visitors are redirected or rejected before data is loaded.
+
+Displayed command cards:
+
+- `nvidia-smi GPU list`
+- `GPU inventory`
+- `GPU topology`
+- `Driver version`
+- `CUDA version`
+- `PyTorch GPU count`
+
+Each command card shows status, exit code, duration, parsed summary, parser warnings, stdout, stderr, truncation state, copy action, and evidence timestamp. Raw stdout/stderr are inside expandable panels. CUDA toolkit and PyTorch absence are treated as unavailable/warning states when NVIDIA driver and GPU discovery succeed, not as automatic validation failure.
+
+Validation rules shown include agent online, nvidia-smi execution, GPU discovery, stable UUID collection, inventory/list count match, driver version collection, PCI bus ID collection, topology collection, PyTorch count match when available, and CUDA toolkit collected or marked unavailable.
+
+Navigation supports Back to Dashboard, Back to GPU Inventory, and Rerun validation. Evidence download is not shown because no dedicated evidence-download API exists for validation results yet.
