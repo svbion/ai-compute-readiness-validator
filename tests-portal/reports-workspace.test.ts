@@ -9,9 +9,16 @@ const reportsSource = appSource.slice(appSource.indexOf("function ReportsPage"),
 test("reports workspace declares landing, new, and detail routes", () => {
   assert.match(appSource, /pathName === "\/portal\/reports"/);
   assert.match(appSource, /pathName === "\/portal\/reports\/new"/);
+  assert.match(appSource, /\/portal\/reports\/:reportId\/preview/);
   assert.match(appSource, /pathName\.startsWith\("\/portal\/reports\/"\)/);
   assert.match(reportsSource, /isNewReportRoute/);
   assert.match(reportsSource, /selectedReportId/);
+});
+
+test("reports workspace links open report records to server-rendered HTML preview", () => {
+  assert.match(reportsSource, /Preview HTML/);
+  assert.match(reportsSource, /\/portal\/reports\/\$\{encodeURIComponent\(selectedReport\.report_id\)\}\/preview/);
+  assert.doesNotMatch(reportsSource, /Download PDF|Download DOCX|download\/pdf|download\/docx/i);
 });
 
 test("reports workspace loads API reports and renders required metadata columns", () => {

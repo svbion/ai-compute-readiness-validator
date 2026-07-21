@@ -1,7 +1,10 @@
 import crypto from "crypto";
 import express from "express";
+import fs from "fs";
+import path from "path";
 import type { EngagementStore } from "./engagements";
 import { deriveLiveGpuInventory } from "../portal/agents";
+import { renderHtmlReport } from "./report-renderer";
 
 export const REPORT_SCHEMA_VERSION = "1.0.0";
 
@@ -94,6 +97,9 @@ export interface ReportRecord {
   include_appendices?: boolean;
   reviewer?: string | null;
   notes?: string | null;
+  html_artifact_path?: string | null;
+  html_generated_at?: string | null;
+  html_sha256?: string | null;
   version: number;
   created_at: string;
   updated_at: string;
@@ -162,6 +168,8 @@ function ensureDoc(store: EngagementStore): StoreDoc {
   return doc;
 }
 function writeDoc(store: EngagementStore, doc: StoreDoc) { (store as any).write(doc); }
+function reportStorageRoot(): string { return process.env.AI_VALIDATOR_REPORT_STORAGE_DIR ?? path.join(process.cwd(), "artifacts", "reports"); }
+function safeReportHtmlPath(reportId: string): string { return path.join(reportStorageRoot(), reportId, `${reportId}.html`); }
 function detailsError(code: string, message: string, details: ValidationIssue[] = []) {
   return { code, message, details };
 }
@@ -364,6 +372,35 @@ export function registerReportRoutes(app: express.Express, store: EngagementStor
   app.get("/api/v1/reports", (_req, res) => {
     const document = ensureDoc(store);
     return res.set("Cache-Control", "no-store").json({ reports: sortReports(document.reports as ReportRecord[]).map(publicReport) });
+  });
+
+  app.get("/portal/reports/:reportId/preview", (req, res) => {
+    const document = ensureDoc(store);
+    const reports = document.reports as ReportRecord[];
+    const index = reports.findIndex((candidate) => candidate.report_id === req.params.reportId || (candidate as any).id === req.params.reportId);
+    if (index < 0) return sendError(res, 404, "report_not_found", "Report not found.");
+    const report = reports[index];
+    const rendered = renderHtmlReport(report, document);
+    const htmlPath = safeReportHtmlPath(report.report_id);
+    fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
+    fs.writeFileSync(htmlPath, rendered.html, { encoding: "utf8", mode: 0o600 });
+    reports[index] = {
+      ...report,
+      status: "generated",
+      generated_at: rendered.metadata.generated_at,
+      updated_at: rendered.metadata.generated_at,
+      html_artifact_path: htmlPath,
+      html_generated_at: rendered.metadata.generated_at,
+      html_sha256: rendered.metadata.html_sha256,
+      agent_ids: rendered.metadata.source_lineage.agent_ids,
+      node_ids: rendered.metadata.source_lineage.node_ids,
+      gpu_ids: rendered.metadata.source_lineage.gpu_ids,
+      validation_ids: rendered.metadata.source_lineage.validation_ids,
+      benchmark_ids: rendered.metadata.source_lineage.benchmark_ids,
+      evidence_ids: rendered.metadata.source_lineage.evidence_ids,
+    };
+    writeDoc(store, document);
+    return res.status(200).type("text/html; charset=utf-8").set("Cache-Control", "no-store").send(rendered.html);
   });
 
   app.post("/api/v1/reports", (req, res) => {
