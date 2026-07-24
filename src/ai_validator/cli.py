@@ -40,6 +40,7 @@ from ai_validator.benchmarks.fio import FioParser
 from ai_validator.benchmarks.iperf import IperfParser
 from ai_validator.benchmarks.osu import OsuParser
 from ai_validator.benchmarks.intelligence import parse_benchmark_file, write_import
+from ai_validator.benchmarks.package import BenchmarkPackageError, compare_packages, ingest_package, verify_sha256sums
 
 app = typer.Typer(help="GPU Validator - Assessment CLI")
 console = Console()
@@ -708,9 +709,9 @@ def runner_run(
 
 @app.command()
 def benchmark(
-    action: str = typer.Argument(..., help="Action to execute: 'import'"),
+    action: str = typer.Argument(..., help="Action to execute: import, ingest, validate, summarize, or compare"),
     benchmark_type: str = typer.Option("nccl", "--type", help="Benchmark log type to parse: nccl, hpl, triton, genai-perf"),
-    input_file: Optional[str] = typer.Option(None, "--input", help="Path to raw benchmark output file to import"),
+    input_file: Optional[str] = typer.Option(None, "--input", help="Path to raw benchmark output file or benchmark package directory/archive"),
     file: Optional[str] = typer.Option(None, "--file", help="Deprecated alias for --input"),
     engagement_id: str = typer.Option("local-import", "--engagement-id", help="Engagement ID to attach in the local import record"),
     node_id: Optional[str] = typer.Option(None, "--node-id", help="Optional node ID to attach in the local import record"),
@@ -721,11 +722,32 @@ def benchmark(
     Imports and parses existing NCCL, NVIDIA HPL, Triton perf_analyzer, or GenAI-Perf output.
     This command never launches benchmarks or installs benchmark software.
     """
-    if action.lower() not in {"import", "ingest"}:
-        console.print("[bold red]Unsupported action. Use 'import'.[/bold red]")
+    normalized_action = action.lower().strip()
+    selected_input = input_file or file
+    if normalized_action in {"ingest", "validate", "summarize"} and selected_input:
+        try:
+            result = ingest_package(Path(selected_input), Path(output_dir))
+        except BenchmarkPackageError as exc:
+            console.print(f"[bold red]{exc}[/bold red]", err=True)
+            sys.exit(1)
+        console.print("[bold green]Benchmark package processed.[/bold green]")
+        console.print(f"Package: [cyan]{result.package_dir}[/cyan]")
+        console.print(f"Output: [cyan]{result.output_dir}[/cyan]")
+        console.print(f"Status: [cyan]{result.summary.get('status')}[/cyan]")
+        console.print(f"Fabric: [cyan]{result.summary.get('fabric', {}).get('status')}[/cyan]")
+        return
+    if normalized_action == "compare" and selected_input and node_id:
+        comparison = compare_packages(Path(selected_input), Path(node_id), Path(output_dir))
+        output_path = Path(output_dir) / "benchmark-compare.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(comparison, indent=2) + "\n", encoding="utf-8")
+        console.print("[bold green]Benchmark comparison written.[/bold green]")
+        console.print(f"Output: [cyan]{output_path}[/cyan]")
+        return
+    if normalized_action not in {"import", "ingest"}:
+        console.print("[bold red]Unsupported action. Use 'import', 'ingest', 'validate', 'summarize', or 'compare'.[/bold red]")
         sys.exit(1)
 
-    selected_input = input_file or file
     if not selected_input or not os.path.exists(selected_input):
         console.print(f"[bold red]Error: Benchmark input file '{selected_input}' does not exist.[/bold red]", err=True)
         sys.exit(1)
