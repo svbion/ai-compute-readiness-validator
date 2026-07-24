@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SUPPORTED_MANIFEST_SCHEMA = "1.0.0"
-SUPPORTED_PROFILES = {"linux-host", "gpu-workstation", "single-gpu-node", "dgx-class"}
+SUPPORTED_PROFILES = {"linux-host", "gpu-workstation", "single-gpu-node", "dgx-class", "gpu-benchmark"}
 NESTED_ARCHIVE_SUFFIXES = (".zip", ".tar", ".tgz", ".tar.gz", ".tar.bz2", ".tar.xz")
 
 

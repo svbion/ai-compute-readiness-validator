@@ -22,6 +22,9 @@ class DeterministicSanitizer:
         r")(?:%[\w.-]+)?(?![\w:])"
     )
     _user_path_pattern = re.compile(r"(?P<prefix>/(?:home|Users)/)(?P<user>[A-Za-z0-9._-]+)(?=/|\b)")
+    _gpu_uuid_pattern = re.compile(r"GPU-(?!REDACTED\b)[0-9A-Fa-f-]{8,}")
+    _mac_pattern = re.compile(r"(?i)(?:[0-9a-f]{2}:){5}[0-9a-f]{2}")
+    _secret_pattern = re.compile(r"(?i)(api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*[^\s]+")
 
     def __init__(self, *, source_hostname: str | None = None) -> None:
         self.source_hostname = source_hostname or ""
@@ -68,4 +71,7 @@ class DeterministicSanitizer:
             lambda match: f"{match.group('prefix')}{self._next(self.user_replacements, 'USER', match.group('user'))}",
             sanitized,
         )
+        sanitized = self._gpu_uuid_pattern.sub("GPU-REDACTED", sanitized)
+        sanitized = self._mac_pattern.sub("MAC-REDACTED", sanitized)
+        sanitized = self._secret_pattern.sub(lambda match: f"{match.group(1)}=REDACTED", sanitized)
         return sanitized

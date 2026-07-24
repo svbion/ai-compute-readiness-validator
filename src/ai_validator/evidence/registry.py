@@ -31,6 +31,7 @@ SUPPORTED_PROFILES = {
     "gpu-workstation": ("linux", "gpu"),
     "single-gpu-node": ("linux", "gpu"),
     "dgx-class": ("linux", "gpu"),
+    "gpu-benchmark": ("linux", "gpu"),
 }
 
 
