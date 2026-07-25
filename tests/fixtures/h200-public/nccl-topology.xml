@@ -1,0 +1,62 @@
+<system version="1">
+  <cpu host_hash="0x101548dc66d1b2a7" numaid="0" affinity="00000000,00000000,ffffffff,ffffffff,00000000,00000000,ffffffff,ffffffff" arch="x86_64" vendor="AuthenticAMD" familyid="175" modelid="17">
+    <pci busid="0000:01:00.0" class="0x060400" vendor="0x1000" device="0xc030" subsystem_vendor="0x15d9" subsystem_device="0x1d25" link_speed="32.0 GT/s PCIe" link_width="16">
+      <pci busid="0000:04:00.0" class="0x030200" vendor="0x10de" device="0x2335" subsystem_vendor="0x10de" subsystem_device="0x18be" link_speed="32.0 GT/s PCIe" link_width="16">
+        <gpu dev="0" sm="90" rank="0" gdr="1">
+          <nvlink target="0000:0a:00.0" count="5" tclass="0x068000"/>
+          <nvlink target="0000:0c:00.0" count="4" tclass="0x068000"/>
+          <nvlink target="0000:0b:00.0" count="5" tclass="0x068000"/>
+          <nvlink target="0000:09:00.0" count="4" tclass="0x068000"/>
+        </gpu>
+      </pci>
+    </pci>
+    <nic>
+      <net name="eth0" dev="0" latency="0" speed="10000" port="0" guid="0x0" maxconn="65536" gdr="0"/>
+    </nic>
+    <pci busid="0000:41:00.0" class="0x060400" vendor="0x1000" device="0xc030" subsystem_vendor="0x15d9" subsystem_device="0x1d25" link_speed="32.0 GT/s PCIe" link_width="16">
+      <pci busid="0000:43:00.0" class="0x030200" vendor="0x10de" device="0x2335" subsystem_vendor="0x10de" subsystem_device="0x18be" link_speed="32.0 GT/s PCIe" link_width="16">
+        <gpu dev="1" sm="90" rank="1" gdr="1">
+          <nvlink target="0000:0a:00.0" count="5" tclass="0x068000"/>
+          <nvlink target="0000:0b:00.0" count="5" tclass="0x068000"/>
+          <nvlink target="0000:0c:00.0" count="4" tclass="0x068000"/>
+          <nvlink target="0000:09:00.0" count="4" tclass="0x068000"/>
+        </gpu>
+      </pci>
+    </pci>
+  </cpu>
+  <cpu host_hash="0x101548dc66d1b2a7" numaid="1" affinity="ffffffff,ffffffff,00000000,00000000,ffffffff,ffffffff,00000000,00000000" arch="x86_64" vendor="AuthenticAMD" familyid="175" modelid="17">
+    <pci busid="0000:a1:00.0" class="0x060400" vendor="0x1000" device="0xc030" subsystem_vendor="0x15d9" subsystem_device="0x1d25" link_speed="32.0 GT/s PCIe" link_width="16">
+      <pci busid="0000:a3:00.0" class="0x030200" vendor="0x10de" device="0x2335" subsystem_vendor="0x10de" subsystem_device="0x18be" link_speed="32.0 GT/s PCIe" link_width="16">
+        <gpu dev="2" sm="90" rank="2" gdr="1">
+          <nvlink target="0000:0b:00.0" count="5" tclass="0x068000"/>
+          <nvlink target="0000:0a:00.0" count="5" tclass="0x068000"/>
+          <nvlink target="0000:09:00.0" count="4" tclass="0x068000"/>
+          <nvlink target="0000:0c:00.0" count="4" tclass="0x068000"/>
+        </gpu>
+      </pci>
+    </pci>
+    <nic>
+      <net name="eth0" dev="0" latency="0" speed="10000" port="0" guid="0x0" maxconn="65536" gdr="0"/>
+    </nic>
+    <pci busid="0000:c1:00.0" class="0x060400" vendor="0x1000" device="0xc030" subsystem_vendor="0x15d9" subsystem_device="0x1d25" link_speed="32.0 GT/s PCIe" link_width="16">
+      <pci busid="0000:c3:00.0" class="0x030200" vendor="0x10de" device="0x2335" subsystem_vendor="0x10de" subsystem_device="0x18be" link_speed="32.0 GT/s PCIe" link_width="16">
+        <gpu dev="3" sm="90" rank="3" gdr="1">
+          <nvlink target="0000:0a:00.0" count="5" tclass="0x068000"/>
+          <nvlink target="0000:09:00.0" count="4" tclass="0x068000"/>
+          <nvlink target="0000:0c:00.0" count="4" tclass="0x068000"/>
+          <nvlink target="0000:0b:00.0" count="5" tclass="0x068000"/>
+        </gpu>
+      </pci>
+    </pci>
+    <pci busid="0000:e1:00.0" class="0x060400" vendor="0x1000" device="0xc030" subsystem_vendor="0x15d9" subsystem_device="0x1d25" link_speed="32.0 GT/s PCIe" link_width="16">
+      <pci busid="0000:e4:00.0" class="0x030200" vendor="0x10de" device="0x2335" subsystem_vendor="0x10de" subsystem_device="0x18be" link_speed="32.0 GT/s PCIe" link_width="16">
+        <gpu dev="4" sm="90" rank="4" gdr="1">
+          <nvlink target="0000:0c:00.0" count="4" tclass="0x068000"/>
+          <nvlink target="0000:0a:00.0" count="5" tclass="0x068000"/>
+          <nvlink target="0000:09:00.0" count="4" tclass="0x068000"/>
+          <nvlink target="0000:0b:00.0" count="5" tclass="0x068000"/>
+        </gpu>
+      </pci>
+    </pci>
+  </cpu>
+</system>
