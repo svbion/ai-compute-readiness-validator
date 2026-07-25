@@ -1,5 +1,7 @@
+import json
 import os
 import sys
+from pathlib import Path
 from typing import Optional
 import typer
 from rich.console import Console
@@ -30,6 +32,7 @@ from ai_validator.benchmarks.hpl import HplParser
 from ai_validator.benchmarks.fio import FioParser
 from ai_validator.benchmarks.iperf import IperfParser
 from ai_validator.benchmarks.osu import OsuParser
+from ai_validator.benchmarks.package import BenchmarkPackageError, compare_packages, ingest_package
 
 app = typer.Typer(help="AI Compute Readiness Validator - Assessment CLI")
 console = Console()
@@ -278,36 +281,63 @@ def version():
 
 @app.command()
 def benchmark(
-    action: str = typer.Argument(..., help="Action to execute: 'ingest'"),
+    action: str = typer.Argument(..., help="Action to execute: import, ingest, validate, summarize, or compare"),
     benchmark_type: str = typer.Option("nccl", "--type", help="Benchmark log type to parse: 'nccl', 'hpl', 'fio', 'iperf', 'osu'"),
-    file: str = typer.Option(..., "--file", help="Path to raw benchmark log file to ingest")
+    input_file: Optional[str] = typer.Option(None, "--input", help="Path to raw benchmark log file or benchmark package directory/archive"),
+    file: Optional[str] = typer.Option(None, "--file", help="Deprecated alias for --input"),
+    output_dir: str = typer.Option("artifacts/benchmark-imports", "--output-dir", help="Directory for benchmark package reports"),
 ):
     """
     Ingests and parses historical execution logs of standard communication and compute benchmarks.
     Appends the parsed performance profiles to the current diagnostic reports.
     """
-    if action.lower() != "ingest":
-        console.print("[bold red]Unsupported action. Use 'ingest'.[/bold red]")
+    normalized_action = action.lower().strip()
+    selected_input = input_file or file
+
+    if normalized_action in {"ingest", "validate", "summarize"} and selected_input:
+        try:
+            result = ingest_package(Path(selected_input), Path(output_dir))
+        except BenchmarkPackageError as exc:
+            console.print(f"[bold red]{exc}[/bold red]", err=True)
+            sys.exit(1)
+        console.print("[bold green]Benchmark package processed.[/bold green]")
+        console.print(f"Package: [cyan]{result.package_dir}[/cyan]")
+        console.print(f"Output: [cyan]{result.output_dir}[/cyan]")
+        console.print(f"Status: [cyan]{result.summary.get('status')}[/cyan]")
+        console.print(f"Fabric: [cyan]{result.summary.get('fabric', {}).get('status')}[/cyan]")
+        return
+
+    if normalized_action == "compare" and selected_input and file:
+        comparison = compare_packages(Path(selected_input), Path(file), Path(output_dir))
+        output_path = Path(output_dir) / "benchmark-compare.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(comparison, indent=2) + "\n", encoding="utf-8")
+        console.print("[bold green]Benchmark comparison written.[/bold green]")
+        console.print(f"Output: [cyan]{output_path}[/cyan]")
+        return
+
+    if normalized_action not in {"import", "ingest"}:
+        console.print("[bold red]Unsupported action. Use 'import', 'ingest', 'validate', 'summarize', or 'compare'.[/bold red]")
         sys.exit(1)
         
-    if not os.path.exists(file):
-        console.print(f"[bold red]Error: Benchmark log file '{file}' does not exist.[/bold red]", err=True)
+    if not selected_input or not os.path.exists(selected_input):
+        console.print(f"[bold red]Error: Benchmark log file '{selected_input}' does not exist.[/bold red]", err=True)
         sys.exit(1)
 
-    console.print(f"Ingesting [cyan]{benchmark_type.upper()}[/cyan] log from: [cyan]{file}[/cyan]")
+    console.print(f"Ingesting [cyan]{benchmark_type.upper()}[/cyan] log from: [cyan]{selected_input}[/cyan]")
     
     # Select parser
     parser_type = benchmark_type.strip().lower()
     if parser_type == "nccl":
-        result = NcclParser.parse(file)
+        result = NcclParser.parse(selected_input)
     elif parser_type == "hpl":
-        result = HplParser.parse(file)
+        result = HplParser.parse(selected_input)
     elif parser_type == "fio":
-        result = FioParser.parse(file)
+        result = FioParser.parse(selected_input)
     elif parser_type == "iperf":
-        result = IperfParser.parse(file)
+        result = IperfParser.parse(selected_input)
     elif parser_type in ("osu", "osu-mpi"):
-        result = OsuParser.parse(file)
+        result = OsuParser.parse(selected_input)
     else:
         console.print(f"[bold red]Unsupported benchmark type: '{benchmark_type}'. Supported: nccl, hpl, fio, iperf, osu[/bold red]", err=True)
         sys.exit(1)
