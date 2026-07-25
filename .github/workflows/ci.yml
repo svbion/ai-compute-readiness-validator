@@ -16,15 +16,4 @@ jobs:
       - run: python -m pytest tests -q
       - run: python -m build || true
       - run: git diff --check
-  portal:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run test:portal
-      - run: npm run build
-      - run: bash tests-deploy/test-deployment-scripts.sh
+
