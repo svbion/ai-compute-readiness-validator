@@ -16,4 +16,3 @@ jobs:
       - run: python -m pytest tests -q
       - run: python -m build || true
       - run: git diff --check
-
