@@ -31,7 +31,12 @@ dev = [
 
 [project.scripts]
 ai-validator = "ai_validator.cli:app"
+gpu-validator = "ai_validator.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["ai_validator*"]
+
+[tool.pytest.ini_options]
+norecursedirs = [".git", ".venv", ".venv-clean", "node_modules", "dist", "build", "artifacts", "results"]
+testpaths = ["tests"]

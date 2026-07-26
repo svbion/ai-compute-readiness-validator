@@ -7,14 +7,23 @@ coverage/
 .env*
 !.env.example
 .pytest_cache/
+*.egg-info/
+src/*.egg-info/
+results/
+*.tar.gz
+*.tgz
+*.zip
 
 node_modules/
 .venv/
+.venv-clean/
 dist/
 build/
 .pytest_cache/
 __pycache__/
 *.py[cod]
+*.egg-info/
+src/*.egg-info/
 .env
 .env.local
 .DS_Store

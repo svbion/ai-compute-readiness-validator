@@ -98,6 +98,19 @@ Extend the assessment reports by parsing raw benchmark files:
 ai-validator benchmark ingest --type nccl --file sample-data/sample-nccl.log
 ```
 
+#### Process GPU Benchmark Packages
+The CLI also supports sanitized GPU benchmark packages with NCCL, topology,
+P2P, NVLink, and fabric-analysis evidence:
+```bash
+gpu-validator benchmark ingest \
+  --input /path/to/gpu-benchmark-package \
+  --output-dir artifacts/benchmark-package
+```
+
+See `docs/BENCHMARK_PACKAGES.md` and `docs/GPU_BENCHMARK_WORKFLOW.md` for the
+benchmark-only ingestion, validation, summarization, comparison, and generic
+`--gpu auto` workflow.
+
 ---
 
 ## 📊 Evaluation Mechanics
