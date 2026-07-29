@@ -1,0 +1,200 @@
+{
+  "organizations": [
+    {
+      "id": "org_ZGVtbw",
+      "name": "GPUValidator Demo Org",
+      "status": "active",
+      "created_at": "2026-07-27T22:28:55.073Z",
+      "updated_at": "2026-07-27T22:28:55.073Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "user_YWRtaW4",
+      "organization_id": "org_ZGVtbw",
+      "email": "admin@example.test",
+      "role_ids": [
+        "role_YWRtaW4"
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "id": "role_YWRtaW4",
+      "organization_id": "org_ZGVtbw",
+      "name": "Administrator",
+      "permissions": [
+        "*"
+      ]
+    },
+    {
+      "id": "role_dmlld2Vy",
+      "organization_id": "org_ZGVtbw",
+      "name": "Viewer",
+      "permissions": [
+        "cluster:read",
+        "academy:read"
+      ]
+    }
+  ],
+  "permissions": [],
+  "clusters": [
+    {
+      "id": "cluster_Zml4dHVyZS1oMjAwLW",
+      "organization_id": "org_ZGVtbw",
+      "name": "fixture-h200-cluster",
+      "status": "partial-data",
+      "environment": "fixture"
+    }
+  ],
+  "racks": [
+    {
+      "id": "rack_cmFjay1h",
+      "organization_id": "org_ZGVtbw",
+      "cluster_id": "cluster_Zml4dHVyZS1oMjAwLW",
+      "name": "rack-a"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_bm9kZS1h",
+      "organization_id": "org_ZGVtbw",
+      "cluster_id": "cluster_Zml4dHVyZS1oMjAwLW",
+      "hostname": "node-a",
+      "operating_system": "unknown",
+      "kernel": "unknown",
+      "status": "partial-data"
+    }
+  ],
+  "gpus": [
+    {
+      "id": "gpu_bm9kZS1hLTA",
+      "organization_id": "org_ZGVtbw",
+      "node_id": "node_bm9kZS1h",
+      "index": 0,
+      "model": "NVIDIA H200",
+      "memory_gb": 141,
+      "nvlink_status": "observed"
+    },
+    {
+      "id": "gpu_bm9kZS1hLTE",
+      "organization_id": "org_ZGVtbw",
+      "node_id": "node_bm9kZS1h",
+      "index": 1,
+      "model": "NVIDIA H200",
+      "memory_gb": 141,
+      "nvlink_status": "observed"
+    }
+  ],
+  "nics": [
+    {
+      "id": "nic_bWx4NV8w",
+      "organization_id": "org_ZGVtbw",
+      "node_id": "node_bm9kZS1h",
+      "name": "mlx5_0",
+      "kind": "InfiniBand",
+      "link_state": "unknown"
+    }
+  ],
+  "fabric_links": [
+    {
+      "id": "fabric_Z3B1MC1ncHUx",
+      "organization_id": "org_ZGVtbw",
+      "source_resource_id": "gpu_bm9kZS1hLTA",
+      "target_resource_id": "gpu_bm9kZS1hLTE",
+      "fabric_type": "NVLink",
+      "source_type": "observed",
+      "status": "unknown"
+    }
+  ],
+  "storage_targets": [],
+  "schedulers": [],
+  "kubernetes_clusters": [],
+  "agents": [],
+  "agent_heartbeats": [],
+  "agent_executions": [],
+  "validation_definitions": [
+    {
+      "id": "vdef_Z3B1LW5vZGUtYmFzZW",
+      "organization_id": "org_ZGVtbw",
+      "category": "GPU hardware",
+      "profile": "GPU node baseline",
+      "expected_result": "GPU inventory is available"
+    }
+  ],
+  "validation_runs": [],
+  "validation_steps": [],
+  "validation_findings": [],
+  "benchmark_packages": [],
+  "benchmark_runs": [],
+  "benchmark_results": [],
+  "benchmark_metrics": [],
+  "benchmark_comparisons": [],
+  "regression_findings": [],
+  "alerts": [],
+  "incidents": [],
+  "investigations": [],
+  "conversations": [],
+  "conversation_messages": [],
+  "evidence_references": [],
+  "reports": [],
+  "remediation_plans": [
+    {
+      "id": "rem_RHJhaW4gbm9kZSBhbm",
+      "organization_id": "org_ZGVtbw",
+      "action": "Drain node and run validation",
+      "target": "node-a",
+      "risk": "high",
+      "state": "REVIEW_REQUIRED",
+      "created_at": "2026-07-27T22:29:08.265Z",
+      "updated_at": "2026-07-27T22:29:08.265Z"
+    }
+  ],
+  "approval_requests": [],
+  "audit_events": [
+    {
+      "id": "audit_c2VlZC0yMDI2LTA3LT",
+      "organization_id": "org_ZGVtbw",
+      "action": "platform.seed_demo_fixture",
+      "object_type": "organization",
+      "object_id": "org_ZGVtbw",
+      "created_at": "2026-07-27T22:28:55.073Z"
+    },
+    {
+      "id": "audit_cmVtLTIwMjYtMDctMj",
+      "organization_id": "org_ZGVtbw",
+      "action": "remediation.plan.create",
+      "object_type": "remediation_plan",
+      "object_id": "rem_RHJhaW4gbm9kZSBhbm",
+      "created_at": "2026-07-27T22:29:08.265Z"
+    }
+  ],
+  "academy_courses": [
+    {
+      "id": "course_bmNjbA",
+      "organization_id": "org_ZGVtbw",
+      "title": "AI Infrastructure Academy: NCCL Troubleshooting"
+    }
+  ],
+  "academy_lessons": [
+    {
+      "id": "lesson_bmNjbC1mdW5kYW1lbn",
+      "organization_id": "org_ZGVtbw",
+      "course_id": "course_bmNjbA",
+      "title": "NCCL all-reduce troubleshooting fundamentals"
+    }
+  ],
+  "academy_labs": [
+    {
+      "id": "lab_YWxsLXJlZHVjZS1kcm",
+      "organization_id": "org_ZGVtbw",
+      "course_id": "course_bmNjbA",
+      "title": "Why did NCCL all-reduce bandwidth drop?",
+      "fixture_refs": [
+        "gpu-benchmark-lab:h200-public"
+      ]
+    }
+  ],
+  "academy_progress": [],
+  "saved_investigations": []
+}

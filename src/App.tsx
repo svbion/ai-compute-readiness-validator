@@ -7,6 +7,8 @@ import {
   ArrowUpRight, Info, BookOpen, Sun, Moon, Search, Pin, PinOff
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { HgxNvlinkVisualization } from "./components/mission-control/HgxNvlinkVisualization";
+import { ValidationFlowVisualization } from "./components/mission-control/ValidationFlowVisualization";
 
 // Types corresponding to our Python schema
 interface CommandEvidence {
@@ -70,6 +72,20 @@ interface Cluster {
   };
 }
 
+interface PlatformSummary {
+  surface: string;
+  mode: "demo" | "live";
+  states: {
+    loading: boolean;
+    empty: boolean;
+    error: string | null;
+    permission: "allowed" | "denied";
+    partial_data: boolean;
+  };
+  counts: Record<string, number>;
+  clusters: Array<{ id: string; name: string; status: string }>;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<"diagnostics" | "benchmarks">("diagnostics");
   const [selectedScenario, setSelectedScenario] = useState<"healthy" | "degraded">("degraded");
@@ -79,6 +95,8 @@ export default function App() {
   const [selectedNodeName, setSelectedNodeName] = useState<string>("dgx01");
   const [selectedCheck, setSelectedCheck] = useState<ValidationCheck | null>(null);
   const [ingestingBenchmark, setIngestingBenchmark] = useState<string | null>(null);
+  const [platformSummary, setPlatformSummary] = useState<PlatformSummary | null>(null);
+  const [platformSummaryError, setPlatformSummaryError] = useState<string | null>(null);
 
   // Modal and Interactive Popup Toggles
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -450,6 +468,22 @@ export default function App() {
   useEffect(() => {
     fetchResults(selectedScenario);
   }, [selectedScenario]);
+
+  useEffect(() => {
+    const fetchPlatformSummary = async () => {
+      try {
+        const res = await fetch("/api/platform/summary");
+        if (!res.ok) {
+          throw new Error(`Platform API returned HTTP ${res.status}`);
+        }
+        setPlatformSummary(await res.json());
+        setPlatformSummaryError(null);
+      } catch (err) {
+        setPlatformSummaryError(err instanceof Error ? err.message : "Unable to load platform summary");
+      }
+    };
+    fetchPlatformSummary();
+  }, []);
 
   // Fetch historical health scores for selected node
   const fetchNodeHistory = async (nodeName: string, scenario: "healthy" | "degraded") => {
@@ -953,6 +987,34 @@ export default function App() {
       </AnimatePresence>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        <section className="mb-6 cyber-panel rounded-2xl p-4 border border-emerald-500/20 bg-slate-950/60" aria-label="GPUValidator platform service state">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.24em] text-emerald-400">Platform V02 Service</p>
+              <h2 className="text-sm font-display font-bold text-slate-100 mt-1">
+                {platformSummary ? `${platformSummary.clusters.length} persisted cluster${platformSummary.clusters.length === 1 ? "" : "s"}` : "Connecting to platform services"}
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                {platformSummaryError || (platformSummary?.states.partial_data ? "Partial fixture/demo data is explicit; live integrations are not faked." : "Live platform response loaded.")}
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.nodes ?? "—"}</div>
+                <div className="text-[9px] uppercase tracking-wider text-slate-500">Nodes</div>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.gpus ?? "—"}</div>
+                <div className="text-[9px] uppercase tracking-wider text-slate-500">GPUs</div>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.audit_events ?? "—"}</div>
+                <div className="text-[9px] uppercase tracking-wider text-slate-500">Audits</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* TAB CONTROLS */}
         <div className="flex border-b border-slate-800/85 mb-8 p-1 bg-slate-950/40 rounded-xl max-w-md">
           <button 
@@ -1147,6 +1209,8 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+              <ValidationFlowVisualization />
 
               {/* CLUSTER NODE GRID */}
               <div className="flex flex-col gap-4">
@@ -1998,7 +2062,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* 3. PHYSICAL INTERCONNECT FABRIC TOPOLOGY MAP MODAL */}
+      {/* 3. LOGICAL HGX-STYLE NVLINK/NVSWITCH TOPOLOGY MAP MODAL */}
       <AnimatePresence>
         {showTopologyModal && (
           <motion.div 
@@ -2011,12 +2075,12 @@ export default function App() {
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
-              className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden text-slate-200 flex flex-col"
+              className="bg-slate-900 border border-slate-800 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden text-slate-200 flex flex-col max-h-[92vh]"
             >
               <div className="flex justify-between items-center px-6 py-4.5 border-b border-slate-800 bg-slate-950/30">
                 <div className="flex items-center gap-2.5">
                   <Layers className="h-5 w-5 text-emerald-500" />
-                  <span className="font-display font-bold tracking-wider text-sm text-slate-100 uppercase">SuperPOD Physical Link Fabric Map</span>
+                  <span className="font-display font-bold tracking-wider text-sm text-slate-100 uppercase">Logical HGX-style topology</span>
                 </div>
                 <button 
                   onClick={() => setShowTopologyModal(false)}
@@ -2026,100 +2090,8 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="p-6 overflow-hidden flex flex-col gap-4 text-center">
-                <p className="text-slate-400 text-xs leading-relaxed max-w-xl mx-auto">
-                  Interactive schematic representing physical InfiniBand NDR routing interconnecting the SuperPOD nodes. 
-                  {selectedScenario === "degraded" ? (
-                    <span className="text-amber-400 block mt-1 font-mono font-bold">
-                      ⚠ INTERCONNECT DEGRADATION FAULT detected on Mellanox fabric connecting [DGX03]!
-                    </span>
-                  ) : (
-                    <span className="text-emerald-400 block mt-1 font-mono font-bold">
-                      ✔ All high-speed links running nominal ConnectX-7 NDR bandwidth rates (400 Gb/s).
-                    </span>
-                  )}
-                </p>
-
-                {/* SVG INTERCONNECT MAP */}
-                <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800/80 relative flex items-center justify-center min-h-[300px]">
-                  <svg className="w-full max-w-xl h-64" viewBox="0 0 500 250">
-                    {/* Switch Box Leaf-A */}
-                    <g transform="translate(130, 20)">
-                      <rect width="110" height="30" rx="4" fill="rgba(30, 41, 59, 0.9)" stroke="#76B900" strokeWidth="1.5" className="shadow" />
-                      <text x="55" y="18" fill="#f8fafc" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">IB-SPINE-SWITCH-01</text>
-                    </g>
-                    {/* Switch Box Leaf-B */}
-                    <g transform="translate(260, 20)">
-                      <rect width="110" height="30" rx="4" fill="rgba(30, 41, 59, 0.9)" stroke="#76B900" strokeWidth="1.5" className="shadow" />
-                      <text x="55" y="18" fill="#f8fafc" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">IB-SPINE-SWITCH-02</text>
-                    </g>
-
-                    {/* Nodes (dgx01, dgx02, dgx03, dgx04) */}
-                    {[
-                      { name: "dgx01", x: 40, status: "pass" },
-                      { name: "dgx02", x: 160, status: "pass" },
-                      { name: "dgx03", x: 280, status: selectedScenario === "degraded" ? "warning" : "pass" },
-                      { name: "dgx04", x: 400, status: "pass" }
-                    ].map((n, idx) => {
-                      const strokeColor = n.status === "pass" ? "#10b981" : "#f59e0b";
-                      const isWarning = n.status === "warning";
-                      return (
-                        <g key={n.name} transform={`translate(${n.x}, 180)`}>
-                          <rect 
-                            width="60" 
-                            height="40" 
-                            rx="5" 
-                            fill="rgba(15, 23, 42, 0.9)" 
-                            stroke={strokeColor} 
-                            strokeWidth={isWarning ? "2" : "1.5"} 
-                            className={`shadow transition-all duration-300 ${isWarning ? "animate-pulse" : ""}`}
-                          />
-                          <text x="30" y="20" fill="#f1f5f9" fontSize="9" fontFamily="monospace" fontWeight="bold" textAnchor="middle">{n.name.toUpperCase()}</text>
-                          <text x="30" y="32" fill={isWarning ? "#f59e0b" : "#64748b"} fontSize="7" fontFamily="monospace" textAnchor="middle">
-                            {isWarning ? "DEGRADED" : "ONLINE"}
-                          </text>
-                        </g>
-                      );
-                    })}
-
-                    {/* Connections */}
-                    {/* Node 1 Connects to Switch 1 */}
-                    <path d="M 70 180 L 185 50" fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4,4" className="animate-[dash_10s_linear_infinite]" />
-                    
-                    {/* Node 2 Connects to Switch 1 and 2 */}
-                    <path d="M 190 180 L 185 50" fill="none" stroke="#10b981" strokeWidth="1.5" />
-                    <path d="M 190 180 L 315 50" fill="none" stroke="#10b981" strokeWidth="1.5" />
-
-                    {/* Node 3 Connects to Switch 1 and 2 (dgx03 degraded!) */}
-                    {selectedScenario === "degraded" ? (
-                      <>
-                        <path d="M 310 180 L 185 50" fill="none" stroke="#f59e0b" strokeWidth="2.5" className="animate-[pulse_1.5s_infinite]" />
-                        <path d="M 310 180 L 315 50" fill="none" stroke="#10b981" strokeWidth="1.5" />
-                        <circle cx="247" cy="115" r="4" fill="#f59e0b" className="animate-ping" />
-                      </>
-                    ) : (
-                      <>
-                        <path d="M 310 180 L 185 50" fill="none" stroke="#10b981" strokeWidth="1.5" />
-                        <path d="M 310 180 L 315 50" fill="none" stroke="#10b981" strokeWidth="1.5" />
-                      </>
-                    )}
-
-                    {/* Node 4 Connects to Switch 2 */}
-                    <path d="M 430 180 L 315 50" fill="none" stroke="#10b981" strokeWidth="1.5" />
-                  </svg>
-
-                  {/* Interconnect indicators */}
-                  <div className="absolute bottom-4 left-4 flex gap-4 text-[10px] font-mono">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      <span className="text-slate-400">Nominal NDR (400 Gb/s)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)] animate-pulse" />
-                      <span className="text-slate-400">Degraded NDR (200 Gb/s)</span>
-                    </div>
-                  </div>
-                </div>
+              <div className="p-6 overflow-y-auto">
+                <HgxNvlinkVisualization />
               </div>
 
               <div className="px-6 py-4 border-t border-slate-800 bg-slate-950/40 flex justify-end">
