@@ -4,6 +4,8 @@ import fs from 'node:fs';
 
 const server = fs.readFileSync('server.ts', 'utf8');
 const app = fs.readFileSync('src/App.tsx', 'utf8');
+const indexHtml = fs.readFileSync('index.html', 'utf8');
+const landing = fs.readFileSync('src/components/landing/PublicLanding.tsx', 'utf8');
 const missionControl = fs.readFileSync('src/components/mission-control/MissionControlOverview.tsx', 'utf8');
 const hgxTopology = fs.readFileSync('src/components/mission-control/HgxNvlinkVisualization.tsx', 'utf8');
 const validationFlow = fs.readFileSync('src/components/mission-control/ValidationFlowVisualization.tsx', 'utf8');
@@ -41,6 +43,40 @@ const requiredUiContracts = [
 for (const marker of requiredUiContracts) {
   assert(app.includes(marker), `missing UI state or service contract marker ${marker}`);
 }
+
+const requiredLandingMarkers = [
+  'GPUValidator',
+  'GPU Infrastructure Readiness, Validated',
+  'Reviewer sign in',
+  'Logical GPU Node Fabric',
+  'NVLink',
+  'NVSwitch',
+  'Node NIC',
+  'InfiniBand / RDMA',
+  'External Cluster Fabric',
+  'Logical reference topology',
+  'AI FACTORY READINESS PORTAL',
+  '8× GPU',
+  'NVLink and NVSwitch provide high-bandwidth GPU communication inside the node. The node NIC connects the system to the external InfiniBand/RDMA cluster fabric.',
+  'prefers-reduced-motion',
+];
+for (const marker of requiredLandingMarkers) {
+  assert(landing.includes(marker) || app.includes(marker) || styles.includes(marker), `missing landing marker ${marker}`);
+}
+
+const forbiddenLandingMarkers = [
+  'Gate',
+  'CLUSTER FABRIC',
+  'GPU-0',
+  'GPU-1',
+  'GPU-2',
+  'GPU-3',
+];
+for (const marker of forbiddenLandingMarkers) {
+  assert(!landing.includes(marker), `obsolete landing marker still present: ${marker}`);
+}
+
+assert(indexHtml.includes('GPUValidator | AI Infrastructure Readiness'), 'landing metadata title was not updated');
 
 const requiredHgxTopologyMarkers = [
   'Logical HGX-style topology',
@@ -138,4 +174,4 @@ for (const entity of storeEntities) {
   assert(server.includes(`${entity}: []`) || server.includes(`${entity}:`), `platform store missing ${entity}`);
 }
 
-console.log(`portal contract ok: ${requiredRoutes.length} routes, ${requiredUiContracts.length} UI markers, ${requiredHgxTopologyMarkers.length} HGX topology markers, ${requiredValidationFlowMarkers.length} validation workflow markers, ${requiredMissionControlV3Markers.length} Mission Control V3 markers`);
+console.log(`portal contract ok: ${requiredRoutes.length} routes, ${requiredUiContracts.length} UI markers, ${requiredLandingMarkers.length} landing markers, ${requiredHgxTopologyMarkers.length} HGX topology markers, ${requiredValidationFlowMarkers.length} validation workflow markers, ${requiredMissionControlV3Markers.length} Mission Control V3 markers`);

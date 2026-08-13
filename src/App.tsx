@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { HgxNvlinkVisualization } from "./components/mission-control/HgxNvlinkVisualization";
 import { MissionControlOverview } from "./components/mission-control/MissionControlOverview";
+import { PublicLanding } from "./components/landing/PublicLanding";
 
 // Types corresponding to our Python schema
 interface CommandEvidence {
@@ -447,6 +448,8 @@ export default function App() {
     }
   }, [isDarkMode]);
 
+  const [isReviewerAuthenticated, setIsReviewerAuthenticated] = useState(false);
+
   // Fetch results based on selected scenario
   const fetchResults = async (scenario: "healthy" | "degraded") => {
     try {
@@ -813,6 +816,16 @@ export default function App() {
   };
 
   const selectedNode = computedCluster?.nodes.find(n => n.name === selectedNodeName);
+
+  if (!isReviewerAuthenticated) {
+    return (
+      <PublicLanding
+        isDarkMode={isDarkMode}
+        onSubmit={() => setIsReviewerAuthenticated(true)}
+        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-300 transition-colors duration-300">

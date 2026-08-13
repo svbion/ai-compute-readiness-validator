@@ -662,6 +662,558 @@ input:focus-visible,
   outline-offset: 3px;
 }
 
+.public-landing-shell {
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.08), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(118, 185, 0, 0.08), transparent 24%),
+    var(--surface-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.public-landing-header {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 auto;
+  max-width: 80rem;
+  padding: 1rem 1rem 0;
+}
+
+.public-landing-theme-toggle {
+  align-items: center;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.public-landing-main {
+  margin: 0 auto;
+  max-width: 80rem;
+  padding: 1rem;
+}
+
+.public-landing-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.9fr);
+  align-items: start;
+}
+
+.public-landing-identity,
+.public-landing-signin-column {
+  min-width: 0;
+}
+
+.public-landing-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.public-landing-identity-block,
+.public-landing-signin-card,
+.public-landing-trust-card,
+.public-landing-capability-chip,
+.landing-topology {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.22);
+}
+
+.public-landing-identity-block {
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+}
+
+.public-landing-kicker,
+.landing-topology__eyebrow {
+  color: var(--success-bright);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.public-landing-subkicker {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+}
+
+.public-landing-title {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(2.35rem, 5vw, 4.5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  margin-top: 1rem;
+}
+
+.public-landing-copy {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-top: 1rem;
+  max-width: 44rem;
+}
+
+.public-landing-trust-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.public-landing-trust-grid--mobile,
+.public-landing-capabilities--mobile,
+.landing-topology--compact,
+.public-landing-footer-markers--mobile {
+  display: none;
+}
+
+.public-landing-signin-card .public-landing-trust-grid--mobile,
+.public-landing-signin-card .public-landing-capabilities--mobile,
+.public-landing-signin-card .landing-topology--compact,
+.public-landing-signin-card .public-landing-footer-markers--mobile {
+  display: none;
+}
+
+.public-landing-trust-card,
+.public-landing-capability-chip {
+  border-radius: 1.25rem;
+  padding: 1rem;
+}
+
+.public-landing-trust-card {
+  display: flex;
+  gap: 0.85rem;
+}
+
+.public-landing-trust-card h2,
+.public-landing-capability-chip h2,
+.public-landing-signin-header h2 {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.public-landing-trust-card p,
+.public-landing-capability-chip p,
+.public-landing-signin-header p,
+.public-landing-footer,
+.landing-topology__summary {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.public-landing-trust-icon {
+  color: var(--info);
+  flex: none;
+  margin-top: 0.1rem;
+}
+
+.landing-topology {
+  border-radius: 1.5rem;
+  overflow: hidden;
+  padding: 1.1rem;
+}
+
+.landing-topology__header-row {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.landing-topology__title {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-top: 0.35rem;
+}
+
+.landing-topology__stage {
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  border-radius: 999px;
+  color: var(--info);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 0.4rem 0.7rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.landing-topology__summary {
+  margin-top: 0.75rem;
+}
+
+.landing-topology__canvas {
+  margin-top: 1rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.landing-topology__svg {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.landing-topology__boundary {
+  fill: rgba(15, 23, 42, 0.35);
+  stroke-dasharray: 8 6;
+  stroke-width: 1.5;
+}
+
+.landing-topology__boundary--internal {
+  stroke: rgba(118, 185, 0, 0.54);
+}
+
+.landing-topology__boundary--external {
+  fill: rgba(37, 99, 235, 0.08);
+  stroke: rgba(96, 165, 250, 0.5);
+}
+
+.landing-topology__boundary-label,
+.landing-topology__node-title,
+.landing-topology__external-label,
+.landing-topology__annotation,
+.landing-topology__topology-note,
+.landing-topology__path-label,
+.landing-topology__cluster-mark,
+.landing-topology__block-label {
+  font-family: var(--font-mono);
+}
+
+.landing-topology__boundary-label,
+.landing-topology__node-title,
+.landing-topology__annotation,
+.landing-topology__topology-note,
+.landing-topology__path-label,
+.landing-topology__cluster-mark,
+.landing-topology__block-label,
+.landing-topology__external-label {
+  fill: var(--text-primary);
+}
+
+.landing-topology__boundary-label,
+.landing-topology__annotation,
+.landing-topology__topology-note,
+.landing-topology__external-label,
+.landing-topology__path-label {
+  font-size: 0.75rem;
+}
+
+.landing-topology__node-title {
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.landing-topology__block {
+  fill: var(--surface-elevated);
+  stroke-width: 1.6;
+}
+
+.landing-topology__block--gpu {
+  stroke: rgba(96, 165, 250, 0.44);
+}
+
+.landing-topology__block--nvlink {
+  stroke: rgba(52, 211, 153, 0.58);
+}
+
+.landing-topology__block--nvswitch {
+  stroke: rgba(192, 132, 252, 0.58);
+}
+
+.landing-topology__block--nic {
+  stroke: rgba(251, 191, 36, 0.58);
+}
+
+.landing-topology__block--cluster {
+  stroke: rgba(96, 165, 250, 0.58);
+}
+
+.landing-topology__block-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.landing-topology__cluster-mark {
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.landing-topology__path {
+  fill: none;
+  stroke: rgba(71, 85, 105, 0.5);
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+.landing-topology--discovery .landing-topology__block--gpu,
+.landing-topology--validated .landing-topology__block--gpu {
+  filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.35));
+}
+
+.landing-topology--discovery .landing-topology__path--discovery,
+.landing-topology--cluster .landing-topology__path--cluster,
+.landing-topology--validated .landing-topology__path--cluster,
+.landing-topology--validated .landing-topology__path--discovery {
+  stroke: var(--info);
+}
+
+.landing-topology--fabric .landing-topology__path--fabric,
+.landing-topology--validated .landing-topology__path--fabric {
+  stroke: #34d399;
+}
+
+.landing-topology--nccl .landing-topology__path--nccl,
+.landing-topology--validated .landing-topology__path--nccl {
+  stroke: #c084fc;
+}
+
+.landing-topology--egress .landing-topology__path--egress,
+.landing-topology--validated .landing-topology__path--egress {
+  stroke: #fbbf24;
+}
+
+.landing-topology--validated .landing-topology__block--cluster,
+.landing-topology--validated .landing-topology__block--nic,
+.landing-topology--validated .landing-topology__block--nvswitch,
+.landing-topology--validated .landing-topology__block--nvlink {
+  filter: drop-shadow(0 0 8px rgba(118, 185, 0, 0.18));
+}
+
+.public-landing-capabilities {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.public-landing-capability-chip h2 {
+  font-size: 0.92rem;
+}
+
+.public-landing-footer {
+  padding-bottom: 0.5rem;
+}
+
+.public-landing-footer-markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.public-landing-footer-markers span {
+  align-items: center;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 0.45rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.public-landing-signin-card {
+  border-radius: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.4rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.public-landing-signin-header p {
+  margin-top: 0.55rem;
+}
+
+.public-landing-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.public-landing-field label {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.public-landing-field input {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 1rem;
+  color: var(--text-primary);
+  min-height: 3rem;
+  padding: 0.85rem 1rem;
+  width: 100%;
+}
+
+.public-landing-field input::placeholder {
+  color: var(--text-subtle);
+}
+
+.public-landing-password-row {
+  align-items: stretch;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.public-landing-password-toggle,
+.public-landing-submit {
+  border-radius: 1rem;
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 3rem;
+}
+
+.public-landing-password-toggle {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  min-width: 4.5rem;
+  padding: 0 1rem;
+}
+
+.public-landing-submit {
+  background: linear-gradient(135deg, var(--success), var(--success-bright));
+  border: 1px solid rgba(118, 185, 0, 0.5);
+  color: #021003;
+  width: 100%;
+}
+
+.light .public-landing-submit {
+  color: #ffffff;
+}
+
+@media (max-width: 1024px) {
+  .public-landing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-landing-signin-card {
+    position: static;
+  }
+
+  .public-landing-trust-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .public-landing-title {
+    font-size: clamp(2.1rem, 9vw, 3rem);
+  }
+
+  .public-landing-trust-grid,
+  .public-landing-capabilities {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .public-landing-header,
+  .public-landing-main {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
+
+  .public-landing-grid {
+    gap: 1rem;
+  }
+
+  .public-landing-identity {
+    gap: 1rem;
+  }
+
+  .public-landing-identity-block,
+  .public-landing-signin-card,
+  .landing-topology,
+  .public-landing-trust-card,
+  .public-landing-capability-chip {
+    border-radius: 1.2rem;
+    padding: 1rem;
+  }
+
+  .public-landing-trust-grid--desktop,
+  .landing-topology--desktop,
+  .public-landing-capabilities:not(.public-landing-capabilities--mobile),
+  .public-landing-footer {
+    display: none;
+  }
+
+  .public-landing-trust-grid--mobile,
+  .public-landing-capabilities--mobile,
+  .landing-topology--compact,
+  .public-landing-footer-markers--mobile {
+    display: grid;
+  }
+
+  .public-landing-signin-card .landing-topology--compact {
+    display: block;
+  }
+
+  .public-landing-trust-grid--mobile,
+  .public-landing-capabilities--mobile {
+    grid-template-columns: 1fr;
+  }
+
+  .public-landing-footer-markers--mobile {
+    gap: 0.6rem;
+  }
+
+  .public-landing-password-row {
+    grid-template-columns: minmax(0, 1fr) 5rem;
+  }
+
+  .landing-topology__header-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .landing-topology__stage {
+    align-self: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-topology__stage,
+  .public-landing-theme-toggle,
+  .public-landing-submit,
+  .public-landing-password-toggle,
+  .landing-topology,
+  .public-landing-trust-card,
+  .public-landing-capability-chip {
+    transition: none !important;
+  }
+}
+
 .mission-control-v3 {
   display: flex;
   flex-direction: column;
