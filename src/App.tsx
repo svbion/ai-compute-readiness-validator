@@ -828,7 +828,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-300 transition-colors duration-300">
+    <div className="app-shell--authenticated min-h-screen bg-transparent text-slate-200 font-sans antialiased selection:bg-cyan-400/20 selection:text-cyan-100 transition-colors duration-300">
       {/* Mission Control operations header */}
       <header className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800 py-4 px-6 shadow-xl transition-all duration-300">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
