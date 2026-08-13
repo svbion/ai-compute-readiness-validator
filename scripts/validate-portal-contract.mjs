@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const server = fs.readFileSync('server.ts', 'utf8');
 const app = fs.readFileSync('src/App.tsx', 'utf8');
+const missionControl = fs.readFileSync('src/components/mission-control/MissionControlOverview.tsx', 'utf8');
 const hgxTopology = fs.readFileSync('src/components/mission-control/HgxNvlinkVisualization.tsx', 'utf8');
 const validationFlow = fs.readFileSync('src/components/mission-control/ValidationFlowVisualization.tsx', 'utf8');
 const styles = fs.readFileSync('src/index.css', 'utf8');
@@ -93,6 +94,35 @@ for (const marker of requiredValidationFlowMarkers) {
   assert(validationFlow.includes(marker) || app.includes(marker) || styles.includes(marker), `missing validation workflow marker ${marker}`);
 }
 
+const requiredMissionControlV3Markers = [
+  'Mission Control V3',
+  'Current AI Factory Health',
+  'AI Factory Health',
+  'Critical Conditions',
+  'Current Activity',
+  'Prioritized KPIs',
+  'VALIDATION PIPELINE',
+  'Affected scope',
+  'Current validation',
+  'Latest benchmark',
+  'Recommended next action',
+  'DEMO / FIXTURE DATA',
+  '--surface-primary',
+  '--surface-secondary',
+  '--surface-elevated',
+  '--text-primary',
+  '--text-secondary',
+  '--success',
+  '--warning',
+  '--critical',
+  '--info',
+  '--border-primary',
+  'prefers-reduced-motion',
+];
+for (const marker of requiredMissionControlV3Markers) {
+  assert(missionControl.includes(marker) || validationFlow.includes(marker) || styles.includes(marker) || app.includes(marker), `missing Mission Control V3 marker ${marker}`);
+}
+
 const obsoleteLandingMarkers = ['Gate', 'GPU-0', 'GPU-1', 'GPU-2', 'GPU-3'];
 for (const marker of obsoleteLandingMarkers) {
   assert(!validationFlow.includes(marker) && !app.includes(marker), `obsolete landing workflow marker still present: ${marker}`);
@@ -108,4 +138,4 @@ for (const entity of storeEntities) {
   assert(server.includes(`${entity}: []`) || server.includes(`${entity}:`), `platform store missing ${entity}`);
 }
 
-console.log(`portal contract ok: ${requiredRoutes.length} routes, ${requiredUiContracts.length} UI markers, ${requiredHgxTopologyMarkers.length} HGX topology markers, ${requiredValidationFlowMarkers.length} validation workflow markers`);
+console.log(`portal contract ok: ${requiredRoutes.length} routes, ${requiredUiContracts.length} UI markers, ${requiredHgxTopologyMarkers.length} HGX topology markers, ${requiredValidationFlowMarkers.length} validation workflow markers, ${requiredMissionControlV3Markers.length} Mission Control V3 markers`);

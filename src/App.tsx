@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { HgxNvlinkVisualization } from "./components/mission-control/HgxNvlinkVisualization";
-import { ValidationFlowVisualization } from "./components/mission-control/ValidationFlowVisualization";
+import { MissionControlOverview } from "./components/mission-control/MissionControlOverview";
 
 // Types corresponding to our Python schema
 interface CommandEvidence {
@@ -816,7 +816,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-300 transition-colors duration-300">
-      {/* FUTURISTIC ULTRA-MODERN HEADER */}
+      {/* Mission Control operations header */}
       <header className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800 py-4 px-6 shadow-xl transition-all duration-300">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
@@ -830,11 +830,11 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
                 <h1 className="text-xl font-display font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-slate-200 to-slate-400">
-                  NVIDIA DGX SUPERPOD // READY-CHECK
+                  GPUValidator Mission Control
                 </h1>
               </div>
               <p className="text-[10px] text-emerald-500 font-mono tracking-widest uppercase mt-0.5 font-semibold">
-                AI COMPUTE INFRASTRUCTURE VALIDATION ENVIRONMENT
+                AI Factory Operations Experience
               </p>
             </div>
           </div>
@@ -845,13 +845,13 @@ export default function App() {
                 onClick={() => { setSelectedScenario("degraded"); }}
                 className={`px-3 py-1.5 text-[11px] font-mono font-medium rounded-lg transition-all duration-300 cursor-pointer ${selectedScenario === "degraded" ? "bg-red-500/10 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.1)]" : "text-slate-400 hover:text-slate-200 border border-transparent"}`}
               >
-                // DEGRADED_SYS
+                Degraded fixture
               </button>
               <button 
                 onClick={() => { setSelectedScenario("healthy"); }}
                 className={`px-3 py-1.5 text-[11px] font-mono font-medium rounded-lg transition-all duration-300 cursor-pointer ${selectedScenario === "healthy" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(118,185,0,0.15)]" : "text-slate-400 hover:text-slate-200 border border-transparent"}`}
               >
-                // NOMINAL_SYS
+                Nominal fixture
               </button>
             </div>
 
@@ -1015,6 +1015,23 @@ export default function App() {
           </div>
         </section>
 
+        {computedCluster && (
+          <MissionControlOverview
+            cluster={computedCluster}
+            platformSummary={platformSummary}
+            platformSummaryError={platformSummaryError}
+            selectedScenario={selectedScenario}
+            selectedNodeName={selectedNodeName}
+            loading={loading}
+            bookmarkedNodes={bookmarkedNodes}
+            onTriggerScan={triggerScan}
+            onSelectCheck={setSelectedCheck}
+            onToggleBookmark={toggleBookmark}
+            onOpenExport={() => setShowExportModal(true)}
+            benchmarkCount={computedCluster.benchmark_results?.length || 0}
+          />
+        )}
+
         {/* TAB CONTROLS */}
         <div className="flex border-b border-slate-800/85 mb-8 p-1 bg-slate-950/40 rounded-xl max-w-md">
           <button 
@@ -1033,7 +1050,7 @@ export default function App() {
 
         {activeTab === "diagnostics" ? (
           <div className="flex flex-col gap-8">
-            {/* NEW DIAGNOSTIC SUMMARY CARDS ROW */}
+            {/* Supporting diagnostic summary cards */}
             {computedCluster && (() => {
               const allChecks = computedCluster.nodes.flatMap(n => 
                 (Object.values(n.categories) as ValidationCategory[]).flatMap(cat => cat.checks)
@@ -1049,7 +1066,7 @@ export default function App() {
               );
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mission-legacy-support">
                   {/* Metric 1: Total Nodes Active */}
                   <div className="cyber-panel rounded-2xl p-5 relative overflow-hidden flex items-center justify-between group hover:border-emerald-500/30 transition-all duration-300">
                     <div className="flex flex-col gap-1.5">
@@ -1118,9 +1135,9 @@ export default function App() {
             {/* LEFT / CENTER COLUMN: SCORES & NODE GRID */}
             <div className="lg:col-span-2 flex flex-col gap-8">
               
-              {/* READINESS HERO PANEL */}
+              {/* Supporting readiness details */}
               {computedCluster && (
-                <div className="cyber-panel scanline-effect rounded-2xl p-6 border border-slate-800/80 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                <div className="cyber-panel rounded-2xl p-6 border border-slate-800/80 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden mission-legacy-support">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
                   
                   <div className="flex items-center gap-6">
@@ -1209,8 +1226,6 @@ export default function App() {
                   </div>
                 </div>
               )}
-
-              <ValidationFlowVisualization />
 
               {/* CLUSTER NODE GRID */}
               <div className="flex flex-col gap-4">
