@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import * as d3 from "d3";
 import { 
   Activity, Server, Cpu, Network, Database, HardDrive, 
-  AlertTriangle, CheckCircle2, XCircle, Terminal, HelpCircle, 
-  ArrowRight, Play, RefreshCw, Layers, FileText, Settings, Award, 
-  ArrowUpRight, Info, BookOpen, Sun, Moon, Search, Pin, PinOff
+  AlertTriangle, CheckCircle2, XCircle, Terminal,
+  ArrowRight, Play, RefreshCw, Layers, FileText, Settings, Award,
+  ArrowUpRight, Info, BookOpen, Search, Pin, PinOff
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { HgxNvlinkVisualization } from "./components/mission-control/HgxNvlinkVisualization";
 import { MissionControlOverview } from "./components/mission-control/MissionControlOverview";
 import { PublicLanding } from "./components/landing/PublicLanding";
+import { HudTopBar, type HudTopBarTone } from "./components/hud";
 
 // Types corresponding to our Python schema
 interface CommandEvidence {
@@ -89,7 +90,7 @@ interface PlatformSummary {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"diagnostics" | "benchmarks">("diagnostics");
-  const [selectedScenario, setSelectedScenario] = useState<"healthy" | "degraded">("degraded");
+  const selectedScenario: "healthy" | "degraded" = "degraded";
   const [cluster, setCluster] = useState<Cluster | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState<string[]>([]);
@@ -816,6 +817,27 @@ export default function App() {
   };
 
   const selectedNode = computedCluster?.nodes.find(n => n.name === selectedNodeName);
+  const primaryClusterName = computedCluster?.name || platformSummary?.clusters[0]?.name || "UNKNOWN";
+  const scopeLabel = `GLOBAL / ${primaryClusterName.toUpperCase()}`;
+  const environmentLabel = platformSummary?.mode === "demo" || platformSummary?.states.partial_data || computedCluster ? "DEMO" : "UNKNOWN";
+
+  let systemStateLabel = "UNKNOWN";
+  if (loading) {
+    systemStateLabel = "SCANNING";
+  } else if (computedCluster?.classification) {
+    systemStateLabel = computedCluster.classification.toUpperCase();
+  } else if (platformSummaryError) {
+    systemStateLabel = "UNKNOWN";
+  }
+
+  let systemStateTone: HudTopBarTone = "unknown";
+  if (systemStateLabel.includes("READY") && !systemStateLabel.includes("WARNING")) {
+    systemStateTone = "healthy";
+  } else if (systemStateLabel.includes("WARNING") || systemStateLabel === "SCANNING") {
+    systemStateTone = "warning";
+  } else if (systemStateLabel.includes("REMEDIATION") || systemStateLabel.includes("FAIL") || systemStateLabel.includes("CRITICAL")) {
+    systemStateTone = "critical";
+  }
 
   if (!isReviewerAuthenticated) {
     return (
@@ -829,84 +851,16 @@ export default function App() {
 
   return (
     <div className="app-shell--authenticated min-h-screen bg-transparent text-slate-200 font-sans antialiased selection:bg-cyan-400/20 selection:text-cyan-100 transition-colors duration-300">
-      {/* Mission Control operations header */}
-      <header className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800 py-4 px-6 shadow-xl transition-all duration-300">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-emerald-500/20 rounded-xl blur-md pulse-cyber" />
-              <div className="relative bg-gradient-to-br from-emerald-500 to-emerald-600 p-2.5 rounded-xl text-slate-950 shadow-lg border border-emerald-400/30">
-                <Activity className="h-6 w-6 animate-pulse" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                <h1 className="text-xl font-display font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-slate-200 to-slate-400">
-                  GPUValidator Mission Control
-                </h1>
-              </div>
-              <p className="text-[10px] text-emerald-500 font-mono tracking-widest uppercase mt-0.5 font-semibold">
-                AI Factory Operations Experience
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 bg-slate-950/60 rounded-xl p-1 border border-slate-800">
-              <button 
-                onClick={() => { setSelectedScenario("degraded"); }}
-                className={`px-3 py-1.5 text-[11px] font-mono font-medium rounded-lg transition-all duration-300 cursor-pointer ${selectedScenario === "degraded" ? "bg-red-500/10 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.1)]" : "text-slate-400 hover:text-slate-200 border border-transparent"}`}
-              >
-                Degraded fixture
-              </button>
-              <button 
-                onClick={() => { setSelectedScenario("healthy"); }}
-                className={`px-3 py-1.5 text-[11px] font-mono font-medium rounded-lg transition-all duration-300 cursor-pointer ${selectedScenario === "healthy" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(118,185,0,0.15)]" : "text-slate-400 hover:text-slate-200 border border-transparent"}`}
-              >
-                Nominal fixture
-              </button>
-            </div>
-
-            {/* LIGHT AND DARK THEME SWITCHER */}
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-900 text-slate-400 hover:text-emerald-500 transition-all duration-300 cursor-pointer flex items-center justify-center"
-              title={isDarkMode ? "Activate Light Operations" : "Activate Dark Operations"}
-            >
-              {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-
-            {/* HANDBOOK/HELP TRIGGER */}
-            <button
-              onClick={() => setShowHelpModal(true)}
-              className="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-900 text-slate-400 hover:text-emerald-500 transition-all duration-300 cursor-pointer flex items-center justify-center"
-              title="Infrastructure Handbook & Help"
-            >
-              <HelpCircle className="h-4 w-4" />
-            </button>
-
-            {/* TUNING SETTINGS TRIGGER */}
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              className="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-900 text-slate-400 hover:text-emerald-500 transition-all duration-300 cursor-pointer flex items-center justify-center"
-              title="Adjust Score Weight & Thresholds"
-            >
-              <Settings className="h-4 w-4" />
-            </button>
- 
-            <button 
-              onClick={triggerScan}
-              disabled={loading}
-              className="relative group overflow-hidden flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:from-emerald-800/80 disabled:to-emerald-900/80 text-slate-950 font-semibold font-display text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg hover:shadow-emerald-500/20 shadow-emerald-500/10 cursor-pointer border border-emerald-400/30"
-            >
-              <div className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine" />
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-              <span className="tracking-wide uppercase">{loading ? "Diagnosing..." : "Trigger Scan"}</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      <HudTopBar
+        environmentLabel={environmentLabel}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+        scopeLabel={scopeLabel}
+        systemStateLabel={systemStateLabel}
+        systemStateTone={systemStateTone}
+        userLabel="Reviewer"
+        userMeta="Authenticated session"
+      />
 
       {/* TERMINAL MODAL POPUP FOR RUNNING SCANNING ANIMATION */}
       <AnimatePresence>

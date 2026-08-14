@@ -11,8 +11,11 @@ const hgxTopology = fs.readFileSync('src/components/mission-control/HgxNvlinkVis
 const validationFlow = fs.readFileSync('src/components/mission-control/ValidationFlowVisualization.tsx', 'utf8');
 const hudPanel = fs.readFileSync('src/components/hud/HudPanel.tsx', 'utf8');
 const hudPanelHeader = fs.readFileSync('src/components/hud/HudPanelHeader.tsx', 'utf8');
+const hudTopBar = fs.readFileSync('src/components/hud/HudTopBar.tsx', 'utf8');
+const hudTopBarStyles = fs.readFileSync('src/components/hud/HudTopBar.css', 'utf8');
 const hudPanelTypes = fs.readFileSync('src/components/hud/types.ts', 'utf8');
 const hudPanelStyles = fs.readFileSync('src/components/hud/HudPanel.css', 'utf8');
+const hudIndex = fs.readFileSync('src/components/hud/index.ts', 'utf8');
 const styles = fs.readFileSync('src/index.css', 'utf8');
 const requiredRoutes = [
   '/api/platform/summary',
@@ -185,7 +188,27 @@ for (const marker of requiredHudPanelMarkers) {
   assert(hudPanel.includes(marker) || hudPanelHeader.includes(marker) || hudPanelTypes.includes(marker) || hudPanelStyles.includes(marker) || styles.includes(marker) || missionControl.includes(marker), `missing HUD panel marker ${marker}`);
 }
 
+const requiredHudTopBarMarkers = [
+  'HudTopBar',
+  'GPUValidator',
+  'AI INFRASTRUCTURE MISSION CONTROL',
+  'AI FACTORY OPERATIONS EXPERIENCE',
+  'environmentLabel',
+  'THEME',
+  'SYSTEM STATE',
+  'data-testid="HudTopBar"',
+  'aria-live="off"',
+  'hud-top-bar__waveform',
+  'environmentLabel={environmentLabel}',
+  'userLabel="Reviewer"',
+  'systemStateLabel={systemStateLabel}',
+];
+for (const marker of requiredHudTopBarMarkers) {
+  assert(hudTopBar.includes(marker) || hudTopBarStyles.includes(marker) || hudIndex.includes(marker) || app.includes(marker), `missing HudTopBar marker ${marker}`);
+}
+
 assert(!landing.includes('HudPanel') && !landing.includes('HudPanelHeader'), 'public landing must not migrate to HudPanel primitives');
+assert(!landing.includes('HudTopBar') && !app.includes('<HudTopBar') || app.includes('if (!isReviewerAuthenticated)'), 'HudTopBar must not render on PublicLanding');
 
 const obsoleteLandingMarkers = ['Gate', 'GPU-0', 'GPU-1', 'GPU-2', 'GPU-3'];
 for (const marker of obsoleteLandingMarkers) {
