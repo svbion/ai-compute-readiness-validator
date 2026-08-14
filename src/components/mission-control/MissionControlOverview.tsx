@@ -8,6 +8,7 @@ import {
   Database,
   FileText,
   HardDrive,
+  Info,
   Layers,
   Network,
   Pin,
@@ -17,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { CSSProperties } from "react";
+import { HudPanel, HudPanelHeader } from "../hud";
 import { ValidationFlowVisualization } from "./ValidationFlowVisualization";
 
 type Status = "pass" | "warning" | "fail" | "unknown" | "unavailable";
@@ -162,6 +164,9 @@ export function MissionControlOverview({
     ? `${criticalConditions[0].node.toUpperCase()} ${criticalConditions[0].category.toUpperCase()}: ${criticalConditions[0].summary}`
     : "No active critical or warning findings in the selected validation scenario.";
   const nextAction = criticalConditions[0]?.recommendation || "Continue evidence review, preserve current validation baseline, and monitor benchmark drift.";
+  const warningCheck = criticalConditions.find((check) => check.status === "warning");
+  const criticalCheck = criticalConditions.find((check) => check.status === "fail");
+  const representativeAlert = warningCheck || criticalCheck;
 
   const prioritizedKpis = [
     { label: "Active Alerts", value: failCount + warningCount, detail: `${failCount} fail / ${warningCount} warning`, tone: healthTone, icon: <AlertTriangle className="h-4 w-4" /> },
@@ -301,6 +306,138 @@ export function MissionControlOverview({
           </div>
         </section>
       </div>
+
+      <section className="hud-panel-demo" aria-labelledby="hud-panel-demo-title">
+        <div className="mission-section-heading">
+          <span>JARVIS-002 primitive validation</span>
+          <h3 id="hud-panel-demo-title">HUD instrumentation panel geometry</h3>
+        </div>
+
+        <div className="hud-panel-demo__grid">
+          <HudPanel
+            header={
+              <HudPanelHeader
+                eyebrow="Default module"
+                title="Evidence Buffer"
+                titleId="hud-panel-default-title"
+                icon={<Database />}
+                status="Standby"
+                metadata="Reference surface"
+              />
+            }
+            labelledBy="hud-panel-default-title"
+          >
+            <div className="hud-panel__meta-row">
+              <span>Buffer depth 04</span>
+              <span>Trust label visible</span>
+            </div>
+            <ul className="hud-panel__list">
+              <li>Chamfered frame and segmented rail remain outside the readable content well.</li>
+              <li>Dense technical copy wraps without clipping under long metadata conditions.</li>
+            </ul>
+          </HudPanel>
+
+          <HudPanel
+            selected
+            header={
+              <HudPanelHeader
+                eyebrow="Selected focus"
+                title="Active Scope Inspector"
+                titleId="hud-panel-selected-title"
+                icon={<Pin />}
+                status="Selected"
+                metadata={selectedNodeName.toUpperCase()}
+              />
+            }
+            labelledBy="hud-panel-selected-title"
+          >
+            <div className="hud-panel__kpi-grid">
+              <div className="hud-panel__kpi">
+                <span className="hud-panel__kpi-label">Node</span>
+                <strong className="hud-panel__kpi-value">{selectedNodeName.toUpperCase()}</strong>
+              </div>
+              <div className="hud-panel__kpi">
+                <span className="hud-panel__kpi-label">Status</span>
+                <strong className="hud-panel__kpi-value">{selectedNodeStatus.toUpperCase()}</strong>
+              </div>
+            </div>
+          </HudPanel>
+
+          <HudPanel
+            status="healthy"
+            header={
+              <HudPanelHeader
+                eyebrow="Healthy state"
+                title="Operational Envelope"
+                titleId="hud-panel-healthy-title"
+                icon={<CheckCircle2 />}
+                status="Healthy"
+                metadata={`${activeNodes}/${cluster.nodes.length} nodes online`}
+              />
+            }
+            labelledBy="hud-panel-healthy-title"
+          >
+            <div className="hud-panel__meta-row">
+              <span>Classification</span>
+              <strong>{cluster.classification}</strong>
+            </div>
+            <p>Healthy panels use restrained green terminal accents while preserving the cyan structural panel language.</p>
+          </HudPanel>
+
+          <HudPanel
+            status="warning"
+            header={
+              <HudPanelHeader
+                eyebrow="Warning state"
+                title="Fabric Advisory"
+                titleId="hud-panel-warning-title"
+                icon={<AlertTriangle />}
+                status="Warning"
+                metadata={warningCheck ? `${warningCheck.node.toUpperCase()} • ${warningCheck.category.toUpperCase()}` : "Demonstration state"}
+              />
+            }
+            labelledBy="hud-panel-warning-title"
+          >
+            <p>{warningCheck?.summary || "Amber-localized edge treatment indicates degraded but still readable infrastructure state."}</p>
+          </HudPanel>
+
+          <HudPanel
+            status="critical"
+            header={
+              <HudPanelHeader
+                eyebrow="Critical state"
+                title="Escalation Module"
+                titleId="hud-panel-critical-title"
+                icon={<XCircle />}
+                status="Critical"
+                metadata={criticalCheck ? `${criticalCheck.node.toUpperCase()} • ${criticalCheck.category.toUpperCase()}` : "Demonstration state"}
+              />
+            }
+            labelledBy="hud-panel-critical-title"
+            footer={<><span>Evidence review required</span><strong>{criticalCheck ? "Inspect finding" : "Static state sample"}</strong></>}
+          >
+            <p>{criticalCheck?.summary || "Critical surfaces deepen the inset well and confine red emphasis to local edge illumination only."}</p>
+          </HudPanel>
+
+          <HudPanel
+            active
+            header={
+              <HudPanelHeader
+                eyebrow="Informational / active"
+                title="Classification Channel"
+                titleId="hud-panel-info-title"
+                icon={<Info />}
+                status="Active"
+                metadata={dataLabel}
+              />
+            }
+            labelledBy="hud-panel-info-title"
+            footer={<><span>Surface safety</span><strong>{representativeAlert ? "Mapped to live story content" : "Reference-safe"}</strong></>}
+          >
+            <p>Active and selected states persist through hover with modest cyan edge intensity, no aggressive pulsing, and explicit text labels.</p>
+          </HudPanel>
+        </div>
+      </section>
 
       <ValidationFlowVisualization />
 

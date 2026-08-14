@@ -1957,6 +1957,30 @@ input:focus-visible,
   grid-column: 2;
 }
 
+.hud-panel-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.hud-panel-demo__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.hud-panel-demo__grid .hud-panel {
+  min-height: 13.5rem;
+}
+
+.hud-panel-demo__grid .hud-panel:nth-child(2) {
+  min-height: 12rem;
+}
+
+.light .hud-panel-demo__grid .hud-panel {
+  filter: none;
+}
+
 .light .mission-health-hero,
 .light .critical-conditions,
 .light .current-activity,
@@ -2026,6 +2050,7 @@ input:focus-visible,
   }
 
   .mission-health-hero__scope-list,
+  .hud-panel-demo__grid,
   .prioritized-kpis__grid,
   .mission-support-strip {
     grid-template-columns: 1fr;

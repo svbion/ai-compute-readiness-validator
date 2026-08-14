@@ -9,6 +9,10 @@ const landing = fs.readFileSync('src/components/landing/PublicLanding.tsx', 'utf
 const missionControl = fs.readFileSync('src/components/mission-control/MissionControlOverview.tsx', 'utf8');
 const hgxTopology = fs.readFileSync('src/components/mission-control/HgxNvlinkVisualization.tsx', 'utf8');
 const validationFlow = fs.readFileSync('src/components/mission-control/ValidationFlowVisualization.tsx', 'utf8');
+const hudPanel = fs.readFileSync('src/components/hud/HudPanel.tsx', 'utf8');
+const hudPanelHeader = fs.readFileSync('src/components/hud/HudPanelHeader.tsx', 'utf8');
+const hudPanelTypes = fs.readFileSync('src/components/hud/types.ts', 'utf8');
+const hudPanelStyles = fs.readFileSync('src/components/hud/HudPanel.css', 'utf8');
 const styles = fs.readFileSync('src/index.css', 'utf8');
 const requiredRoutes = [
   '/api/platform/summary',
@@ -158,6 +162,30 @@ const requiredMissionControlV3Markers = [
 for (const marker of requiredMissionControlV3Markers) {
   assert(missionControl.includes(marker) || validationFlow.includes(marker) || styles.includes(marker) || app.includes(marker), `missing Mission Control V3 marker ${marker}`);
 }
+
+const requiredHudPanelMarkers = [
+  'export function HudPanel',
+  'export function HudPanelHeader',
+  'HUD_PANEL_STATES',
+  '"default"',
+  '"active"',
+  '"selected"',
+  '"healthy"',
+  '"warning"',
+  '"critical"',
+  '"informational"',
+  '"disabled"',
+  'clip-path: polygon',
+  'hud-panel-header',
+  'hud-panel-demo-title',
+  'JARVIS-002 primitive validation',
+  'HUD instrumentation panel geometry',
+];
+for (const marker of requiredHudPanelMarkers) {
+  assert(hudPanel.includes(marker) || hudPanelHeader.includes(marker) || hudPanelTypes.includes(marker) || hudPanelStyles.includes(marker) || styles.includes(marker) || missionControl.includes(marker), `missing HUD panel marker ${marker}`);
+}
+
+assert(!landing.includes('HudPanel') && !landing.includes('HudPanelHeader'), 'public landing must not migrate to HudPanel primitives');
 
 const obsoleteLandingMarkers = ['Gate', 'GPU-0', 'GPU-1', 'GPU-2', 'GPU-3'];
 for (const marker of obsoleteLandingMarkers) {
