@@ -1,0 +1,417 @@
+.hud-bottom-rail {
+  position: fixed;
+  left: 50%;
+  bottom: 0.5rem;
+  z-index: 34;
+  width: min(calc(100vw - 1.5rem), 1600px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.hud-bottom-rail__desktop,
+.hud-bottom-rail__frame,
+.hud-bottom-rail__cells,
+.hud-bottom-rail__cell,
+.hud-bottom-rail__cell-header,
+.hud-bottom-rail__cell-body,
+.hud-bottom-rail__mobile {
+  min-width: 0;
+}
+
+.hud-bottom-rail__frame {
+  --rail-accent: var(--hud-border-active);
+  position: relative;
+  min-height: 44px;
+  padding: 0.22rem 0.55rem 0.28rem;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 10px), 0 10px);
+  border: 1px solid color-mix(in srgb, var(--rail-accent) 34%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--hud-surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--hud-surface-primary) 92%, transparent) 100%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 7%, transparent),
+    inset 0 -10px 16px rgba(0, 0, 0, 0.14),
+    0 14px 28px rgba(0, 0, 0, 0.20);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  isolation: isolate;
+}
+
+.hud-bottom-rail__frame::before,
+.hud-bottom-rail__frame::after,
+.hud-bottom-rail__cell::before,
+.hud-bottom-rail__cell::after,
+.hud-bottom-rail__anchor::before,
+.hud-bottom-rail__anchor::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.hud-bottom-rail__frame::before {
+  inset: 0;
+  clip-path: inherit;
+  background:
+    linear-gradient(90deg, transparent 0 1rem, color-mix(in srgb, var(--rail-accent) 88%, transparent) 1rem 12%, transparent 12% 28%, color-mix(in srgb, var(--rail-accent) 58%, transparent) 28% 42%, transparent 42% 58%, color-mix(in srgb, var(--rail-accent) 58%, transparent) 58% 72%, transparent 72% 88%, color-mix(in srgb, var(--rail-accent) 88%, transparent) 88% calc(100% - 1rem), transparent calc(100% - 1rem)) top/100% 1px no-repeat,
+    linear-gradient(90deg, color-mix(in srgb, var(--rail-accent) 42%, transparent) 0 0.8rem, transparent 0.8rem calc(100% - 0.8rem), color-mix(in srgb, var(--rail-accent) 42%, transparent) calc(100% - 0.8rem) 100%) bottom/100% 1px no-repeat,
+    linear-gradient(180deg, transparent 0 0.8rem, color-mix(in srgb, var(--rail-accent) 20%, transparent) 0.8rem 80%, transparent 80% 100%) left/1px 100% no-repeat,
+    linear-gradient(180deg, transparent 0 0.8rem, color-mix(in srgb, var(--rail-accent) 20%, transparent) 0.8rem 80%, transparent 80% 100%) right/1px 100% no-repeat,
+    radial-gradient(circle at 12px 10px, color-mix(in srgb, var(--rail-accent) 96%, white 8%) 0 1.3px, transparent 1.8px),
+    radial-gradient(circle at calc(100% - 12px) 10px, color-mix(in srgb, var(--rail-accent) 96%, white 8%) 0 1.3px, transparent 1.8px),
+    radial-gradient(circle at 12px calc(100% - 10px), color-mix(in srgb, var(--rail-accent) 70%, transparent) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at calc(100% - 12px) calc(100% - 10px), color-mix(in srgb, var(--rail-accent) 70%, transparent) 0 1.2px, transparent 1.7px);
+}
+
+.hud-bottom-rail__frame::after {
+  left: 0.7rem;
+  right: 0.7rem;
+  top: 0.42rem;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rail-accent) 72%, transparent) 0 12%, transparent 12% 21%, color-mix(in srgb, var(--rail-accent) 42%, transparent) 21% 29%, transparent 29% 71%, color-mix(in srgb, var(--rail-accent) 42%, transparent) 71% 79%, transparent 79% 88%, color-mix(in srgb, var(--rail-accent) 72%, transparent) 88% 100%);
+  opacity: 0.82;
+}
+
+.hud-bottom-rail__cells {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  list-style: none;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.hud-bottom-rail__cell {
+  position: relative;
+  display: flex;
+  min-height: 34px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.16rem;
+  padding: 0.12rem 0.58rem 0.14rem;
+}
+
+.hud-bottom-rail__cell::before {
+  top: 0.2rem;
+  bottom: 0.18rem;
+  right: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0, color-mix(in srgb, var(--hud-border) 34%, transparent) 18%, color-mix(in srgb, var(--hud-border) 14%, transparent) 82%, transparent 100%);
+}
+
+.hud-bottom-rail__cell:last-child::before {
+  display: none;
+}
+
+.hud-bottom-rail__cell::after {
+  left: 0.58rem;
+  top: 0.62rem;
+  width: 1rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--hud-border) 54%, transparent);
+  opacity: 0.65;
+}
+
+.hud-bottom-rail__cell[data-tone="healthy"] {
+  --rail-cell-accent: var(--state-healthy);
+}
+
+.hud-bottom-rail__cell[data-tone="warning"] {
+  --rail-cell-accent: var(--state-warning);
+}
+
+.hud-bottom-rail__cell[data-tone="critical"] {
+  --rail-cell-accent: var(--state-critical);
+}
+
+.hud-bottom-rail__cell[data-tone="informational"] {
+  --rail-cell-accent: var(--state-info);
+}
+
+.hud-bottom-rail__cell[data-tone="unknown"] {
+  --rail-cell-accent: var(--state-unknown);
+}
+
+.hud-bottom-rail__cell-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hud-bottom-rail__cell-node {
+  width: 0.34rem;
+  height: 0.34rem;
+  border-radius: 999px;
+  background: var(--rail-cell-accent, var(--state-unknown));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--rail-cell-accent, var(--state-unknown)) 24%, transparent), 0 0 6px color-mix(in srgb, var(--rail-cell-accent, var(--state-unknown)) 16%, transparent);
+}
+
+.hud-bottom-rail__cell-label,
+.hud-bottom-rail__cell-index,
+.hud-bottom-rail__cell-value,
+.hud-bottom-rail__cell-meta,
+.hud-bottom-rail__mobile-label,
+.hud-bottom-rail__mobile-value,
+.hud-bottom-rail__mobile-meta {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.hud-bottom-rail__cell-label,
+.hud-bottom-rail__cell-index,
+.hud-bottom-rail__cell-meta {
+  color: var(--hud-text-metadata);
+}
+
+.hud-bottom-rail__cell-label {
+  font-size: 0.44rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.hud-bottom-rail__cell-index {
+  font-size: 0.4rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.hud-bottom-rail__cell-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.14rem 0.36rem;
+}
+
+.hud-bottom-rail__cell-value {
+  color: var(--rail-cell-accent, var(--hud-text-primary));
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  line-height: 1.1;
+  text-shadow: 0 0 6px color-mix(in srgb, var(--rail-cell-accent, transparent) 10%, transparent);
+}
+
+.hud-bottom-rail__cell-meta {
+  font-size: 0.48rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+}
+
+.hud-bottom-rail__anchor {
+  position: absolute;
+  left: 50%;
+  bottom: 0.02rem;
+  z-index: 2;
+  width: 3.1rem;
+  height: 1.2rem;
+  transform: translateX(-50%);
+}
+
+.hud-bottom-rail__anchor::before {
+  left: 50%;
+  top: 0;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--hud-border-active) 40%, transparent);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(19, 216, 255, 0.22) 0, rgba(19, 216, 255, 0.08) 38%, rgba(4, 14, 22, 0.92) 72%),
+    color-mix(in srgb, var(--hud-surface-inset) 94%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 8%, transparent), 0 0 10px rgba(19, 216, 255, 0.14);
+}
+
+.hud-bottom-rail__anchor::after {
+  left: 50%;
+  top: 0.32rem;
+  width: 3.4rem;
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent 0, color-mix(in srgb, var(--hud-border-active) 54%, transparent) 50%, transparent 100%);
+}
+
+.hud-bottom-rail__anchor-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: 0.34rem;
+  height: 0.34rem;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-cyan-400) 94%, white 8%);
+  box-shadow: 0 0 8px rgba(19, 216, 255, 0.32), 0 0 0 3px rgba(19, 216, 255, 0.07);
+}
+
+.hud-bottom-rail__anchor-wing {
+  position: absolute;
+  bottom: 0.04rem;
+  width: 0.9rem;
+  height: 0.42rem;
+  border-top: 1px solid color-mix(in srgb, var(--hud-border-active) 58%, transparent);
+}
+
+.hud-bottom-rail__anchor-wing--left {
+  left: 0.2rem;
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+  background: linear-gradient(135deg, transparent 36%, color-mix(in srgb, var(--hud-border-active) 18%, transparent) 100%);
+}
+
+.hud-bottom-rail__anchor-wing--right {
+  right: 0.2rem;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: linear-gradient(225deg, transparent 36%, color-mix(in srgb, var(--hud-border-active) 18%, transparent) 100%);
+}
+
+.hud-bottom-rail__mobile {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 34px;
+  padding: 0.38rem 0.72rem;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+  border: 1px solid color-mix(in srgb, var(--hud-border) 34%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--hud-surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--hud-surface-primary) 90%, transparent) 100%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 7%, transparent), 0 14px 28px rgba(0, 0, 0, 0.22);
+  white-space: nowrap;
+}
+
+.hud-bottom-rail__mobile-node {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--state-info);
+  box-shadow: 0 0 10px rgba(88, 183, 255, 0.18);
+}
+
+.hud-bottom-rail__mobile-label,
+.hud-bottom-rail__mobile-meta {
+  color: var(--hud-text-metadata);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.hud-bottom-rail__mobile-value {
+  color: var(--hud-text-primary);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.hud-bottom-rail__mobile-separator {
+  color: var(--hud-text-metadata);
+}
+
+.hud-bottom-rail__mobile-label,
+.hud-bottom-rail__mobile-value,
+.hud-bottom-rail__mobile-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.light .hud-bottom-rail__frame {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -12px 18px rgba(148, 163, 184, 0.08),
+    0 16px 30px rgba(15, 23, 42, 0.08);
+}
+
+.light .hud-bottom-rail__anchor::before,
+.light .hud-bottom-rail__mobile {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 12px 22px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 1279px) {
+  .hud-bottom-rail {
+    width: min(calc(100vw - 1.25rem), 1600px);
+  }
+
+  .hud-bottom-rail__frame {
+    min-height: 38px;
+    padding-top: 0.16rem;
+    padding-bottom: 0.2rem;
+    padding-inline: 0.5rem;
+  }
+
+  .hud-bottom-rail__cell {
+    min-height: 30px;
+    gap: 0.12rem;
+    padding-top: 0.08rem;
+    padding-bottom: 0.1rem;
+    padding-inline: 0.46rem;
+  }
+
+  .hud-bottom-rail__cell-label {
+    font-size: 0.42rem;
+  }
+
+  .hud-bottom-rail__cell-value {
+    font-size: 0.52rem;
+  }
+
+  .hud-bottom-rail__cell-meta {
+    font-size: 0.44rem;
+  }
+
+  .hud-bottom-rail__cell[data-cell="collectors"] {
+    display: none;
+  }
+
+  .hud-bottom-rail__cells {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .hud-bottom-rail__frame {
+    min-height: 40px;
+    padding-top: 0.2rem;
+    padding-bottom: 0.24rem;
+  }
+
+  .hud-bottom-rail__anchor,
+  .hud-bottom-rail__cell[data-cell="scope"] {
+    display: none;
+  }
+
+  .hud-bottom-rail__cells {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .hud-bottom-rail__cell-value {
+    font-size: 0.54rem;
+  }
+
+  .hud-bottom-rail__cell-meta {
+    font-size: 0.44rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .hud-bottom-rail {
+    width: min(calc(100vw - 1rem), 38rem);
+  }
+
+  .hud-bottom-rail__desktop {
+    display: none;
+  }
+
+  .hud-bottom-rail__mobile {
+    display: inline-flex;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-bottom-rail__frame,
+  .hud-bottom-rail__cell,
+  .hud-bottom-rail__mobile {
+    transition: none !important;
+  }
+}

@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { HgxNvlinkVisualization } from "./components/mission-control/HgxNvlinkVisualization";
 import { MissionControlOverview } from "./components/mission-control/MissionControlOverview";
 import { PublicLanding } from "./components/landing/PublicLanding";
-import { HudNavigationRail, HudTopBar, type HudNavigationRailItem, type HudTopBarTone } from "./components/hud";
+import { HudBottomRail, HudNavigationRail, HudTopBar, type HudNavigationRailItem, type HudSystemTone, type HudTopBarTone } from "./components/hud";
 
 // Types corresponding to our Python schema
 interface CommandEvidence {
@@ -86,6 +86,52 @@ interface PlatformSummary {
   };
   counts: Record<string, number>;
   clusters: Array<{ id: string; name: string; status: string }>;
+}
+
+function deriveHudSystemTone(systemStateLabel: string): HudTopBarTone {
+  if (systemStateLabel.includes("READY") && !systemStateLabel.includes("WARNING")) {
+    return "healthy";
+  }
+
+  if (systemStateLabel.includes("WARNING") || systemStateLabel === "SCANNING") {
+    return "warning";
+  }
+
+  if (systemStateLabel.includes("REMEDIATION") || systemStateLabel.includes("FAIL") || systemStateLabel.includes("CRITICAL")) {
+    return "critical";
+  }
+
+  return "unknown";
+}
+
+function formatRailSnapshotLabel(timestamp?: string | null): string | null {
+  if (!timestamp) {
+    return null;
+  }
+
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return `${date.toISOString().slice(0, 10)} ${date.toISOString().slice(11, 16)}Z`;
+}
+
+function deriveRiskState(systemStateLabel: string): { label: string; tone: HudSystemTone } {
+  if (systemStateLabel.includes("READY") && !systemStateLabel.includes("WARNING")) {
+    return { label: "LOW", tone: "healthy" };
+  }
+
+  if (systemStateLabel.includes("WARNING") || systemStateLabel === "SCANNING") {
+    return { label: "WARNING", tone: "warning" };
+  }
+
+  if (systemStateLabel.includes("REMEDIATION") || systemStateLabel.includes("FAIL") || systemStateLabel.includes("CRITICAL")) {
+    return { label: "HIGH", tone: "critical" };
+  }
+
+  return { label: "UNKNOWN", tone: "unknown" };
 }
 
 export default function App() {
@@ -819,7 +865,11 @@ export default function App() {
   const selectedNode = computedCluster?.nodes.find(n => n.name === selectedNodeName);
   const primaryClusterName = computedCluster?.name || platformSummary?.clusters[0]?.name || "UNKNOWN";
   const scopeLabel = `GLOBAL / ${primaryClusterName.toUpperCase()}`;
-  const environmentLabel = platformSummary?.mode === "demo" || platformSummary?.states.partial_data || computedCluster ? "DEMO" : "UNKNOWN";
+  const environmentLabel = platformSummary?.mode === "live"
+    ? "LIVE"
+    : platformSummary?.mode === "demo" || platformSummary?.states.partial_data || computedCluster
+      ? "DEMO"
+      : "UNKNOWN";
 
   let systemStateLabel = "UNKNOWN";
   if (loading) {
@@ -830,14 +880,34 @@ export default function App() {
     systemStateLabel = "UNKNOWN";
   }
 
-  let systemStateTone: HudTopBarTone = "unknown";
-  if (systemStateLabel.includes("READY") && !systemStateLabel.includes("WARNING")) {
-    systemStateTone = "healthy";
-  } else if (systemStateLabel.includes("WARNING") || systemStateLabel === "SCANNING") {
-    systemStateTone = "warning";
-  } else if (systemStateLabel.includes("REMEDIATION") || systemStateLabel.includes("FAIL") || systemStateLabel.includes("CRITICAL")) {
-    systemStateTone = "critical";
-  }
+  const systemStateTone = deriveHudSystemTone(systemStateLabel);
+  const riskState = deriveRiskState(systemStateLabel);
+  const dataFreshnessLabel = loading || platformSummary?.states.loading
+    ? "SYNCING"
+    : formatRailSnapshotLabel(computedCluster?.timestamp || computedCluster?.benchmark_results?.[0]?.timestamp)
+      || (platformSummaryError ? "UNAVAILABLE" : "UNKNOWN");
+  const dataClassificationLabel = platformSummary?.mode === "live" && !platformSummary?.states.partial_data
+    ? "LIVE"
+    : platformSummary?.mode === "demo" && platformSummary?.states.partial_data
+      ? "DEMO / REFERENCE"
+      : platformSummary?.mode === "demo"
+        ? "DEMO"
+        : platformSummary?.states.partial_data || computedCluster
+          ? "REFERENCE"
+          : "UNKNOWN";
+  const collectorCount = typeof platformSummary?.counts?.agents === "number"
+    ? platformSummary.counts.agents
+    : typeof platformSummary?.counts?.collectors === "number"
+      ? platformSummary.counts.collectors
+      : null;
+  const collectorLabel = loading || platformSummary?.states.loading
+    ? "SYNCING"
+    : collectorCount !== null
+      ? `${collectorCount} REGISTERED`
+      : "UNAVAILABLE";
+  const sessionLabel = platformSummary?.states.permission === "denied"
+    ? "AUTH REVIEW / LIMITED"
+    : "AUTHENTICATED REVIEW";
 
   const hudNavigationItems: HudNavigationRailItem[] = [
     { id: "mission-control", label: "Mission Control", shortLabel: "MISSION", availability: "available" },
@@ -965,7 +1035,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-3 pb-8 pt-4 md:px-4 lg:flex-row lg:items-start lg:gap-5">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-3 pb-[4.25rem] pt-4 md:px-4 md:pb-[4.5rem] lg:flex-row lg:items-start lg:gap-5 lg:pb-[4.75rem]">
         <HudNavigationRail
           items={hudNavigationItems}
           activeItemId="mission-control"
@@ -2454,6 +2524,18 @@ ${computedCluster?.recommendations && computedCluster.recommendations.length > 0
           </motion.div>
         )}
       </AnimatePresence>
+
+      <HudBottomRail
+        collectorLabel={collectorLabel}
+        dataClassificationLabel={dataClassificationLabel}
+        dataFreshnessLabel={dataFreshnessLabel}
+        riskLabel={riskState.label}
+        riskTone={riskState.tone}
+        scopeLabel={scopeLabel}
+        sessionLabel={sessionLabel}
+        systemStateLabel={systemStateLabel}
+        systemStateTone={systemStateTone}
+      />
     </div>
   );
 }

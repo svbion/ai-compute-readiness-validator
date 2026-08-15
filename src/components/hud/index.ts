@@ -4,6 +4,8 @@ export { HudPanelHeader } from "./HudPanelHeader";
 export type { HudPanelHeaderProps } from "./HudPanelHeader";
 export { HudTopBar } from "./HudTopBar";
 export type { HudTopBarProps, HudTopBarTone } from "./HudTopBar";
+export { HudBottomRail } from "./HudBottomRail";
+export type { HudBottomRailProps, HudSystemTone } from "./HudBottomRail";
 export { HudNavigationRail, HUD_NAVIGATION_RAIL_ITEM_IDS } from "./HudNavigationRail";
 export type {
   HudNavigationRailAvailability,
