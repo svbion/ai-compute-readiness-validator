@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { HgxNvlinkVisualization } from "./components/mission-control/HgxNvlinkVisualization";
 import { MissionControlOverview } from "./components/mission-control/MissionControlOverview";
 import { PublicLanding } from "./components/landing/PublicLanding";
-import { HudTopBar, type HudTopBarTone } from "./components/hud";
+import { HudNavigationRail, HudTopBar, type HudNavigationRailItem, type HudTopBarTone } from "./components/hud";
 
 // Types corresponding to our Python schema
 interface CommandEvidence {
@@ -839,6 +839,18 @@ export default function App() {
     systemStateTone = "critical";
   }
 
+  const hudNavigationItems: HudNavigationRailItem[] = [
+    { id: "mission-control", label: "Mission Control", shortLabel: "MISSION", availability: "available" },
+    { id: "ai-factory", label: "AI Factory", shortLabel: "FACTORY", availability: "planned" },
+    { id: "topology", label: "Topology", shortLabel: "TOPO", availability: "planned" },
+    { id: "benchmarks", label: "Benchmarks", shortLabel: "BMK", availability: "planned" },
+    { id: "evidence", label: "Evidence", shortLabel: "EVID", availability: "planned" },
+    { id: "alerts", label: "Alerts", shortLabel: "ALERTS", availability: "planned" },
+    { id: "investigations", label: "Investigations", shortLabel: "INVEST", availability: "planned" },
+    { id: "copilot", label: "Copilot", shortLabel: "COPLT", availability: "planned" },
+    { id: "settings", label: "Settings", shortLabel: "SET", availability: "planned" },
+  ];
+
   if (!isReviewerAuthenticated) {
     return (
       <PublicLanding
@@ -953,7 +965,15 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-3 pb-8 pt-4 md:px-4 lg:flex-row lg:items-start lg:gap-5">
+        <HudNavigationRail
+          items={hudNavigationItems}
+          activeItemId="mission-control"
+          mobileLabel="Navigation"
+        />
+
+        <main className="min-w-0 flex-1" id="authenticated-primary-content">
+          <div className="mx-auto max-w-7xl px-0 py-0 md:px-2 md:py-2">
         <section className="mb-6 cyber-panel rounded-2xl p-4 border border-emerald-500/20 bg-slate-950/60" aria-label="GPUValidator platform service state">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
@@ -1788,7 +1808,9 @@ export default function App() {
             )}
           </div>
         )}
-      </main>
+          </div>
+        </main>
+      </div>
 
       {/* FOOTER */}
       <footer className="bg-slate-950 border-t border-slate-900 mt-24 py-10 text-center text-[10px] text-slate-500 font-mono tracking-wider">

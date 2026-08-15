@@ -11,6 +11,8 @@ const hgxTopology = fs.readFileSync('src/components/mission-control/HgxNvlinkVis
 const validationFlow = fs.readFileSync('src/components/mission-control/ValidationFlowVisualization.tsx', 'utf8');
 const hudPanel = fs.readFileSync('src/components/hud/HudPanel.tsx', 'utf8');
 const hudPanelHeader = fs.readFileSync('src/components/hud/HudPanelHeader.tsx', 'utf8');
+const hudNavigationRail = fs.readFileSync('src/components/hud/HudNavigationRail.tsx', 'utf8');
+const hudNavigationRailStyles = fs.readFileSync('src/components/hud/HudNavigationRail.css', 'utf8');
 const hudTopBar = fs.readFileSync('src/components/hud/HudTopBar.tsx', 'utf8');
 const hudTopBarStyles = fs.readFileSync('src/components/hud/HudTopBar.css', 'utf8');
 const hudPanelTypes = fs.readFileSync('src/components/hud/types.ts', 'utf8');
@@ -207,8 +209,39 @@ for (const marker of requiredHudTopBarMarkers) {
   assert(hudTopBar.includes(marker) || hudTopBarStyles.includes(marker) || hudIndex.includes(marker) || app.includes(marker), `missing HudTopBar marker ${marker}`);
 }
 
+const requiredHudNavigationRailMarkers = [
+  'HudNavigationRail',
+  'HUD_NAVIGATION_RAIL_ITEM_IDS',
+  'aria-label="Primary"',
+  'data-testid="HudNavigationRail"',
+  'Mission Control',
+  'AI Factory',
+  'Topology',
+  'Benchmarks',
+  'Evidence',
+  'Alerts',
+  'Investigations',
+  'Copilot',
+  'Settings',
+  'activeItemId="mission-control"',
+  'availability: "available"',
+  'availability: "planned"',
+  'aria-current={active ? "page" : undefined}',
+  'mobileLabel="Navigation"',
+  'position: sticky',
+  'width: 88px',
+  '@media (max-width: 767px)',
+  'hud-navigation-rail-mobile-trigger',
+  'Planned',
+];
+for (const marker of requiredHudNavigationRailMarkers) {
+  assert(hudNavigationRail.includes(marker) || hudNavigationRailStyles.includes(marker) || app.includes(marker) || hudIndex.includes(marker), `missing HudNavigationRail marker ${marker}`);
+}
+
 assert(!landing.includes('HudPanel') && !landing.includes('HudPanelHeader'), 'public landing must not migrate to HudPanel primitives');
 assert(!landing.includes('HudTopBar') && !app.includes('<HudTopBar') || app.includes('if (!isReviewerAuthenticated)'), 'HudTopBar must not render on PublicLanding');
+assert(!landing.includes('HudNavigationRail'), 'public landing must not migrate to HudNavigationRail');
+assert(app.includes('<HudNavigationRail') && app.includes('if (!isReviewerAuthenticated)'), 'HudNavigationRail must render only after reviewer authentication');
 
 const obsoleteLandingMarkers = ['Gate', 'GPU-0', 'GPU-1', 'GPU-2', 'GPU-3'];
 for (const marker of obsoleteLandingMarkers) {
