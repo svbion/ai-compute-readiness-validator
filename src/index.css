@@ -2056,3 +2056,1050 @@ input:focus-visible,
     grid-template-columns: 1fr;
   }
 }
+
+/* JARVIS-006 shell composition */
+.jarvis-auth-shell__layout {
+  align-items: flex-start;
+}
+
+.jarvis-auth-shell__main {
+  min-width: 0;
+}
+
+.jarvis-auth-shell__workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.jarvis-auth-shell__details {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-secondary) 82%, transparent), color-mix(in srgb, var(--surface-primary) 94%, transparent));
+  border: 1px solid color-mix(in srgb, var(--border-primary) 95%, transparent);
+  border-radius: 1.3rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  margin-top: 0.25rem;
+  padding: 1.2rem;
+  position: relative;
+}
+
+.jarvis-auth-shell__details::before {
+  content: "";
+  position: absolute;
+  inset: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--border-primary) 40%, transparent);
+  border-radius: 1rem;
+  pointer-events: none;
+}
+
+.jarvis-auth-shell__details-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1.15rem;
+}
+
+.jarvis-auth-shell__details-eyebrow,
+.jarvis-auth-shell__details-badges,
+.jarvis-auth-shell__details-badges span {
+  font-family: var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.jarvis-auth-shell__details-eyebrow {
+  color: var(--hud-text-technical);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.jarvis-auth-shell__details-header h2 {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: 800;
+  margin-top: 0.35rem;
+}
+
+.jarvis-auth-shell__details-header p {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin-top: 0.35rem;
+  max-width: 44rem;
+}
+
+.jarvis-auth-shell__details-badges {
+  align-items: flex-end;
+  color: var(--text-subtle);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.56rem;
+  font-weight: 800;
+  gap: 0.4rem;
+}
+
+.jarvis-auth-shell__details-badges span {
+  border: 1px solid color-mix(in srgb, var(--border-primary) 92%, transparent);
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+}
+
+.mission-control-v3 {
+  position: relative;
+}
+
+.mission-control-v3__frame {
+  border: 1px solid color-mix(in srgb, var(--border-primary) 88%, transparent);
+  border-radius: 1.25rem;
+  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  padding: 0.85rem;
+  position: relative;
+}
+
+.mission-control-v3__frame::before,
+.mission-control-v3__frame::after {
+  content: "";
+  position: absolute;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 68%, transparent);
+  width: 3rem;
+  height: 3rem;
+  pointer-events: none;
+}
+
+.mission-control-v3__frame::before {
+  border-right: none;
+  border-bottom: none;
+  left: 0.6rem;
+  top: 0.6rem;
+}
+
+.mission-control-v3__frame::after {
+  border-left: none;
+  border-top: none;
+  bottom: 0.6rem;
+  right: 0.6rem;
+}
+
+.mission-control-v3__workspace-frame {
+  inset: 0.75rem;
+  pointer-events: none;
+  position: absolute;
+}
+
+.mission-control-v3__frame-node {
+  background: var(--accent-cyan-500);
+  border-radius: 999px;
+  box-shadow: var(--glow-xs);
+  height: 0.34rem;
+  position: absolute;
+  width: 0.34rem;
+}
+
+.mission-control-v3__frame-node--top-left { left: 0.1rem; top: 0.1rem; }
+.mission-control-v3__frame-node--top-right { right: 0.1rem; top: 0.1rem; }
+.mission-control-v3__frame-node--bottom-left { bottom: 0.1rem; left: 0.1rem; }
+.mission-control-v3__frame-node--bottom-right { bottom: 0.1rem; right: 0.1rem; }
+
+.mission-control-v3__header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  min-height: 3.4rem;
+}
+
+.mission-control-v3__title-block {
+  min-width: 0;
+}
+
+.mission-control-v3__eyebrow,
+.mission-control-v3__scope,
+.mission-control-v3__scope span,
+.jarvis-action,
+.jarvis-kpi-list__row span,
+.jarvis-kpi-list__item small,
+.jarvis-health-panel__facts dt,
+.jarvis-centerpiece__label,
+.jarvis-centerpiece__stat span,
+.jarvis-telemetry-grid__item span,
+.jarvis-telemetry-grid__item small,
+.jarvis-critical-list__body span,
+.jarvis-critical-list__body small,
+.jarvis-evidence-panel__facts span {
+  font-family: var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mission-control-v3__eyebrow {
+  color: var(--hud-text-technical);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.mission-control-v3__header h2 {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  font-weight: 800;
+  margin-top: 0.25rem;
+}
+
+.mission-control-v3__header p {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin-top: 0.22rem;
+  max-width: 46rem;
+}
+
+.mission-control-v3__scope {
+  align-items: flex-end;
+  color: var(--text-subtle);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.56rem;
+  font-weight: 800;
+  gap: 0.4rem;
+  min-width: max-content;
+}
+
+.mission-control-v3__scope span {
+  background: color-mix(in srgb, var(--surface-secondary) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 96%, transparent);
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+}
+
+.mission-control-v3__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-areas:
+    "health centerpiece critical"
+    "activity validation kpis"
+    "telemetry evidence evidence";
+  grid-template-columns: minmax(0, 0.26fr) minmax(0, 0.46fr) minmax(0, 0.28fr);
+  grid-template-rows: minmax(0, 0.38fr) minmax(0, 0.27fr) minmax(0, 0.23fr);
+  height: clamp(41.5rem, calc(100vh - 14.25rem), 46.5rem);
+  overflow: hidden;
+}
+
+.jarvis-shell-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.jarvis-shell-panel--health { grid-area: health; }
+.jarvis-shell-panel--critical { grid-area: critical; }
+.jarvis-shell-panel--activity { grid-area: activity; }
+.jarvis-shell-panel--centerpiece { grid-area: centerpiece; }
+.jarvis-shell-panel--validation { grid-area: validation; min-height: 0; }
+.jarvis-shell-panel--kpis { grid-area: kpis; }
+.jarvis-shell-panel--telemetry { grid-area: telemetry; }
+.jarvis-shell-panel--evidence { grid-area: evidence; }
+
+.jarvis-shell-panel--health .hud-panel-header__right {
+  display: none;
+}
+
+.jarvis-shell-panel--health .hud-panel,
+.jarvis-shell-panel--critical .hud-panel,
+.jarvis-shell-panel--activity .hud-panel,
+.jarvis-shell-panel--centerpiece .hud-panel,
+.jarvis-shell-panel--kpis .hud-panel,
+.jarvis-shell-panel--telemetry .hud-panel,
+.jarvis-shell-panel--evidence .hud-panel {
+  height: 100%;
+}
+
+.jarvis-shell-panel .hud-panel__surface {
+  height: 100%;
+}
+
+.jarvis-shell-panel .hud-panel__body {
+  min-height: 0;
+}
+
+.jarvis-health-panel {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(7.5rem, 9.5rem) minmax(0, 1fr);
+  height: 100%;
+}
+
+.jarvis-health-panel__ring {
+  --ring-color: var(--success);
+  align-items: center;
+  aspect-ratio: 1;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--ring-color) 20%, transparent), transparent 58%),
+    conic-gradient(var(--ring-color) calc(var(--health-score) * 1%), rgba(100, 116, 139, 0.18) 0);
+  border-radius: 999px;
+  display: flex;
+  justify-content: center;
+  margin: auto 0;
+  position: relative;
+  width: min(9.75rem, 100%);
+}
+
+.jarvis-shell-panel--health .hud-panel[data-hud-state="warning"] .jarvis-health-panel__ring {
+  --ring-color: var(--warning);
+}
+
+.jarvis-shell-panel--health .hud-panel[data-hud-state="critical"] .jarvis-health-panel__ring {
+  --ring-color: var(--critical);
+}
+
+.jarvis-health-panel__ring::before,
+.jarvis-health-panel__ring::after {
+  content: "";
+  position: absolute;
+  border-radius: inherit;
+}
+
+.jarvis-health-panel__ring::before {
+  inset: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--ring-color) 55%, transparent);
+}
+
+.jarvis-health-panel__ring::after {
+  inset: 1.1rem;
+  background: color-mix(in srgb, var(--surface-inset) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 90%, transparent);
+}
+
+.jarvis-health-panel__ring-core {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.jarvis-health-panel__ring-core strong {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 900;
+}
+
+.jarvis-health-panel__ring-core span {
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.jarvis-health-panel__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.jarvis-health-panel__reason {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.jarvis-health-panel__facts {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.jarvis-health-panel__facts div:last-child {
+  grid-column: 1 / -1;
+}
+
+.jarvis-health-panel__facts div,
+.jarvis-centerpiece__stat,
+.jarvis-kpi-list__item,
+.jarvis-telemetry-grid__item,
+.jarvis-critical-list__item,
+.jarvis-critical-empty,
+.jarvis-evidence-panel__facts div {
+  background: color-mix(in srgb, var(--surface-inset) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 92%, transparent);
+  border-radius: 0.9rem;
+}
+
+.jarvis-health-panel__facts div {
+  padding: 0.72rem;
+}
+
+.jarvis-health-panel__facts dt {
+  color: var(--text-subtle);
+  font-size: 0.5rem;
+  font-weight: 800;
+}
+
+.jarvis-health-panel__facts dd {
+  color: var(--text-primary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.45;
+  margin-top: 0.3rem;
+}
+
+.jarvis-health-panel__actions,
+.jarvis-centerpiece__actions,
+.jarvis-evidence-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: auto;
+}
+
+.jarvis-action {
+  align-items: center;
+  border-radius: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.62rem;
+  font-weight: 900;
+  gap: 0.45rem;
+  justify-content: center;
+  line-height: 1;
+  min-height: 2.5rem;
+  padding: 0.72rem 0.9rem;
+  transition: border-color var(--motion-ui) var(--ease-standard), background-color var(--motion-ui) var(--ease-standard), color var(--motion-ui) var(--ease-standard), box-shadow var(--motion-ui) var(--ease-standard), transform var(--motion-ui) var(--ease-standard);
+}
+
+.jarvis-action:hover,
+.jarvis-action:focus-visible {
+  transform: translateY(-1px);
+}
+
+.jarvis-action--primary {
+  background: color-mix(in srgb, var(--success) 88%, white 6%);
+  color: #04110d;
+}
+
+.jarvis-action--secondary,
+.jarvis-action--ghost {
+  background: color-mix(in srgb, var(--surface-inset) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 94%, transparent);
+  color: var(--text-secondary);
+}
+
+.jarvis-action--ghost {
+  background: transparent;
+}
+
+.jarvis-critical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  height: 100%;
+  overflow: auto;
+}
+
+.jarvis-critical-list__item {
+  align-items: flex-start;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 0.78rem;
+  text-align: left;
+  transition: border-color var(--motion-ui) var(--ease-standard), box-shadow var(--motion-ui) var(--ease-standard), transform var(--motion-ui) var(--ease-standard);
+}
+
+.jarvis-critical-list__item:hover,
+.jarvis-critical-list__item:focus-visible {
+  border-color: color-mix(in srgb, var(--border-strong) 100%, transparent);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.jarvis-critical-list__item--fail {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--critical) 10%, transparent), color-mix(in srgb, var(--surface-inset) 84%, transparent));
+  border-color: color-mix(in srgb, var(--critical) 45%, transparent);
+}
+
+.jarvis-critical-list__item--warning {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--warning) 10%, transparent), color-mix(in srgb, var(--surface-inset) 84%, transparent));
+  border-color: color-mix(in srgb, var(--warning) 42%, transparent);
+}
+
+.jarvis-critical-list__icon {
+  color: var(--critical);
+}
+
+.jarvis-critical-list__item--warning .jarvis-critical-list__icon {
+  color: var(--warning);
+}
+
+.jarvis-critical-list__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.24rem;
+  min-width: 0;
+}
+
+.jarvis-critical-list__body strong {
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.jarvis-critical-list__body span,
+.jarvis-critical-list__body small {
+  color: var(--text-subtle);
+  font-size: 0.49rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.jarvis-critical-list__body small {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.jarvis-critical-empty {
+  align-items: center;
+  color: var(--success);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+.jarvis-critical-empty strong {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.jarvis-critical-empty span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.jarvis-activity-list {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: 1fr;
+  height: 100%;
+  overflow: auto;
+}
+
+.jarvis-activity-list__item {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-inset) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 92%, transparent);
+  border-radius: 0.9rem;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: auto 1fr;
+  padding: 0.82rem;
+}
+
+.jarvis-activity-list__icon {
+  color: var(--hud-text-technical);
+}
+
+.jarvis-activity-list__item strong {
+  color: var(--text-primary);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.jarvis-activity-list__item span {
+  color: var(--text-muted);
+  display: block;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  margin-top: 0.18rem;
+}
+
+.jarvis-centerpiece {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(15rem, 0.9fr);
+  height: 100%;
+}
+
+.jarvis-centerpiece__projection {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(19, 216, 255, 0.12), transparent 35%),
+    radial-gradient(circle at 50% 62%, rgba(37, 99, 235, 0.09), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-inset) 88%, transparent), color-mix(in srgb, var(--surface-secondary) 74%, transparent));
+  border: 1px solid color-mix(in srgb, var(--border-primary) 92%, transparent);
+  border-radius: 1rem;
+  display: flex;
+  justify-content: center;
+  min-height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.jarvis-centerpiece__projection::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--hud-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hud-grid-color) 1px, transparent 1px);
+  background-size: 36px 36px;
+  opacity: 0.25;
+}
+
+.jarvis-centerpiece__beam {
+  background: linear-gradient(180deg, rgba(19, 216, 255, 0), rgba(19, 216, 255, 0.28), rgba(19, 216, 255, 0));
+  border-radius: 999px;
+  height: 88%;
+  position: absolute;
+  top: 6%;
+  width: 1.15rem;
+  box-shadow: var(--glow-hologram);
+}
+
+.jarvis-centerpiece__ring {
+  border: 1px solid color-mix(in srgb, var(--accent-cyan-500) 74%, transparent);
+  border-radius: 999px;
+  position: absolute;
+}
+
+.jarvis-centerpiece__ring--outer {
+  width: 78%;
+  height: 55%;
+  bottom: 14%;
+  box-shadow: var(--glow-md);
+}
+
+.jarvis-centerpiece__ring--middle {
+  width: 58%;
+  height: 41%;
+  bottom: 21%;
+}
+
+.jarvis-centerpiece__ring--inner {
+  width: 32%;
+  height: 23%;
+  bottom: 29%;
+}
+
+.jarvis-centerpiece__core {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-primary) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 94%, transparent);
+  border-radius: 1rem;
+  box-shadow: var(--glow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 1.15rem;
+  position: relative;
+  z-index: 1;
+}
+
+.jarvis-centerpiece__core span {
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.jarvis-centerpiece__core strong {
+  color: var(--accent-cyan-400);
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 1.9vw, 1.7rem);
+  font-weight: 800;
+}
+
+.jarvis-centerpiece__callout {
+  background: color-mix(in srgb, var(--surface-primary) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 90%, transparent);
+  border-radius: 0.8rem;
+  min-width: 8.5rem;
+  padding: 0.6rem 0.7rem;
+  position: absolute;
+  z-index: 1;
+}
+
+.jarvis-centerpiece__callout span {
+  color: var(--text-subtle);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.46rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.jarvis-centerpiece__callout strong {
+  color: var(--text-primary);
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-top: 0.2rem;
+}
+
+.jarvis-centerpiece__callout--left-top { left: 1rem; top: 1rem; }
+.jarvis-centerpiece__callout--left-bottom { bottom: 1rem; left: 1rem; }
+.jarvis-centerpiece__callout--right-top { right: 1rem; top: 1rem; }
+.jarvis-centerpiece__callout--right-bottom { bottom: 1rem; right: 1rem; }
+
+.jarvis-centerpiece__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.jarvis-centerpiece__label {
+  color: var(--accent-cyan-400);
+  font-size: 0.56rem;
+  font-weight: 800;
+}
+
+.jarvis-centerpiece__copy h3 {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  font-weight: 800;
+}
+
+.jarvis-centerpiece__copy p {
+  color: var(--text-secondary);
+  font-size: 0.77rem;
+  line-height: 1.55;
+}
+
+.jarvis-centerpiece__stats {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.jarvis-centerpiece__stat {
+  padding: 0.7rem;
+}
+
+.jarvis-centerpiece__stat span {
+  color: var(--text-subtle);
+  display: block;
+  font-size: 0.48rem;
+  font-weight: 800;
+}
+
+.jarvis-centerpiece__stat strong {
+  color: var(--text-primary);
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.45;
+  margin-top: 0.2rem;
+}
+
+.jarvis-centerpiece__stat--fail {
+  border-color: color-mix(in srgb, var(--critical) 44%, transparent);
+}
+
+.jarvis-centerpiece__stat--warning {
+  border-color: color-mix(in srgb, var(--warning) 44%, transparent);
+}
+
+.jarvis-centerpiece__stat--pass {
+  border-color: color-mix(in srgb, var(--success) 42%, transparent);
+}
+
+.jarvis-shell-panel--validation .validation-flow-panel {
+  height: 100%;
+  overflow: hidden;
+}
+
+.jarvis-shell-panel--validation .validation-flow-svg {
+  min-height: 132px;
+}
+
+.jarvis-shell-panel--validation .validation-flow-stage {
+  min-height: 4.75rem;
+  padding: 0.55rem;
+}
+
+.jarvis-shell-panel--validation .validation-flow-stage-summary,
+.jarvis-shell-panel--validation .validation-flow-stage-items,
+.jarvis-shell-panel--validation .validation-flow-status,
+.jarvis-shell-panel--validation .validation-flow-disclaimer {
+  font-size: 0.5rem;
+}
+
+.jarvis-kpi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  height: 100%;
+  overflow: auto;
+}
+
+.jarvis-kpi-list__item {
+  padding: 0.72rem;
+}
+
+.jarvis-kpi-list__row {
+  align-items: baseline;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+}
+
+.jarvis-kpi-list__row span {
+  color: var(--text-subtle);
+  font-size: 0.48rem;
+  font-weight: 800;
+}
+
+.jarvis-kpi-list__row strong {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.jarvis-kpi-list__bar {
+  background: color-mix(in srgb, var(--surface-inset) 90%, transparent);
+  border-radius: 999px;
+  height: 0.38rem;
+  margin-top: 0.45rem;
+  overflow: hidden;
+}
+
+.jarvis-kpi-list__fill {
+  background: linear-gradient(90deg, var(--accent-cyan-500), color-mix(in srgb, var(--success) 72%, var(--accent-cyan-500) 28%));
+  border-radius: inherit;
+  height: 100%;
+}
+
+.jarvis-kpi-list__item--warning .jarvis-kpi-list__fill {
+  background: linear-gradient(90deg, var(--accent-cyan-500), var(--warning));
+}
+
+.jarvis-kpi-list__item--critical .jarvis-kpi-list__fill {
+  background: linear-gradient(90deg, var(--critical), var(--warning));
+}
+
+.jarvis-kpi-list__item small {
+  color: var(--text-muted);
+  display: block;
+  font-size: 0.5rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-top: 0.34rem;
+}
+
+.jarvis-telemetry-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  height: 100%;
+  overflow: auto;
+}
+
+.jarvis-telemetry-grid__item {
+  align-items: center;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: auto 1fr;
+  padding: 0.78rem;
+}
+
+.jarvis-telemetry-grid__icon {
+  color: var(--hud-text-technical);
+}
+
+.jarvis-telemetry-grid__item span {
+  color: var(--text-subtle);
+  display: block;
+  font-size: 0.48rem;
+  font-weight: 800;
+}
+
+.jarvis-telemetry-grid__item strong {
+  color: var(--text-primary);
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-top: 0.18rem;
+}
+
+.jarvis-telemetry-grid__item small {
+  color: var(--text-muted);
+  display: block;
+  font-size: 0.5rem;
+  font-weight: 800;
+  margin-top: 0.22rem;
+}
+
+.jarvis-evidence-panel {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(15rem, 0.8fr);
+  height: 100%;
+  overflow: auto;
+}
+
+.jarvis-evidence-panel__narrative {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.jarvis-evidence-panel__narrative p {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.jarvis-evidence-panel__facts {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.jarvis-evidence-panel__facts div {
+  padding: 0.74rem;
+}
+
+.jarvis-evidence-panel__facts span {
+  color: var(--text-subtle);
+  display: block;
+  font-size: 0.48rem;
+  font-weight: 800;
+}
+
+.jarvis-evidence-panel__facts strong {
+  color: var(--text-primary);
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.45;
+  margin-top: 0.24rem;
+}
+
+@media (max-width: 1199px) {
+  .jarvis-auth-shell__layout {
+    gap: 1rem;
+  }
+
+  .mission-control-v3__grid {
+    grid-template-areas:
+      "centerpiece centerpiece"
+      "health critical"
+      "activity validation"
+      "kpis telemetry"
+      "evidence evidence";
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: none;
+    min-height: auto;
+  }
+
+  .jarvis-centerpiece,
+  .jarvis-evidence-panel,
+  .jarvis-health-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .jarvis-health-panel__ring {
+    width: min(12rem, 54vw);
+    margin: 0 auto;
+  }
+
+  .jarvis-centerpiece__projection {
+    min-height: 17rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .jarvis-auth-shell__details,
+  .mission-control-v3__frame {
+    padding: 0.85rem;
+  }
+
+  .jarvis-auth-shell__details-header,
+  .mission-control-v3__header,
+  .jarvis-health-panel__facts,
+  .jarvis-centerpiece__stats,
+  .jarvis-telemetry-grid,
+  .jarvis-evidence-panel,
+  .mission-control-v3__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .jarvis-auth-shell__details-header,
+  .mission-control-v3__header {
+    flex-direction: column;
+  }
+
+  .jarvis-auth-shell__details-badges,
+  .mission-control-v3__scope {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .mission-control-v3__grid {
+    grid-template-areas:
+      "health"
+      "critical"
+      "activity"
+      "centerpiece"
+      "validation"
+      "kpis"
+      "telemetry"
+      "evidence";
+    min-height: auto;
+  }
+
+  .jarvis-shell-panel--validation .validation-flow-panel {
+    padding: 1rem;
+  }
+
+  .jarvis-centerpiece__projection {
+    min-height: 15rem;
+  }
+
+  .jarvis-centerpiece__callout {
+    min-width: 7rem;
+    padding: 0.45rem 0.55rem;
+  }
+
+  .jarvis-centerpiece__callout strong {
+    font-size: 0.92rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jarvis-action,
+  .jarvis-critical-list__item,
+  .validation-flow-panel,
+  .mission-control-v3__frame,
+  .jarvis-centerpiece__beam,
+  .jarvis-centerpiece__ring {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .jarvis-centerpiece__beam {
+    box-shadow: none;
+  }
+}

@@ -1035,61 +1035,78 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-3 pb-[4.25rem] pt-4 md:px-4 md:pb-[4.5rem] lg:flex-row lg:items-start lg:gap-5 lg:pb-[4.75rem]">
+      <div className="jarvis-auth-shell__layout mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-3 pb-[4.25rem] pt-4 md:px-4 md:pb-[4.5rem] lg:flex-row lg:items-start lg:gap-4 lg:pb-[4.75rem]">
         <HudNavigationRail
           items={hudNavigationItems}
           activeItemId="mission-control"
           mobileLabel="Navigation"
         />
 
-        <main className="min-w-0 flex-1" id="authenticated-primary-content">
-          <div className="mx-auto max-w-7xl px-0 py-0 md:px-2 md:py-2">
-        <section className="mb-6 cyber-panel rounded-2xl p-4 border border-emerald-500/20 bg-slate-950/60" aria-label="GPUValidator platform service state">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.24em] text-emerald-400">Platform V02 Service</p>
-              <h2 className="text-sm font-display font-bold text-slate-100 mt-1">
-                {platformSummary ? `${platformSummary.clusters.length} persisted cluster${platformSummary.clusters.length === 1 ? "" : "s"}` : "Connecting to platform services"}
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                {platformSummaryError || (platformSummary?.states.partial_data ? "Partial fixture/demo data is explicit; live integrations are not faked." : "Live platform response loaded.")}
-              </p>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
-                <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.nodes ?? "—"}</div>
-                <div className="text-[9px] uppercase tracking-wider text-slate-500">Nodes</div>
-              </div>
-              <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
-                <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.gpus ?? "—"}</div>
-                <div className="text-[9px] uppercase tracking-wider text-slate-500">GPUs</div>
-              </div>
-              <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
-                <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.audit_events ?? "—"}</div>
-                <div className="text-[9px] uppercase tracking-wider text-slate-500">Audits</div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <main className="jarvis-auth-shell__main min-w-0 flex-1" id="authenticated-primary-content">
+          <div className="jarvis-auth-shell__workspace px-0 py-0">
+            {computedCluster && (
+              <MissionControlOverview
+                cluster={computedCluster}
+                platformSummary={platformSummary}
+                platformSummaryError={platformSummaryError}
+                selectedScenario={selectedScenario}
+                selectedNodeName={selectedNodeName}
+                loading={loading}
+                bookmarkedNodes={bookmarkedNodes}
+                onTriggerScan={triggerScan}
+                onSelectCheck={setSelectedCheck}
+                onToggleBookmark={toggleBookmark}
+                onOpenExport={() => setShowExportModal(true)}
+                onOpenTopology={() => setShowTopologyModal(true)}
+                benchmarkCount={computedCluster.benchmark_results?.length || 0}
+              />
+            )}
 
-        {computedCluster && (
-          <MissionControlOverview
-            cluster={computedCluster}
-            platformSummary={platformSummary}
-            platformSummaryError={platformSummaryError}
-            selectedScenario={selectedScenario}
-            selectedNodeName={selectedNodeName}
-            loading={loading}
-            bookmarkedNodes={bookmarkedNodes}
-            onTriggerScan={triggerScan}
-            onSelectCheck={setSelectedCheck}
-            onToggleBookmark={toggleBookmark}
-            onOpenExport={() => setShowExportModal(true)}
-            benchmarkCount={computedCluster.benchmark_results?.length || 0}
-          />
-        )}
+            <section className="jarvis-auth-shell__details" aria-labelledby="detailed-diagnostics-title" data-testid="DetailedDiagnosticsWorkspace">
+              <div className="jarvis-auth-shell__details-header">
+                <div>
+                  <p className="jarvis-auth-shell__details-eyebrow">Detailed diagnostics / evidence</p>
+                  <h2 id="detailed-diagnostics-title">Detailed diagnostics / evidence</h2>
+                  <p>
+                    Primary operations remain above. This lower workspace preserves the existing node inventory, diagnostics, topology drill-in, and benchmark detail without dominating the first viewport.
+                  </p>
+                </div>
+                <div className="jarvis-auth-shell__details-badges" aria-label="Detailed diagnostics context">
+                  <span>{primaryClusterName.toUpperCase()}</span>
+                  <span>{selectedScenario.toUpperCase()} SCENARIO</span>
+                  <span>{dataClassificationLabel}</span>
+                </div>
+              </div>
 
-        {/* TAB CONTROLS */}
+              <section className="mb-6 cyber-panel rounded-2xl p-4 border border-emerald-500/20 bg-slate-950/60" aria-label="GPUValidator platform service state">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-mono uppercase tracking-[0.24em] text-emerald-400">Platform V02 Service</p>
+                    <h3 className="text-sm font-display font-bold text-slate-100 mt-1">
+                      {platformSummary ? `${platformSummary.clusters.length} persisted cluster${platformSummary.clusters.length === 1 ? "" : "s"}` : "Connecting to platform services"}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {platformSummaryError || (platformSummary?.states.partial_data ? "Partial fixture/demo data is explicit; live integrations are not faked." : "Live platform response loaded.")}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                      <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.nodes ?? "—"}</div>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-500">Nodes</div>
+                    </div>
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                      <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.gpus ?? "—"}</div>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-500">GPUs</div>
+                    </div>
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                      <div className="text-lg font-mono font-bold text-emerald-300">{platformSummary?.counts.audit_events ?? "—"}</div>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-500">Audits</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* TAB CONTROLS */}
         <div className="flex border-b border-slate-800/85 mb-8 p-1 bg-slate-950/40 rounded-xl max-w-md">
           <button 
             onClick={() => setActiveTab("diagnostics")}
@@ -1878,6 +1895,7 @@ export default function App() {
             )}
           </div>
         )}
+            </section>
           </div>
         </main>
       </div>
