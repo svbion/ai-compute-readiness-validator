@@ -1,0 +1,367 @@
+.critical-conditions-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-height: 0;
+}
+
+.critical-conditions-panel__stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-height: 0;
+}
+
+.critical-conditions-panel__item {
+  --condition-accent: var(--state-info);
+  --condition-glow: rgba(88, 183, 255, 0.16);
+  align-items: stretch;
+  appearance: none;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--condition-accent) 36%, var(--border-primary));
+  clip-path: polygon(14px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 8px 100%, 0 calc(100% - 8px), 0 14px);
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 0;
+  grid-template-columns: 0.32rem minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  text-align: left;
+  transition:
+    border-color var(--motion-ui) var(--ease-standard),
+    box-shadow var(--motion-ui) var(--ease-standard),
+    transform var(--motion-ui) var(--ease-standard),
+    background-color var(--motion-ui) var(--ease-standard);
+}
+
+.critical-conditions-panel__item::before,
+.critical-conditions-panel__item::after,
+.critical-conditions-panel__frame::before,
+.critical-conditions-panel__divider::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+}
+
+.critical-conditions-panel__item::before {
+  inset: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--condition-accent) 54%, transparent), transparent 22%) top/100% 1px no-repeat,
+    linear-gradient(90deg, transparent 0 76%, color-mix(in srgb, var(--condition-accent) 42%, transparent) 76% 100%) bottom/100% 1px no-repeat,
+    linear-gradient(180deg, color-mix(in srgb, var(--condition-accent) 14%, transparent), transparent 38%);
+  opacity: 0.95;
+}
+
+.critical-conditions-panel__item::after {
+  inset: 0.75rem 0.8rem auto auto;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--condition-accent) 94%, white 6%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--condition-accent) 24%, transparent), 0 0 10px color-mix(in srgb, var(--condition-accent) 28%, transparent);
+}
+
+.critical-conditions-panel__item--critical {
+  --condition-accent: var(--state-critical);
+  --condition-glow: rgba(255, 90, 102, 0.22);
+}
+
+.critical-conditions-panel__item--warning {
+  --condition-accent: var(--state-warning);
+  --condition-glow: rgba(255, 194, 71, 0.2);
+}
+
+.critical-conditions-panel__item--informational {
+  --condition-accent: var(--state-info);
+  --condition-glow: rgba(88, 183, 255, 0.18);
+}
+
+.critical-conditions-panel__item--unknown {
+  --condition-accent: var(--state-unknown);
+  --condition-glow: rgba(126, 150, 168, 0.16);
+}
+
+.critical-conditions-panel__item:hover,
+.critical-conditions-panel__item:focus-visible {
+  border-color: color-mix(in srgb, var(--condition-accent) 72%, white 8%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px color-mix(in srgb, var(--condition-accent) 24%, transparent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.critical-conditions-panel__item:focus-visible {
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.22),
+    0 0 0 1px color-mix(in srgb, var(--condition-accent) 30%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--condition-accent) 22%, transparent),
+    0 0 0 5px rgba(255, 255, 255, 0.16);
+}
+
+.critical-conditions-panel__severity-rail {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--condition-accent) 98%, white 2%), color-mix(in srgb, var(--condition-accent) 28%, transparent));
+  box-shadow: 0 0 14px var(--condition-glow);
+}
+
+.critical-conditions-panel__frame {
+  display: flex;
+  flex-direction: column;
+  gap: 0.62rem;
+  min-width: 0;
+  padding: 0.78rem 0.84rem 0.82rem;
+  position: relative;
+}
+
+.critical-conditions-panel__frame::before {
+  inset: 0.52rem;
+  border: 1px solid color-mix(in srgb, var(--condition-accent) 16%, transparent);
+  clip-path: polygon(10px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 7px 100%, 0 calc(100% - 7px), 0 10px);
+  opacity: 0.7;
+}
+
+.critical-conditions-panel__topline,
+.critical-conditions-panel__signal-line,
+.critical-conditions-panel__scope-grid span,
+.critical-conditions-panel__action-line span,
+.critical-conditions-panel__overflow {
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.critical-conditions-panel__topline,
+.critical-conditions-panel__signal-line {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  justify-content: space-between;
+}
+
+.critical-conditions-panel__index {
+  color: var(--text-subtle);
+}
+
+.critical-conditions-panel__severity {
+  color: color-mix(in srgb, var(--condition-accent) 92%, white 8%);
+}
+
+.critical-conditions-panel__heading-row {
+  align-items: flex-start;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.critical-conditions-panel__heading-row h4 {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.critical-conditions-panel__alert-icon {
+  color: color-mix(in srgb, var(--condition-accent) 92%, white 8%);
+  height: 0.95rem;
+  margin-top: 0.1rem;
+  width: 0.95rem;
+}
+
+.critical-conditions-panel__scope-grid {
+  display: grid;
+  gap: 0.55rem 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.critical-conditions-panel__scope-grid div,
+.critical-conditions-panel__evidence-block,
+.critical-conditions-panel__action-line {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--condition-accent) 5%, transparent), transparent),
+    color-mix(in srgb, var(--surface-inset) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--condition-accent) 16%, var(--border-primary));
+  clip-path: polygon(10px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 6px 100%, 0 calc(100% - 6px), 0 10px);
+  min-width: 0;
+  padding: 0.5rem 0.58rem;
+  position: relative;
+}
+
+.critical-conditions-panel__scope-grid strong,
+.critical-conditions-panel__signal-line strong {
+  color: var(--text-primary);
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  margin-top: 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.critical-conditions-panel__divider {
+  height: 1px;
+  position: relative;
+}
+
+.critical-conditions-panel__divider::before {
+  inset: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--condition-accent) 82%, transparent) 0 18%, color-mix(in srgb, var(--condition-accent) 18%, transparent) 42%, transparent 100%);
+}
+
+.critical-conditions-panel__evidence-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.36rem;
+}
+
+.critical-conditions-panel__signal-line strong {
+  color: color-mix(in srgb, var(--condition-accent) 92%, white 8%);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  margin-top: 0;
+  text-transform: uppercase;
+}
+
+.critical-conditions-panel__evidence-block p,
+.critical-conditions-panel__action-line p,
+.critical-conditions-panel__nominal p {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.critical-conditions-panel__action-line {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.critical-conditions-panel__inspect {
+  align-items: center;
+  color: color-mix(in srgb, var(--condition-accent) 92%, white 8%);
+  display: inline-flex;
+  gap: 0.38rem;
+  white-space: nowrap;
+}
+
+.critical-conditions-panel__inspect svg {
+  height: 0.84rem;
+  width: 0.84rem;
+}
+
+.critical-conditions-panel__overflow {
+  border-top: 1px solid color-mix(in srgb, var(--border-primary) 70%, transparent);
+  color: var(--text-muted);
+  margin-top: auto;
+  padding-top: 0.55rem;
+}
+
+.critical-conditions-panel__nominal {
+  align-items: center;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--success) 5%, transparent), color-mix(in srgb, var(--surface-inset) 88%, transparent));
+  border: 1px solid color-mix(in srgb, var(--success) 18%, var(--border-primary));
+  clip-path: polygon(16px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 8px 100%, 0 calc(100% - 8px), 0 16px);
+  display: grid;
+  flex: 1;
+  gap: 0.85rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 12rem;
+  padding: 1rem;
+}
+
+.critical-conditions-panel__nominal svg {
+  color: var(--success);
+  height: 1.35rem;
+  width: 1.35rem;
+}
+
+.critical-conditions-panel__nominal strong {
+  color: var(--text-primary);
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.28rem;
+}
+
+.light .critical-conditions-panel__item {
+  box-shadow: none;
+}
+
+.light .critical-conditions-panel__item:hover,
+.light .critical-conditions-panel__item:focus-visible {
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.08);
+}
+
+@media (max-width: 1120px) {
+  .critical-conditions-panel__scope-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .critical-conditions-panel__frame {
+    padding: 0.76rem;
+  }
+
+  .critical-conditions-panel__scope-grid,
+  .critical-conditions-panel__action-line,
+  .critical-conditions-panel__nominal {
+    grid-template-columns: 1fr;
+  }
+
+  .critical-conditions-panel__inspect {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .critical-conditions-panel__item {
+    clip-path: polygon(10px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 6px 100%, 0 calc(100% - 6px), 0 10px);
+  }
+
+  .critical-conditions-panel__frame::before,
+  .critical-conditions-panel__scope-grid div,
+  .critical-conditions-panel__evidence-block,
+  .critical-conditions-panel__action-line,
+  .critical-conditions-panel__nominal {
+    clip-path: polygon(8px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 5px 100%, 0 calc(100% - 5px), 0 8px);
+  }
+
+  .critical-conditions-panel__scope-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .critical-conditions-panel__heading-row h4 {
+    font-size: 0.8rem;
+  }
+
+  .critical-conditions-panel__evidence-block p,
+  .critical-conditions-panel__action-line p,
+  .critical-conditions-panel__nominal p {
+    font-size: 0.68rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .critical-conditions-panel__item,
+  .critical-conditions-panel__severity-rail {
+    transition: none !important;
+  }
+
+  .critical-conditions-panel__item:hover,
+  .critical-conditions-panel__item:focus-visible {
+    transform: none;
+  }
+}

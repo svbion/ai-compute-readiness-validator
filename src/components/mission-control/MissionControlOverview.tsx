@@ -1,23 +1,22 @@
 import {
   Activity,
-  AlertTriangle,
-  ArrowRight,
-  CheckCircle2,
   Cpu,
   Database,
   FileText,
   HardDrive,
   Layers,
   Network,
-  Pin,
-  RefreshCw,
   Server,
   ShieldAlert,
-  XCircle,
 } from "lucide-react";
 import { HudPanel, HudPanelHeader } from "../hud";
 import { AiFactoryHologram } from "./ai-factory";
 import { AiFactoryHealthInstrument } from "./health";
+import {
+  CriticalConditionsPanel,
+  type CriticalConditionEvidenceState,
+  type CriticalConditionSeverity,
+} from "./critical";
 import { ValidationFlowVisualization } from "./ValidationFlowVisualization";
 
 type Status = "pass" | "warning" | "fail" | "unknown" | "unavailable";
@@ -120,6 +119,70 @@ function categoryAverage(cluster: Cluster, category: string, fallback = 100) {
   return toPercent(cluster.metadata.category_averages?.[category], fallback);
 }
 
+function mapConditionSeverity(check: ValidationCheck): CriticalConditionSeverity {
+  if (check.status === "fail" || check.severity === "critical" || check.severity === "high") {
+    return "critical";
+  }
+
+  if (check.status === "warning" || check.severity === "medium") {
+    return "warning";
+  }
+
+  if (check.severity === "low") {
+    return "informational";
+  }
+
+  return "unknown";
+}
+
+function formatEvidenceEntry(entry: unknown): string | null {
+  if (typeof entry === "string") {
+    const trimmed = entry.trim();
+    return trimmed || null;
+  }
+
+  if (typeof entry === "number" || typeof entry === "boolean") {
+    return String(entry);
+  }
+
+  if (entry && typeof entry === "object") {
+    for (const key of ["summary", "message", "detail", "label", "title", "value", "path"]) {
+      const value = (entry as Record<string, unknown>)[key];
+      if (typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
+      if (typeof value === "number" || typeof value === "boolean") {
+        return String(value);
+      }
+    }
+
+    const serialized = JSON.stringify(entry);
+    return serialized && serialized !== "{}" ? serialized : null;
+  }
+
+  return null;
+}
+
+function summarizeEvidence(check: ValidationCheck, partialData: boolean) {
+  const formattedEvidence = check.evidence
+    .map((entry) => formatEvidenceEntry(entry))
+    .filter((entry): entry is string => Boolean(entry));
+
+  if (formattedEvidence.length > 0) {
+    return formattedEvidence.slice(0, 2).join(" • ");
+  }
+
+  if (check.summary.trim()) {
+    return partialData
+      ? `${check.summary} Structured evidence is partial in the current dataset.`
+      : `${check.summary} Structured evidence is not attached to this finding.`;
+  }
+
+  return partialData
+    ? "Structured evidence is partial in the current dataset."
+    : "Structured evidence is unavailable for this finding.";
+}
+
 export function MissionControlOverview({
   cluster,
   platformSummary,
@@ -148,11 +211,10 @@ export function MissionControlOverview({
       if (statusDelta !== 0) return statusDelta;
       return severityRank[b.severity] - severityRank[a.severity];
     });
+  const partialData = Boolean(platformSummary?.states.partial_data);
 
   const failCount = allChecks.filter((check) => check.status === "fail").length;
   const warningCount = allChecks.filter((check) => check.status === "warning").length;
-  const activeJobs = loading ? 1 : 0;
-  const openInvestigations = criticalConditions.length;
   const activeNodes = cluster.nodes.filter((node) => node.status !== "fail" && node.status !== "unavailable").length;
   const totalGpus = platformSummary?.counts.gpus ?? cluster.nodes.length * 8;
   const selectedNode = cluster.nodes.find((node) => node.name === selectedNodeName);
@@ -198,6 +260,25 @@ export function MissionControlOverview({
       : warningCount > 0
         ? `${warningCount} warning finding${warningCount === 1 ? "" : "s"} remain under review`
         : "Operational baseline is stable for review";
+  const criticalPanelConditions = criticalConditions.map((check) => ({
+    id: `${check.node}-${check.id}`,
+    title: check.title,
+    severity: mapConditionSeverity(check),
+    affectedScope: check.node.toUpperCase(),
+    subsystem: check.category.toUpperCase(),
+    evidenceState: (check.evidence.length > 0
+      ? "available"
+      : partialData
+        ? "partial"
+        : "unavailable") as CriticalConditionEvidenceState,
+    evidenceSummary: summarizeEvidence(check, partialData),
+    recommendation: check.recommendation || "Recommendation unavailable in current findings.",
+    stateLabel: check.status.toUpperCase(),
+    onSelect: () => onSelectCheck(check),
+  }));
+  const criticalNominalContext = partialData
+    ? `No warning or fail findings are present for the selected scope. Current dataset remains marked ${dataLabel}.`
+    : `No warning or fail findings are present for ${selectedNodeName.toUpperCase()}. Latest validation ${new Date(cluster.timestamp).toLocaleString()}.`;
 
   const gpuAverage = categoryAverage(cluster, "gpu");
   const networkAverage = categoryAverage(cluster, "network");
@@ -382,50 +463,15 @@ export function MissionControlOverview({
             />
           </HudPanel>
 
-          <HudPanel
-            className="jarvis-shell-panel jarvis-shell-panel--critical"
-            header={
-              <HudPanelHeader
-                eyebrow="Priority queue"
-                icon={<AlertTriangle />}
-                metadata={affectedNodes.length ? `${affectedNodes.length} NODES` : "NO ACTIVE SCOPE"}
-                status={`${failCount + warningCount} ACTIVE`}
-                title="Critical Conditions"
-                titleId="jarvis-critical-title"
-              />
-            }
-            labelledBy="jarvis-critical-title"
-            status={failCount > 0 ? "critical" : warningCount > 0 ? "warning" : "healthy"}
-          >
-            {criticalConditions.length > 0 ? (
-              <div className="jarvis-critical-list">
-                {criticalConditions.slice(0, 2).map((check) => (
-                  <button
-                    key={`${check.node}-${check.id}`}
-                    type="button"
-                    className={`jarvis-critical-list__item jarvis-critical-list__item--${check.status}`}
-                    onClick={() => onSelectCheck(check)}
-                  >
-                    <span className="jarvis-critical-list__icon">
-                      {check.status === "fail" ? <XCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                    </span>
-                    <span className="jarvis-critical-list__body">
-                      <strong>{check.title}</strong>
-                      <span>{check.severity.toUpperCase()} • {check.node.toUpperCase()} • {check.category.toUpperCase()}</span>
-                      <small>{check.summary}</small>
-                    </span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="jarvis-critical-empty">
-                <CheckCircle2 className="h-7 w-7" />
-                <strong>No active critical conditions</strong>
-                <span>Validation findings are nominal for the selected scope.</span>
-              </div>
-            )}
-          </HudPanel>
+          <CriticalConditionsPanel
+            activeCount={failCount + warningCount}
+            affectedScopeCount={affectedNodes.length}
+            conditions={criticalPanelConditions}
+            maxVisible={3}
+            nominalContext={criticalNominalContext}
+            panelStatus={failCount > 0 ? "critical" : warningCount > 0 ? "warning" : "healthy"}
+            titleId="jarvis-critical-title"
+          />
 
           <HudPanel
             className="jarvis-shell-panel jarvis-shell-panel--activity"

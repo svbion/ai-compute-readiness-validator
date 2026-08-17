@@ -10,6 +10,9 @@ const missionControl = fs.readFileSync('src/components/mission-control/MissionCo
 const aiFactoryHologram = fs.readFileSync('src/components/mission-control/ai-factory/AiFactoryHologram.tsx', 'utf8');
 const aiFactoryHealthInstrument = fs.readFileSync('src/components/mission-control/health/AiFactoryHealthInstrument.tsx', 'utf8');
 const aiFactoryHealthInstrumentStyles = fs.readFileSync('src/components/mission-control/health/AiFactoryHealthInstrument.css', 'utf8');
+const criticalConditionsPanel = fs.readFileSync('src/components/mission-control/critical/CriticalConditionsPanel.tsx', 'utf8');
+const criticalConditionsPanelStyles = fs.readFileSync('src/components/mission-control/critical/CriticalConditionsPanel.css', 'utf8');
+const criticalConditionsPanelIndex = fs.readFileSync('src/components/mission-control/critical/index.ts', 'utf8');
 const hgxTopology = fs.readFileSync('src/components/mission-control/HgxNvlinkVisualization.tsx', 'utf8');
 const validationFlow = fs.readFileSync('src/components/mission-control/ValidationFlowVisualization.tsx', 'utf8');
 const hudPanel = fs.readFileSync('src/components/hud/HudPanel.tsx', 'utf8');
@@ -157,7 +160,7 @@ const requiredMissionControlV3Markers = [
   'LOGICAL / REFERENCE TOPOLOGY',
   'VALIDATION PIPELINE',
   'Affected scope',
-  'Current validation',
+  'Current state',
   'DEMO / FIXTURE DATA',
   'data-testid="JarvisMissionControlShell"',
   'data-testid="JarvisMissionControlGrid"',
@@ -182,6 +185,8 @@ for (const marker of requiredMissionControlV3Markers) {
       aiFactoryHologram.includes(marker) ||
       aiFactoryHealthInstrument.includes(marker) ||
       aiFactoryHealthInstrumentStyles.includes(marker) ||
+      criticalConditionsPanel.includes(marker) ||
+      criticalConditionsPanelStyles.includes(marker) ||
       validationFlow.includes(marker) ||
       styles.includes(marker) ||
       app.includes(marker),
@@ -242,6 +247,36 @@ for (const marker of requiredAiFactoryHealthMarkers) {
     `missing AI Factory Health marker ${marker}`
   );
 }
+
+const requiredCriticalConditionsMarkers = [
+  'CriticalConditionsPanel',
+  'CRITICAL CONDITIONS',
+  'Affected scope',
+  'Severity',
+  'Evidence',
+  'Recommendation',
+  'critical',
+  'warning',
+  'informational',
+  'unknown',
+  'NO CRITICAL CONDITIONS',
+  'NOMINAL',
+];
+for (const marker of requiredCriticalConditionsMarkers) {
+  assert(
+    criticalConditionsPanel.includes(marker) ||
+      criticalConditionsPanelStyles.includes(marker) ||
+      criticalConditionsPanelIndex.includes(marker) ||
+      missionControl.includes(marker),
+    `missing CriticalConditionsPanel marker ${marker}`
+  );
+}
+assert(
+  criticalConditionsPanel.includes('Recommendation unavailable in current findings.') &&
+    criticalConditionsPanel.includes('EVIDENCE PARTIAL') &&
+    criticalConditionsPanel.includes('EVIDENCE UNAVAILABLE'),
+  'CriticalConditionsPanel missing truthful evidence/recommendation fallback states'
+);
 
 const requiredHudPanelMarkers = [
   'export function HudPanel',
@@ -368,4 +403,6 @@ for (const entity of storeEntities) {
   assert(server.includes(`${entity}: []`) || server.includes(`${entity}:`), `platform store missing ${entity}`);
 }
 
-console.log(`portal contract ok: ${requiredRoutes.length} routes, ${requiredUiContracts.length} UI markers, ${requiredLandingMarkers.length} landing markers, ${requiredHgxTopologyMarkers.length} HGX topology markers, ${requiredValidationFlowMarkers.length} validation workflow markers, ${requiredMissionControlV3Markers.length} Mission Control V3 markers, ${requiredAiFactoryHologramMarkers.length} AI Factory hologram markers`);
+console.log(
+  `portal contract ok: ${requiredRoutes.length} routes, ${requiredUiContracts.length} UI markers, ${requiredLandingMarkers.length} landing markers, ${requiredHgxTopologyMarkers.length} HGX topology markers, ${requiredValidationFlowMarkers.length} validation workflow markers, ${requiredMissionControlV3Markers.length} Mission Control V3 markers, ${requiredAiFactoryHologramMarkers.length} AI Factory hologram markers, ${requiredAiFactoryHealthMarkers.length} AI Factory health markers, ${requiredCriticalConditionsMarkers.length} Critical Conditions markers`
+);
