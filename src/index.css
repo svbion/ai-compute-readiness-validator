@@ -2280,8 +2280,8 @@ input:focus-visible,
     "health centerpiece critical"
     "activity validation kpis"
     "telemetry evidence evidence";
-  grid-template-columns: minmax(0, 0.21fr) minmax(0, 0.54fr) minmax(0, 0.25fr);
-  grid-template-rows: minmax(0, 0.56fr) minmax(0, 0.15fr) minmax(0, 0.09fr);
+  grid-template-columns: minmax(0, 0.25fr) minmax(0, 0.5fr) minmax(0, 0.25fr);
+  grid-template-rows: minmax(0, 0.58fr) minmax(0, 0.14fr) minmax(0, 0.08fr);
   height: clamp(43rem, calc(100vh - 13.5rem), 48.25rem);
   overflow: hidden;
 }

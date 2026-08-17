@@ -1,12 +1,10 @@
 .ai-factory-health-instrument {
   --ai-health-semantic-strong: var(--success);
   --ai-health-semantic-soft: color-mix(in srgb, var(--success) 64%, white 16%);
-  --ai-health-structural: rgba(19, 216, 255, 0.92);
-  --ai-health-structural-soft: rgba(88, 183, 255, 0.54);
-  --ai-health-muted: rgba(148, 176, 201, 0.62);
   display: grid;
-  gap: 0.65rem;
+  gap: 0.32rem;
   height: 100%;
+  min-height: 0;
 }
 
 .ai-factory-health-instrument[data-health-state="warning"] {
@@ -29,113 +27,237 @@
   --ai-health-semantic-soft: color-mix(in srgb, var(--info) 72%, white 12%);
 }
 
-.ai-factory-health-instrument__headerband {
-  align-items: start;
-  display: flex;
-  gap: 0.9rem;
-  justify-content: space-between;
-}
-
-.ai-factory-health-instrument__kicker,
-.ai-factory-health-instrument__classification-label,
-.ai-factory-health-instrument__summary-heading,
+.ai-factory-health-instrument__status-kicker,
 .ai-factory-health-instrument__center-label,
-.ai-factory-health-instrument__callout-label,
-.ai-factory-health-instrument__orbit-label span,
+.ai-factory-health-instrument__detail-label,
 .ai-factory-health-instrument__summary-row span {
   color: var(--text-subtle);
   font-family: var(--font-mono);
-  font-size: 0.52rem;
+  font-size: 0.46rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.ai-factory-health-instrument__banner {
-  color: var(--text-primary);
-  display: block;
-  font-size: 0.78rem;
-  line-height: 1.38;
-  max-width: 20rem;
-}
-
-.ai-factory-health-instrument__classification-cluster {
-  align-items: flex-end;
-  display: flex;
-  flex-direction: column;
-  gap: 0.22rem;
-  text-align: right;
-}
-
-.ai-factory-health-instrument__classification-value {
-  color: var(--ai-health-semantic-strong);
-  font-size: 0.95rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.ai-factory-health-instrument__data-label {
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.ai-factory-health-instrument__layout {
+.ai-factory-health-instrument__hero {
   align-items: start;
   display: grid;
-  gap: 0.6rem;
-  grid-template-columns: minmax(8rem, 0.92fr) minmax(0, 1.08fr);
-  min-height: 0;
+  gap: 0.42rem;
+  grid-template-columns: minmax(5.2rem, 5.55rem) minmax(0, 1fr);
 }
 
 .ai-factory-health-instrument__figure-column,
-.ai-factory-health-instrument__callouts {
+.ai-factory-health-instrument__status-block,
+.ai-factory-health-instrument__primary-grid,
+.ai-factory-health-instrument__telemetry-strip,
+.ai-factory-health-instrument__footer-band {
   min-width: 0;
 }
 
-.ai-factory-health-instrument__summary-rail,
-.ai-factory-health-instrument__callout {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-primary) 94%, transparent), color-mix(in srgb, var(--surface-inset) 92%, transparent));
-  border: 1px solid color-mix(in srgb, var(--border-primary) 92%, transparent);
-  border-radius: 1rem;
-  box-shadow: inset 0 0 0 1px rgba(140, 228, 255, 0.04);
+.ai-factory-health-instrument__figure {
+  align-items: center;
+  aspect-ratio: 1;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  width: 100%;
 }
 
-.ai-factory-health-instrument__summary-rail {
-  display: grid;
-  gap: 0.34rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: 0.52rem 0.6rem;
-}
-
-.ai-factory-health-instrument__summary-heading {
-  border: 0;
-  clip: rect(0, 0, 0, 0);
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  padding: 0;
+.ai-factory-health-instrument__figure::before {
+  border: 1px solid color-mix(in srgb, var(--border-primary) 72%, transparent);
+  clip-path: polygon(14% 0, 100% 0, 100% 86%, 86% 100%, 0 100%, 0 14%);
+  content: "";
+  inset: 5%;
+  pointer-events: none;
   position: absolute;
-  white-space: nowrap;
-  width: 1px;
+}
+
+.ai-factory-health-instrument__figure::after {
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--ai-health-semantic-strong) 18%, transparent), transparent 68%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.ai-factory-health-instrument__svg {
+  height: 100%;
+  overflow: visible;
+  width: 100%;
+}
+
+.ai-factory-health-instrument__grid-ring,
+.ai-factory-health-instrument__score-track,
+.ai-factory-health-instrument__structural-arc,
+.ai-factory-health-instrument__core-shell,
+.ai-factory-health-instrument__center-geometry,
+.ai-factory-health-instrument__calibration-sweep {
+  fill: none;
+}
+
+.ai-factory-health-instrument__grid-ring {
+  stroke: color-mix(in srgb, var(--border-primary) 44%, transparent);
+  stroke-width: 1;
+}
+
+.ai-factory-health-instrument__grid-ring--inner {
+  stroke: color-mix(in srgb, var(--ai-health-semantic-strong) 22%, transparent);
+}
+
+.ai-factory-health-instrument__tick {
+  stroke: color-mix(in srgb, var(--text-subtle) 48%, transparent);
+  stroke-width: 1;
+}
+
+.ai-factory-health-instrument__tick--major {
+  stroke: color-mix(in srgb, var(--ai-health-semantic-strong) 58%, white 10%);
+  stroke-width: 1.2;
+}
+
+.ai-factory-health-instrument__score-track {
+  stroke: color-mix(in srgb, var(--text-subtle) 34%, transparent);
+  stroke-width: 8;
+}
+
+.ai-factory-health-instrument__score-progress {
+  fill: none;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--ai-health-semantic-strong) 24%, transparent));
+  stroke: url(#ai-factory-health-instrument-progress);
+  stroke-linecap: round;
+  stroke-width: 8;
+}
+
+.ai-factory-health-instrument__structural-arc {
+  stroke: url(#ai-factory-health-instrument-structural);
+  stroke-linecap: round;
+  stroke-width: 2.1;
+}
+
+.ai-factory-health-instrument__structural-arc--lower {
+  opacity: 0.78;
+  stroke-width: 1.8;
+}
+
+.ai-factory-health-instrument__core-shell {
+  fill: color-mix(in srgb, var(--surface-inset) 94%, transparent);
+  stroke: color-mix(in srgb, var(--ai-health-semantic-strong) 18%, transparent);
+  stroke-width: 1.2;
+}
+
+.ai-factory-health-instrument__center-geometry {
+  fill: color-mix(in srgb, var(--surface-primary) 92%, var(--surface-inset) 8%);
+  stroke: color-mix(in srgb, var(--ai-health-semantic-strong) 22%, transparent);
+  stroke-width: 1;
+}
+
+.ai-factory-health-instrument__center-node {
+  fill: var(--ai-health-semantic-strong);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--ai-health-semantic-strong) 36%, transparent));
+}
+
+.ai-factory-health-instrument__calibration-sweep {
+  opacity: 0.92;
+  stroke: color-mix(in srgb, var(--ai-health-semantic-strong) 88%, white 6%);
+  stroke-dasharray: 16 104;
+  stroke-linecap: round;
+  stroke-width: 2.4;
+}
+
+.ai-factory-health-instrument__center {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  inset: 0;
+  justify-content: center;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+}
+
+.ai-factory-health-instrument__center strong {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: clamp(1.55rem, 2vw, 1.95rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ai-factory-health-instrument__center-state {
+  color: var(--ai-health-semantic-strong);
+  font-size: 0.54rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ai-factory-health-instrument__status-block {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 0;
+}
+
+.ai-factory-health-instrument__classification-value {
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  line-height: 1.02;
+  text-transform: uppercase;
+}
+
+.ai-factory-health-instrument__status-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+}
+
+.ai-factory-health-instrument__state-chip,
+.ai-factory-health-instrument__data-label {
+  border: 1px solid color-mix(in srgb, var(--border-primary) 78%, transparent);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  padding: 0.16rem 0.36rem;
+  text-transform: uppercase;
+}
+
+.ai-factory-health-instrument__state-chip {
+  background: color-mix(in srgb, var(--ai-health-semantic-strong) 14%, transparent);
+  color: var(--ai-health-semantic-strong);
+}
+
+.ai-factory-health-instrument__summary-grid {
+  display: grid;
+  gap: 0.24rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ai-factory-health-instrument__summary-row,
+.ai-factory-health-instrument__detail-card,
+.ai-factory-health-instrument__telemetry-item,
+.ai-factory-health-instrument__next-action {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-primary) 94%, transparent), color-mix(in srgb, var(--surface-inset) 92%, transparent));
+  border: 1px solid color-mix(in srgb, var(--border-primary) 88%, transparent);
+  border-radius: 0.85rem;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ai-health-semantic-strong) 5%, transparent);
 }
 
 .ai-factory-health-instrument__summary-row {
-  align-items: baseline;
-  border-top: 1px solid rgba(108, 177, 209, 0.12);
   display: grid;
-  gap: 0.14rem;
-  padding-top: 0.3rem;
+  gap: 0.06rem;
+  padding: 0.24rem 0.32rem;
 }
 
 .ai-factory-health-instrument__summary-row strong {
   color: var(--text-primary);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 0.64rem;
+  font-weight: 850;
+  line-height: 1.05;
 }
 
 .ai-factory-health-instrument__summary-row[data-tone="healthy"] strong {
@@ -154,246 +276,100 @@
   color: var(--text-secondary);
 }
 
-.ai-factory-health-instrument__figure {
-  align-items: center;
-  aspect-ratio: 1;
-  display: flex;
-  justify-content: center;
-  min-height: 10.75rem;
-  position: relative;
-}
-
-.ai-factory-health-instrument__figure::before,
-.ai-factory-health-instrument__figure::after {
-  content: "";
-  inset: 7%;
-  pointer-events: none;
-  position: absolute;
-}
-
-.ai-factory-health-instrument__figure::before {
-  border: 1px solid rgba(72, 232, 255, 0.16);
-  clip-path: polygon(12% 0, 100% 0, 100% 88%, 88% 100%, 0 100%, 0 12%);
-}
-
-.ai-factory-health-instrument__figure::after {
-  background: radial-gradient(circle at 50% 50%, rgba(19, 216, 255, 0.1), transparent 66%);
-}
-
-.ai-factory-health-instrument__svg {
-  height: 100%;
-  max-height: 11.5rem;
-  max-width: 11.5rem;
-  overflow: visible;
-  width: 100%;
-}
-
-.ai-factory-health-instrument__grid-ring,
-.ai-factory-health-instrument__score-track,
-.ai-factory-health-instrument__segment-band,
-.ai-factory-health-instrument__structural-arc,
-.ai-factory-health-instrument__core-shell,
-.ai-factory-health-instrument__center-geometry,
-.ai-factory-health-instrument__calibration-sweep {
-  fill: none;
-}
-
-.ai-factory-health-instrument__grid-ring {
-  stroke: rgba(88, 183, 255, 0.16);
-  stroke-width: 1;
-}
-
-.ai-factory-health-instrument__grid-ring--middle {
-  stroke: rgba(19, 216, 255, 0.16);
-}
-
-.ai-factory-health-instrument__grid-ring--inner {
-  stroke: rgba(163, 193, 217, 0.12);
-}
-
-.ai-factory-health-instrument__tick {
-  stroke: rgba(102, 170, 204, 0.22);
-  stroke-width: 1;
-}
-
-.ai-factory-health-instrument__tick--major {
-  stroke: rgba(140, 242, 255, 0.46);
-  stroke-width: 1.2;
-}
-
-.ai-factory-health-instrument__segment-band {
-  stroke: rgba(126, 150, 168, 0.16);
-  stroke-linecap: round;
-  stroke-width: 7;
-}
-
-.ai-factory-health-instrument__score-track {
-  stroke: rgba(126, 150, 168, 0.18);
-  stroke-width: 11;
-}
-
-.ai-factory-health-instrument__score-progress {
-  fill: none;
-  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--ai-health-semantic-strong) 24%, transparent));
-  stroke: url(#ai-factory-health-instrument-progress);
-  stroke-linecap: round;
-  stroke-width: 10;
-}
-
-.ai-factory-health-instrument__structural-arc {
-  stroke: url(#ai-factory-health-instrument-structural);
-  stroke-linecap: round;
-  stroke-width: 2.6;
-}
-
-.ai-factory-health-instrument__structural-arc--lower {
-  opacity: 0.74;
-  stroke-width: 2;
-}
-
-.ai-factory-health-instrument__core-shell {
-  fill: color-mix(in srgb, var(--surface-inset) 92%, transparent);
-  stroke: rgba(140, 242, 255, 0.2);
-  stroke-width: 1.4;
-}
-
-.ai-factory-health-instrument__center-geometry {
-  fill: rgba(7, 27, 43, 0.68);
-  stroke: rgba(72, 232, 255, 0.2);
-  stroke-width: 1;
-}
-
-.ai-factory-health-instrument__center-node {
-  fill: var(--ai-health-semantic-strong);
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--ai-health-semantic-strong) 38%, transparent));
-}
-
-.ai-factory-health-instrument__calibration-sweep {
-  opacity: 0.94;
-  stroke: color-mix(in srgb, var(--ai-health-semantic-strong) 92%, white 6%);
-  stroke-dasharray: 20 140;
-  stroke-linecap: round;
-  stroke-width: 3;
-  transform-origin: 140px 140px;
-}
-
-.ai-factory-health-instrument__center {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  gap: 0.22rem;
-  inset: 0;
-  justify-content: center;
-  pointer-events: none;
-  position: absolute;
-  text-align: center;
-}
-
-.ai-factory-health-instrument__center strong {
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
-  font-weight: 900;
-  line-height: 1;
-}
-
-.ai-factory-health-instrument__center-state {
-  color: var(--ai-health-semantic-strong);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.ai-factory-health-instrument__center-classification {
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  max-width: 8rem;
-  text-transform: uppercase;
-}
-
-.ai-factory-health-instrument__orbit-label {
-  display: none;
-}
-
-.ai-factory-health-instrument__orbit-label strong {
-  color: var(--text-primary);
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-}
-
-.ai-factory-health-instrument__orbit-label--north {
-  left: 50%;
-  top: 0.2rem;
-  transform: translateX(-50%);
-}
-
-.ai-factory-health-instrument__orbit-label--east {
-  right: -0.3rem;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.ai-factory-health-instrument__orbit-label--south {
-  bottom: 0.2rem;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.ai-factory-health-instrument__orbit-label--west {
-  left: -0.3rem;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.ai-factory-health-instrument__callouts {
+.ai-factory-health-instrument__primary-grid {
   display: grid;
-  gap: 0.4rem;
-  grid-template-columns: 1fr;
+  gap: 0.28rem;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
 }
 
-.ai-factory-health-instrument__callout {
+.ai-factory-health-instrument__detail-card,
+.ai-factory-health-instrument__telemetry-item,
+.ai-factory-health-instrument__next-action {
   display: grid;
-  gap: 0.16rem;
-  padding: 0.48rem 0.58rem;
+  gap: 0.14rem;
+  padding: 0.32rem 0.4rem;
 }
 
-.ai-factory-health-instrument__callout strong {
+.ai-factory-health-instrument__detail-card strong,
+.ai-factory-health-instrument__telemetry-item strong,
+.ai-factory-health-instrument__next-action strong {
   color: var(--text-primary);
-  font-size: 0.72rem;
-  font-weight: 800;
-  line-height: 1.34;
+  font-size: 0.61rem;
+  font-weight: 760;
+  line-height: 1.18;
 }
 
-.ai-factory-health-instrument__callout small,
+.ai-factory-health-instrument__detail-card--reason strong {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+.ai-factory-health-instrument__detail-card--scope strong {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  display: -webkit-box;
+  word-break: break-word;
+  overflow: hidden;
+}
+
+.ai-factory-health-instrument__telemetry-strip {
+  display: grid;
+  gap: 0.28rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ai-factory-health-instrument__telemetry-item small,
 .ai-factory-health-instrument__summary-copy {
   color: var(--text-secondary);
-  font-size: 0.62rem;
-  line-height: 1.35;
+  font-size: 0.52rem;
+  line-height: 1.18;
+}
+
+.ai-factory-health-instrument__telemetry-item strong,
+.ai-factory-health-instrument__telemetry-item small,
+.ai-factory-health-instrument__next-action strong {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+.ai-factory-health-instrument__telemetry-item strong,
+.ai-factory-health-instrument__next-action strong {
+  -webkit-line-clamp: 2;
+}
+
+.ai-factory-health-instrument__telemetry-item small {
+  -webkit-line-clamp: 2;
+}
+
+.ai-factory-health-instrument__footer-band {
+  display: grid;
+  align-items: start;
+  gap: 0.28rem;
+  grid-template-columns: minmax(0, 1fr) minmax(4.7rem, 5.25rem);
 }
 
 .ai-factory-health-instrument__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: grid;
+  gap: 0.24rem;
+  grid-template-columns: 1fr;
 }
 
 .ai-factory-health-instrument__action {
   align-items: center;
-  border-radius: 0.9rem;
+  border-radius: 0.78rem;
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.58rem;
+  font-size: 0.5rem;
   font-weight: 900;
-  gap: 0.38rem;
+  gap: 0.24rem;
   justify-content: center;
   line-height: 1;
-  min-height: 2.2rem;
-  padding: 0.62rem 0.72rem;
+  min-height: 1.55rem;
+  min-width: 0;
+  padding: 0.3rem 0.38rem;
   transition: border-color var(--motion-ui) var(--ease-standard), background-color var(--motion-ui) var(--ease-standard), color var(--motion-ui) var(--ease-standard), box-shadow var(--motion-ui) var(--ease-standard), transform var(--motion-ui) var(--ease-standard);
 }
 
@@ -408,8 +384,8 @@
 }
 
 .ai-factory-health-instrument__action--primary {
-  background: color-mix(in srgb, var(--ai-health-semantic-strong) 82%, white 10%);
-  color: #04110d;
+  background: color-mix(in srgb, var(--ai-health-semantic-strong) 82%, white 8%);
+  color: color-mix(in srgb, var(--surface-inset) 86%, black 14%);
 }
 
 .ai-factory-health-instrument__action--secondary {
@@ -430,14 +406,6 @@
   width: 1px;
 }
 
-.ai-factory-health-instrument[data-health-state="healthy"] .ai-factory-health-instrument__summary-row[data-tone="healthy"],
-.ai-factory-health-instrument[data-health-state="warning"] .ai-factory-health-instrument__summary-row[data-tone="warning"],
-.ai-factory-health-instrument[data-health-state="critical"] .ai-factory-health-instrument__summary-row[data-tone="critical"],
-.ai-factory-health-instrument[data-health-state="unknown"] .ai-factory-health-instrument__summary-row[data-tone="unknown"],
-.ai-factory-health-instrument[data-health-state="scanning"] .ai-factory-health-instrument__summary-row[data-tone="neutral"] {
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ai-health-semantic-strong) 18%, transparent);
-}
-
 .ai-factory-health-instrument[data-health-state="scanning"] .ai-factory-health-instrument__score-progress,
 .ai-factory-health-instrument[data-health-state="scanning"] .ai-factory-health-instrument__calibration-sweep {
   animation: ai-factory-health-instrument-scan 1.2s var(--ease-standard) 1;
@@ -453,7 +421,7 @@
 @keyframes ai-factory-health-instrument-settle {
   0% {
     opacity: 0.28;
-    stroke-dashoffset: 464.96;
+    stroke-dashoffset: 364.42;
   }
 
   100% {
@@ -478,94 +446,28 @@
 }
 
 @media (max-width: 1180px) {
-  .ai-factory-health-instrument__layout {
+  .ai-factory-health-instrument__primary-grid,
+  .ai-factory-health-instrument__telemetry-strip,
+  .ai-factory-health-instrument__footer-band,
+  .ai-factory-health-instrument__actions {
     grid-template-columns: 1fr;
   }
 
-  .ai-factory-health-instrument__summary-rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .ai-factory-health-instrument__callouts {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .ai-factory-health-instrument__callout--reason,
-  .ai-factory-health-instrument__callout--action {
-    grid-column: span 3;
-  }
-}
-
-@media (max-width: 1024px) {
-  .ai-factory-health-instrument__summary-rail {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .ai-factory-health-instrument__summary-heading {
-    grid-column: 1 / -1;
-  }
-
-  .ai-factory-health-instrument__callouts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .ai-factory-health-instrument__callout--reason,
-  .ai-factory-health-instrument__callout--action {
-    grid-column: 1 / -1;
-  }
-
-  .ai-factory-health-instrument__orbit-label--east,
-  .ai-factory-health-instrument__orbit-label--west {
-    min-width: 4rem;
+  .ai-factory-health-instrument__hero {
+    grid-template-columns: minmax(5.2rem, 5.55rem) minmax(0, 1fr);
   }
 }
 
 @media (max-width: 767px) {
-  .ai-factory-health-instrument__headerband,
-  .ai-factory-health-instrument__classification-cluster {
-    align-items: flex-start;
-    flex-direction: column;
-    text-align: left;
-  }
-
-  .ai-factory-health-instrument__figure {
-    min-height: 14rem;
-  }
-
-  .ai-factory-health-instrument__svg {
-    max-height: 15rem;
-    max-width: 15rem;
-  }
-
-  .ai-factory-health-instrument__summary-rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .ai-factory-health-instrument__callouts {
+  .ai-factory-health-instrument__hero,
+  .ai-factory-health-instrument__summary-grid,
+  .ai-factory-health-instrument__primary-grid,
+  .ai-factory-health-instrument__actions {
     grid-template-columns: 1fr;
   }
 
-  .ai-factory-health-instrument__callout,
-  .ai-factory-health-instrument__callout--reason,
-  .ai-factory-health-instrument__callout--action {
-    grid-column: auto;
-  }
-
-  .ai-factory-health-instrument__actions {
-    flex-direction: column;
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  .ai-factory-health-instrument__summary-rail,
-  .ai-factory-health-instrument__callout,
-  .ai-factory-health-instrument__orbit-label {
-    backdrop-filter: none;
-    box-shadow: inset 0 0 0 1px rgba(16, 92, 128, 0.05);
-  }
-
-  .ai-factory-health-instrument__figure::after {
-    background: radial-gradient(circle at 50% 50%, rgba(19, 216, 255, 0.06), transparent 62%);
+  .ai-factory-health-instrument__figure {
+    max-width: 9rem;
   }
 }
 
@@ -575,10 +477,6 @@
     animation: none !important;
   }
 
-  .ai-factory-health-instrument__figure,
-  .ai-factory-health-instrument__orbit-label,
-  .ai-factory-health-instrument__summary-row,
-  .ai-factory-health-instrument__callout,
   .ai-factory-health-instrument__action {
     transition: none !important;
   }
