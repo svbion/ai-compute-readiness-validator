@@ -7,6 +7,7 @@ const app = fs.readFileSync('src/App.tsx', 'utf8');
 const indexHtml = fs.readFileSync('index.html', 'utf8');
 const landing = fs.readFileSync('src/components/landing/PublicLanding.tsx', 'utf8');
 const missionControl = fs.readFileSync('src/components/mission-control/MissionControlOverview.tsx', 'utf8');
+const aiFactoryHologram = fs.readFileSync('src/components/mission-control/ai-factory/AiFactoryHologram.tsx', 'utf8');
 const hgxTopology = fs.readFileSync('src/components/mission-control/HgxNvlinkVisualization.tsx', 'utf8');
 const validationFlow = fs.readFileSync('src/components/mission-control/ValidationFlowVisualization.tsx', 'utf8');
 const hudPanel = fs.readFileSync('src/components/hud/HudPanel.tsx', 'utf8');
@@ -151,7 +152,7 @@ const requiredMissionControlV3Markers = [
   'System Telemetry',
   'Evidence / Fabric Summary',
   'AI Factory Spatial View',
-  'PLANNED VISUALIZATION',
+  'LOGICAL / REFERENCE TOPOLOGY',
   'VALIDATION PIPELINE',
   'Affected scope',
   'Current validation',
@@ -174,7 +175,28 @@ const requiredMissionControlV3Markers = [
   'prefers-reduced-motion',
 ];
 for (const marker of requiredMissionControlV3Markers) {
-  assert(missionControl.includes(marker) || validationFlow.includes(marker) || styles.includes(marker) || app.includes(marker), `missing Mission Control V3 marker ${marker}`);
+  assert(missionControl.includes(marker) || aiFactoryHologram.includes(marker) || validationFlow.includes(marker) || styles.includes(marker) || app.includes(marker), `missing Mission Control V3 marker ${marker}`);
+}
+
+const requiredAiFactoryHologramMarkers = [
+  'AiFactoryHologram',
+  'LOGICAL / REFERENCE TOPOLOGY',
+  'Cluster',
+  'GPU FABRIC',
+  'NVLink',
+  'NVSwitch',
+  'NIC',
+  'InfiniBand/RDMA boundary',
+  'Selected scope',
+  'healthy',
+  'warning',
+  'critical',
+  'unknown',
+  'Reduced motion',
+  'prefers-reduced-motion',
+];
+for (const marker of requiredAiFactoryHologramMarkers) {
+  assert(aiFactoryHologram.includes(marker) || styles.includes(marker), `missing AI Factory hologram marker ${marker}`);
 }
 
 const requiredHudPanelMarkers = [
@@ -302,4 +324,4 @@ for (const entity of storeEntities) {
   assert(server.includes(`${entity}: []`) || server.includes(`${entity}:`), `platform store missing ${entity}`);
 }
 
-console.log(`portal contract ok: ${requiredRoutes.length} routes, ${requiredUiContracts.length} UI markers, ${requiredLandingMarkers.length} landing markers, ${requiredHgxTopologyMarkers.length} HGX topology markers, ${requiredValidationFlowMarkers.length} validation workflow markers, ${requiredMissionControlV3Markers.length} Mission Control V3 markers`);
+console.log(`portal contract ok: ${requiredRoutes.length} routes, ${requiredUiContracts.length} UI markers, ${requiredLandingMarkers.length} landing markers, ${requiredHgxTopologyMarkers.length} HGX topology markers, ${requiredValidationFlowMarkers.length} validation workflow markers, ${requiredMissionControlV3Markers.length} Mission Control V3 markers, ${requiredAiFactoryHologramMarkers.length} AI Factory hologram markers`);

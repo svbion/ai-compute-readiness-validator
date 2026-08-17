@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { HudPanel, HudPanelHeader } from "../hud";
+import { AiFactoryHologram } from "./ai-factory";
 import { ValidationFlowVisualization } from "./ValidationFlowVisualization";
 
 type Status = "pass" | "warning" | "fail" | "unknown" | "unavailable";
@@ -261,13 +262,16 @@ export function MissionControlOverview({
       icon: <FileText className="h-4 w-4" />,
     },
   ];
-
-  const centerStats = [
-    { label: "Selected node", value: selectedNodeName.toUpperCase(), tone: selectedNodeStatus },
-    { label: "Affected scope", value: affectedNodes.length ? affectedNodes.map((node) => node.toUpperCase()).join(", ") : "NONE", tone: failCount ? "fail" : warningCount ? "warning" : "pass" },
-    { label: "Current validation", value: loading ? "RUNNING" : "READY FOR REVIEW", tone: loading ? "warning" : "pass" },
-    { label: "Benchmark evidence", value: latestBenchmark ? latestBenchmark.benchmark_type.toUpperCase() : "PENDING", tone: latestBenchmark ? latestBenchmark.status : "unknown" },
-  ];
+  const validationTone = loading ? "scanning" : failCount > 0 ? "critical" : warningCount > 0 ? "warning" : "healthy";
+  const fabricTone = loading
+    ? "scanning"
+    : cluster.metadata.category_averages?.network === undefined
+      ? "unknown"
+      : networkAverage >= 95
+        ? "healthy"
+        : networkAverage >= 80
+          ? "warning"
+          : "critical";
 
   return (
     <section className="mission-control-v3" aria-labelledby="mission-control-title" data-testid="JarvisMissionControlShell">
@@ -427,67 +431,30 @@ export function MissionControlOverview({
               <HudPanelHeader
                 eyebrow="Centerpiece region"
                 icon={<Network />}
-                metadata={representativeAlert ? `${representativeAlert.node.toUpperCase()} • ${representativeAlert.category.toUpperCase()}` : primaryCluster}
-                status="PLANNED VISUALIZATION"
+                metadata={representativeAlert ? `${representativeAlert.node.toUpperCase()} • ${representativeAlert.category.toUpperCase()}` : selectedNodeName.toUpperCase()}
+                status="LOGICAL / REFERENCE TOPOLOGY"
                 title="AI Factory Spatial View"
                 titleId="jarvis-centerpiece-title"
               />
             }
             labelledBy="jarvis-centerpiece-title"
           >
-            <div className="jarvis-centerpiece" data-testid="JarvisCenterpieceRegion">
-              <div className="jarvis-centerpiece__projection" aria-hidden="true">
-                <div className="jarvis-centerpiece__beam" />
-                <div className="jarvis-centerpiece__ring jarvis-centerpiece__ring--outer" />
-                <div className="jarvis-centerpiece__ring jarvis-centerpiece__ring--middle" />
-                <div className="jarvis-centerpiece__ring jarvis-centerpiece__ring--inner" />
-                <div className="jarvis-centerpiece__core">
-                  <span>AI FACTORY</span>
-                  <strong>{selectedNodeName.toUpperCase()}</strong>
-                </div>
-                <div className="jarvis-centerpiece__callout jarvis-centerpiece__callout--left-top">
-                  <span>GPU READINESS</span>
-                  <strong>{gpuAverage}%</strong>
-                </div>
-                <div className="jarvis-centerpiece__callout jarvis-centerpiece__callout--left-bottom">
-                  <span>FABRIC HEALTH</span>
-                  <strong>{networkAverage}%</strong>
-                </div>
-                <div className="jarvis-centerpiece__callout jarvis-centerpiece__callout--right-top">
-                  <span>BENCHMARKS</span>
-                  <strong>{benchmarkCount}</strong>
-                </div>
-                <div className="jarvis-centerpiece__callout jarvis-centerpiece__callout--right-bottom">
-                  <span>ACTIVE ALERTS</span>
-                  <strong>{failCount + warningCount}</strong>
-                </div>
-              </div>
-
-              <div className="jarvis-centerpiece__copy">
-                <p className="jarvis-centerpiece__label">AI FACTORY SPATIAL VIEW</p>
-                <h3>PLANNED VISUALIZATION</h3>
-                <p>
-                  JARVIS-006 reserves the approved centerpiece silhouette using truthful Mission Control context while the full hologram implementation remains deferred to JARVIS-008.
-                </p>
-                <div className="jarvis-centerpiece__stats">
-                  {centerStats.map((stat) => (
-                    <div key={stat.label} className={`jarvis-centerpiece__stat jarvis-centerpiece__stat--${stat.tone}`}>
-                      <span>{stat.label}</span>
-                      <strong>{stat.value}</strong>
-                    </div>
-                  ))}
-                </div>
-                <div className="jarvis-centerpiece__actions">
-                  <button type="button" onClick={onOpenTopology} className="jarvis-action jarvis-action--secondary">
-                    <Network className="h-4 w-4" />
-                    View topology map
-                  </button>
-                  <button type="button" onClick={() => onToggleBookmark(selectedNodeName)} className="jarvis-action jarvis-action--ghost">
-                    <Pin className="h-4 w-4" />
-                    {selectedNodeBookmarked ? `Pinned ${selectedNodeName.toUpperCase()}` : `Pin ${selectedNodeName.toUpperCase()}`}
-                  </button>
-                </div>
-              </div>
+            <div data-testid="JarvisCenterpieceRegion">
+              <AiFactoryHologram
+                clusterName={cluster.name}
+                classification={cluster.classification}
+                nodeCount={cluster.nodes.length}
+                gpuCount={totalGpus}
+                selectedScope={selectedNodeName}
+                nodes={cluster.nodes.map((node) => ({ name: node.name, status: node.status }))}
+                affectedNodes={affectedNodes}
+                validationState={validationTone}
+                fabricState={fabricTone}
+                dataClassification={dataLabel}
+                onOpenTopology={onOpenTopology}
+                onToggleBookmark={() => onToggleBookmark(selectedNodeName)}
+                isBookmarked={selectedNodeBookmarked}
+              />
             </div>
           </HudPanel>
 
