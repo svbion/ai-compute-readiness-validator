@@ -1,7 +1,7 @@
 .ai-factory-hologram {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0.55rem;
   min-height: 100%;
 }
 
@@ -19,7 +19,7 @@
 .ai-factory-hologram__header {
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.8rem;
+  gap: 0.65rem;
 }
 
 .ai-factory-hologram__eyebrow,
@@ -46,7 +46,7 @@
 .ai-factory-hologram__header h3 {
   color: var(--text-primary);
   font-family: var(--font-display);
-  font-size: clamp(1.02rem, 1.4vw, 1.25rem);
+  font-size: clamp(0.94rem, 1.1vw, 1.08rem);
   font-weight: 800;
   margin-top: 0.18rem;
 }
@@ -109,7 +109,7 @@
 
 .ai-factory-hologram__desktop-layout {
   align-items: stretch;
-  gap: 1rem;
+  gap: 0.6rem;
   min-height: 0;
 }
 
@@ -127,6 +127,7 @@
 
 .ai-factory-hologram__canvas-shell {
   flex: 1 1 0;
+  min-height: 18.1rem;
   min-width: 0;
   overflow: hidden;
   position: relative;
@@ -137,9 +138,9 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 14%, rgba(19, 216, 255, 0.18), transparent 30%),
-    radial-gradient(circle at 50% 68%, rgba(37, 99, 235, 0.12), transparent 38%),
-    linear-gradient(180deg, rgba(8, 20, 32, 0.94), rgba(5, 11, 20, 0.88));
+    radial-gradient(circle at 50% 14%, rgba(19, 216, 255, 0.24), transparent 32%),
+    radial-gradient(circle at 50% 64%, rgba(37, 99, 235, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(6, 18, 30, 0.88), rgba(4, 10, 18, 0.72));
   pointer-events: none;
 }
 
@@ -159,11 +160,12 @@
 .ai-factory-hologram__node-side,
 .ai-factory-hologram__fabric-shell,
 .ai-factory-hologram__callout rect {
-  fill: rgba(5, 14, 23, 0.86);
+  fill: rgba(4, 14, 22, 0.42);
 }
 
 .ai-factory-hologram__backplane {
-  stroke: color-mix(in srgb, var(--border-primary) 76%, transparent);
+  fill: rgba(6, 18, 30, 0.18);
+  stroke: rgba(72, 232, 255, 0.18);
 }
 
 .ai-factory-hologram__ring,
@@ -190,7 +192,7 @@
 }
 
 .ai-factory-hologram__ring {
-  stroke-width: 1.2;
+  stroke-width: 1.35;
   stroke-dasharray: 7 8;
 }
 
@@ -212,7 +214,7 @@
 .ai-factory-hologram__beam {
   stroke: url(#factoryBeam);
   stroke-linecap: round;
-  stroke-width: 12;
+  stroke-width: 14;
   animation-duration: 9s;
 }
 
@@ -238,7 +240,7 @@
 }
 
 .ai-factory-hologram__group-plane {
-  opacity: 0.25;
+  opacity: 0.34;
   stroke-dasharray: 8 10;
 }
 
@@ -319,8 +321,8 @@
 
 .ai-factory-hologram__fabric-link,
 .ai-factory-hologram__selected-link {
-  opacity: 0.66;
-  stroke-width: 1.2;
+  opacity: 0.72;
+  stroke-width: 1.35;
 }
 
 .ai-factory-hologram__external-link,
@@ -335,13 +337,13 @@
 }
 
 .ai-factory-hologram__callout-line {
-  opacity: 0.38;
+  opacity: 0.26;
   stroke-dasharray: 5 6;
   stroke-width: 1.1;
 }
 
 .ai-factory-hologram__fabric-shell {
-  fill: rgba(10, 20, 30, 0.9);
+  fill: rgba(10, 20, 30, 0.72);
   stroke: color-mix(in srgb, var(--warning) 72%, var(--accent-cyan-500) 28%);
 }
 
@@ -359,14 +361,14 @@
 .ai-factory-hologram__node-label,
 .ai-factory-hologram__platform-label {
   fill: var(--accent-cyan-400);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
 }
 
 .ai-factory-hologram__fabric-label {
   fill: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -374,7 +376,7 @@
 .ai-factory-hologram__platform-label--muted,
 .ai-factory-hologram__callout text:last-of-type {
   fill: var(--text-subtle);
-  font-size: 9px;
+  font-size: 8px;
 }
 
 .ai-factory-hologram__callout rect {
@@ -387,23 +389,23 @@
 
 .ai-factory-hologram__sidebar {
   display: flex;
-  flex: 0 0 17.5rem;
+  flex: 0 0 11.75rem;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.45rem;
   min-width: 0;
-  padding: 0.9rem;
+  padding: 0.55rem;
 }
 
 .ai-factory-hologram__summary-grid {
   display: grid;
-  gap: 0.65rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.38rem;
+  grid-template-columns: 1fr;
 }
 
 .ai-factory-hologram__summary-card,
 .ai-factory-hologram__legend div,
 .ai-factory-hologram__status-board {
-  padding: 0.7rem;
+  padding: 0.46rem 0.5rem;
 }
 
 .ai-factory-hologram__summary-card span,
@@ -425,10 +427,10 @@
 .ai-factory-hologram__mobile-header strong {
   color: var(--text-primary);
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.67rem;
   font-weight: 800;
-  line-height: 1.45;
-  margin-top: 0.22rem;
+  line-height: 1.32;
+  margin-top: 0.16rem;
 }
 
 .ai-factory-hologram__summary-card--selected {
@@ -437,13 +439,13 @@
 
 .ai-factory-hologram__status-board {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.3rem;
 }
 
 .ai-factory-hologram__status-row {
   align-items: center;
   display: flex;
-  gap: 0.75rem;
+  gap: 0.45rem;
   justify-content: space-between;
 }
 
@@ -454,18 +456,19 @@
 
 .ai-factory-hologram__legend {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.35rem;
 }
 
 .ai-factory-hologram__legend dd {
   color: var(--text-secondary);
-  font-size: 0.72rem;
+  font-size: 0.61rem;
   font-weight: 600;
 }
 
 .ai-factory-hologram__actions {
-  gap: 0.65rem;
-  margin-top: auto;
+  flex-direction: column;
+  gap: 0.42rem;
+  margin-top: 0;
 }
 
 .ai-factory-hologram__action {
@@ -473,12 +476,12 @@
   border-radius: 0.85rem;
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.62rem;
+  font-size: 0.56rem;
   font-weight: 900;
   justify-content: center;
   line-height: 1;
-  min-height: 2.35rem;
-  padding: 0.75rem 0.9rem;
+  min-height: 2.05rem;
+  padding: 0.58rem 0.72rem;
   text-transform: uppercase;
   transition: border-color var(--motion-ui) var(--ease-standard), background-color var(--motion-ui) var(--ease-standard), color var(--motion-ui) var(--ease-standard), transform var(--motion-ui) var(--ease-standard), box-shadow var(--motion-ui) var(--ease-standard);
 }
@@ -636,6 +639,10 @@
   .ai-factory-hologram__callout--semantic,
   .ai-factory-hologram__callout:last-of-type {
     display: none;
+  }
+
+  .ai-factory-hologram__actions {
+    flex-direction: row;
   }
 }
 

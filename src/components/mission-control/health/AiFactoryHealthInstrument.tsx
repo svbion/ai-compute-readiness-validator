@@ -106,25 +106,24 @@ export function AiFactoryHealthInstrument({
         </div>
       </div>
 
+      <div className="ai-factory-health-instrument__summary-rail" aria-label="Status summary">
+        <span className="ai-factory-health-instrument__summary-heading">Status summary</span>
+        {summaryRows.map((row) => (
+          <div key={row.label} className="ai-factory-health-instrument__summary-row" data-tone={row.tone ?? "neutral"}>
+            <span>{row.label}</span>
+            <strong>{row.value}</strong>
+          </div>
+        ))}
+      </div>
+
       <div className="ai-factory-health-instrument__layout">
         <div className="ai-factory-health-instrument__figure-column">
-          <div className="ai-factory-health-instrument__figure-shell">
-            <div className="ai-factory-health-instrument__summary-rail" aria-label="Status summary">
-              <span className="ai-factory-health-instrument__summary-heading">Status summary</span>
-              {summaryRows.map((row) => (
-                <div key={row.label} className="ai-factory-health-instrument__summary-row" data-tone={row.tone ?? "neutral"}>
-                  <span>{row.label}</span>
-                  <strong>{row.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            <div
-              className="ai-factory-health-instrument__figure"
-              role="img"
-              aria-label={accessibleSummary}
-            >
-              <svg className="ai-factory-health-instrument__svg" viewBox="0 0 280 280" aria-hidden="true">
+          <div
+            className="ai-factory-health-instrument__figure"
+            role="img"
+            aria-label={accessibleSummary}
+          >
+            <svg className="ai-factory-health-instrument__svg" viewBox="0 0 280 280" aria-hidden="true">
                 <defs>
                   <linearGradient id="ai-factory-health-instrument-progress" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="var(--ai-health-semantic-soft)" />
@@ -199,27 +198,26 @@ export function AiFactoryHealthInstrument({
                 <polygon className="ai-factory-health-instrument__center-geometry" points="140,84 167,97 181,140 167,183 140,196 113,183 99,140 113,97" />
                 <circle className="ai-factory-health-instrument__center-node" cx="140" cy="140" r="6" />
                 <path className="ai-factory-health-instrument__calibration-sweep" d="M 140 44 A 96 96 0 0 1 236 140" />
-              </svg>
+            </svg>
 
-              <div className="ai-factory-health-instrument__center">
-                <span className="ai-factory-health-instrument__center-label">Health score</span>
-                <strong id="ai-factory-health-score" data-testid="AiFactoryHealthInstrument-score">
-                  {normalizedScore}%
-                </strong>
-                <span className="ai-factory-health-instrument__center-state">{readinessLabel}</span>
-                <span className="ai-factory-health-instrument__center-classification">{classificationLabel}</span>
-              </div>
-
-              {orbitLabels.map((orbit) => (
-                <div
-                  key={orbit.key}
-                  className={`ai-factory-health-instrument__orbit-label ai-factory-health-instrument__orbit-label--${orbit.key}`}
-                >
-                  <span>{orbit.label}</span>
-                  <strong>{orbit.value}</strong>
-                </div>
-              ))}
+            <div className="ai-factory-health-instrument__center">
+              <span className="ai-factory-health-instrument__center-label">Health score</span>
+              <strong id="ai-factory-health-score" data-testid="AiFactoryHealthInstrument-score">
+                {normalizedScore}%
+              </strong>
+              <span className="ai-factory-health-instrument__center-state">{readinessLabel}</span>
+              <span className="ai-factory-health-instrument__center-classification">{classificationLabel}</span>
             </div>
+
+            {orbitLabels.map((orbit) => (
+              <div
+                key={orbit.key}
+                className={`ai-factory-health-instrument__orbit-label ai-factory-health-instrument__orbit-label--${orbit.key}`}
+              >
+                <span>{orbit.label}</span>
+                <strong>{orbit.value}</strong>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -227,8 +225,6 @@ export function AiFactoryHealthInstrument({
           <article className="ai-factory-health-instrument__callout ai-factory-health-instrument__callout--reason">
             <span className="ai-factory-health-instrument__callout-label">Reason</span>
             <strong data-testid="AiFactoryHealthInstrument-reason">{reason}</strong>
-          </article>
-          <article className="ai-factory-health-instrument__callout ai-factory-health-instrument__callout--scope">
             <span className="ai-factory-health-instrument__callout-label">Affected scope</span>
             <strong data-testid="AiFactoryHealthInstrument-affected-scope">{affectedScope}</strong>
           </article>
@@ -236,8 +232,6 @@ export function AiFactoryHealthInstrument({
             <span className="ai-factory-health-instrument__callout-label">Evidence confidence</span>
             <strong>{evidenceLabel}</strong>
             <small>{validationLabel}</small>
-          </article>
-          <article className="ai-factory-health-instrument__callout">
             <span className="ai-factory-health-instrument__callout-label">Current state</span>
             <strong>{currentStateText}</strong>
             <small>{readinessLabel} state remains visible independent of color.</small>

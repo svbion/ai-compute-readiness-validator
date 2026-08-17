@@ -2280,9 +2280,9 @@ input:focus-visible,
     "health centerpiece critical"
     "activity validation kpis"
     "telemetry evidence evidence";
-  grid-template-columns: minmax(0, 0.26fr) minmax(0, 0.46fr) minmax(0, 0.28fr);
-  grid-template-rows: minmax(0, 0.38fr) minmax(0, 0.27fr) minmax(0, 0.23fr);
-  height: clamp(41.5rem, calc(100vh - 14.25rem), 46.5rem);
+  grid-template-columns: minmax(0, 0.21fr) minmax(0, 0.54fr) minmax(0, 0.25fr);
+  grid-template-rows: minmax(0, 0.56fr) minmax(0, 0.15fr) minmax(0, 0.09fr);
+  height: clamp(43rem, calc(100vh - 13.5rem), 48.25rem);
   overflow: hidden;
 }
 
@@ -2320,6 +2320,36 @@ input:focus-visible,
 
 .jarvis-shell-panel .hud-panel__body {
   min-height: 0;
+}
+
+.jarvis-shell-panel--centerpiece .hud-panel__surface {
+  --hud-panel-padding: 0.78rem;
+}
+
+.jarvis-shell-panel--centerpiece .hud-panel-header {
+  gap: 0.55rem;
+  padding-bottom: 0.5rem;
+}
+
+.jarvis-shell-panel--critical .hud-panel-header {
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+}
+
+.jarvis-shell-panel--critical .hud-panel-header__right {
+  justify-content: flex-start;
+}
+
+.jarvis-shell-panel--critical .hud-panel-header__title {
+  font-size: 0.92rem;
+  line-height: 1.12;
+  letter-spacing: 0.035em;
+}
+
+.jarvis-shell-panel--critical .hud-panel-header__status,
+.jarvis-shell-panel--critical .hud-panel-header__metadata {
+  min-height: 1.4rem;
+  padding: 0.18rem 0.42rem;
 }
 
 .jarvis-health-panel {
@@ -3001,6 +3031,7 @@ input:focus-visible,
   }
 
   .mission-control-v3__grid {
+    height: auto;
     grid-template-areas:
       "centerpiece centerpiece"
       "health critical"
@@ -3010,6 +3041,7 @@ input:focus-visible,
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: none;
     min-height: auto;
+    overflow: visible;
   }
 
   .jarvis-centerpiece,
@@ -3058,16 +3090,18 @@ input:focus-visible,
   }
 
   .mission-control-v3__grid {
+    height: auto;
     grid-template-areas:
       "health"
       "critical"
-      "activity"
       "centerpiece"
+      "activity"
       "validation"
-      "kpis"
       "telemetry"
+      "kpis"
       "evidence";
     min-height: auto;
+    overflow: visible;
   }
 
   .jarvis-shell-panel--validation .validation-flow-panel {

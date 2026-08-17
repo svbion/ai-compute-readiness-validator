@@ -38,12 +38,12 @@ type PositionedNode = HologramNode & {
 };
 
 const desktopNodeSlots = [
-  { x: 180, y: 178 },
-  { x: 282, y: 120 },
-  { x: 386, y: 160 },
-  { x: 490, y: 104 },
-  { x: 574, y: 188 },
-  { x: 668, y: 144 },
+  { x: 152, y: 186 },
+  { x: 264, y: 116 },
+  { x: 384, y: 164 },
+  { x: 502, y: 104 },
+  { x: 604, y: 194 },
+  { x: 698, y: 142 },
 ];
 
 function normalizeTone(status: NodeStatus): Exclude<HologramTone, "scanning"> {
@@ -72,9 +72,9 @@ function buildVisibleNodes(nodes: HologramNode[], selectedScope: string, affecte
     return {
       ...node,
       ...slot,
-      width: 66,
-      height: 102,
-      depth: 24,
+      width: 72,
+      height: 112,
+      depth: 26,
       gpuDots,
       isSelected: node.name === selectedScope,
       isAffected: affectedNodes.includes(node.name),
@@ -117,7 +117,7 @@ function buildNodeGrid(gpuDots: number) {
 function pathForNode(node: PositionedNode) {
   const startX = node.x + node.width * 0.54;
   const startY = node.y + node.height * 0.16;
-  return `M ${startX} ${startY} C ${startX + 18} ${startY - 42}, 402 154, 412 226`;
+  return `M ${startX} ${startY} C ${startX + 22} ${startY - 48}, 402 146, 412 224`;
 }
 
 export function AiFactoryHologram(props: AiFactoryHologramProps) {
@@ -129,6 +129,19 @@ export function AiFactoryHologram(props: AiFactoryHologramProps) {
   const accessibleSummary = buildAriaDescription({ ...props, selectedScope: fallbackSelectedScope });
   const nodeSummary = nodeStatusSummary(props.nodes);
   const selectedNodeTone = selectedNode?.tone || "unknown";
+  const compactFacts = [
+    { label: "Cluster", value: props.clusterName.toUpperCase() },
+    { label: "Class", value: props.classification.toUpperCase() },
+    { label: "Node count", value: `${props.nodeCount}` },
+    { label: "GPU count", value: `${props.gpuCount}` },
+    { label: "Affected", value: props.affectedNodes.length ? props.affectedNodes.map((node) => node.toUpperCase()).join(", ") : "NONE" },
+  ];
+  const stateRows = [
+    { label: "Selected scope", value: fallbackSelectedScope.toUpperCase(), tone: selectedNodeTone },
+    { label: "Validation", value: stateLabel(props.validationState), tone: props.validationState },
+    { label: "GPU fabric", value: stateLabel(props.fabricState), tone: props.fabricState },
+    { label: "Node envelope", value: nodeSummary, tone: selectedNodeTone },
+  ];
 
   return (
     <section
@@ -140,7 +153,7 @@ export function AiFactoryHologram(props: AiFactoryHologramProps) {
       <div className="ai-factory-hologram__header">
         <div>
           <p className="ai-factory-hologram__eyebrow">LOGICAL / REFERENCE TOPOLOGY</p>
-          <h3 id="ai-factory-hologram-title">AiFactoryHologram</h3>
+          <h3 id="ai-factory-hologram-title">Cluster / Node GPU Fabric</h3>
         </div>
         <div className="ai-factory-hologram__header-chips" aria-label="Topology state markers">
           <span className={stateChipClass(props.validationState)}>{stateLabel(props.validationState)}</span>
@@ -171,19 +184,19 @@ export function AiFactoryHologram(props: AiFactoryHologramProps) {
             </defs>
 
             <g aria-hidden="true">
-              <rect x="48" y="44" width="724" height="416" rx="22" className="ai-factory-hologram__backplane" />
-              <ellipse cx="410" cy="348" rx="246" ry="92" className="ai-factory-hologram__ring ai-factory-hologram__ring--outer" />
-              <ellipse cx="410" cy="348" rx="198" ry="74" className="ai-factory-hologram__ring ai-factory-hologram__ring--middle" />
-              <ellipse cx="410" cy="348" rx="144" ry="56" className="ai-factory-hologram__ring ai-factory-hologram__ring--inner" />
-              <path d="M 176 348 H 644" className="ai-factory-hologram__axis" />
-              <path d="M 246 302 C 328 262 492 262 574 302" className="ai-factory-hologram__orbit ai-factory-hologram__orbit--a" />
-              <path d="M 230 386 C 332 428 488 428 590 386" className="ai-factory-hologram__orbit ai-factory-hologram__orbit--b" />
-              <path d="M 410 90 V 352" className="ai-factory-hologram__beam" />
-              <circle cx="410" cy="214" r="94" fill="url(#factoryGlow)" />
-              <ellipse cx="410" cy="228" rx="122" ry="58" className="ai-factory-hologram__group-plane" />
-              <path d="M 240 234 L 582 234" className="ai-factory-hologram__grid-line" />
-              <path d="M 270 200 L 612 200" className="ai-factory-hologram__grid-line ai-factory-hologram__grid-line--subtle" />
-              <path d="M 270 268 L 612 268" className="ai-factory-hologram__grid-line ai-factory-hologram__grid-line--subtle" />
+              <rect x="22" y="28" width="776" height="430" rx="30" className="ai-factory-hologram__backplane" />
+              <ellipse cx="410" cy="348" rx="270" ry="98" className="ai-factory-hologram__ring ai-factory-hologram__ring--outer" />
+              <ellipse cx="410" cy="348" rx="220" ry="82" className="ai-factory-hologram__ring ai-factory-hologram__ring--middle" />
+              <ellipse cx="410" cy="348" rx="166" ry="62" className="ai-factory-hologram__ring ai-factory-hologram__ring--inner" />
+              <path d="M 144 348 H 676" className="ai-factory-hologram__axis" />
+              <path d="M 218 296 C 320 244 500 244 602 296" className="ai-factory-hologram__orbit ai-factory-hologram__orbit--a" />
+              <path d="M 206 394 C 322 442 498 442 614 394" className="ai-factory-hologram__orbit ai-factory-hologram__orbit--b" />
+              <path d="M 410 64 V 356" className="ai-factory-hologram__beam" />
+              <circle cx="410" cy="210" r="118" fill="url(#factoryGlow)" />
+              <ellipse cx="410" cy="226" rx="146" ry="70" className="ai-factory-hologram__group-plane" />
+              <path d="M 214 232 L 606 232" className="ai-factory-hologram__grid-line" />
+              <path d="M 242 190 L 634 190" className="ai-factory-hologram__grid-line ai-factory-hologram__grid-line--subtle" />
+              <path d="M 242 274 L 634 274" className="ai-factory-hologram__grid-line ai-factory-hologram__grid-line--subtle" />
             </g>
 
             <g className="ai-factory-hologram__node-fleet" aria-label="GPU node group">
@@ -224,20 +237,20 @@ export function AiFactoryHologram(props: AiFactoryHologramProps) {
             </g>
 
             <g className="ai-factory-hologram__selected-fabric" filter="url(#factorySoftGlow)">
-              <path d="M 352 214 L 410 182 L 468 214 L 410 246 Z" className="ai-factory-hologram__fabric-shell" />
-              <path d="M 352 214 L 352 272 L 410 304 L 410 246 Z" className="ai-factory-hologram__fabric-shell ai-factory-hologram__fabric-shell--left" />
-              <path d="M 468 214 L 468 272 L 410 304 L 410 246 Z" className="ai-factory-hologram__fabric-shell ai-factory-hologram__fabric-shell--right" />
-              <text x="410" y="198" textAnchor="middle" className="ai-factory-hologram__fabric-title">GPU FABRIC</text>
-              <text x="410" y="216" textAnchor="middle" className="ai-factory-hologram__fabric-label">NVSwitch</text>
-              <text x="410" y="234" textAnchor="middle" className="ai-factory-hologram__fabric-label ai-factory-hologram__fabric-label--muted">NVLink inside node</text>
+              <path d="M 342 210 L 410 172 L 478 210 L 410 252 Z" className="ai-factory-hologram__fabric-shell" />
+              <path d="M 342 210 L 342 280 L 410 320 L 410 252 Z" className="ai-factory-hologram__fabric-shell ai-factory-hologram__fabric-shell--left" />
+              <path d="M 478 210 L 478 280 L 410 320 L 410 252 Z" className="ai-factory-hologram__fabric-shell ai-factory-hologram__fabric-shell--right" />
+              <text x="410" y="188" textAnchor="middle" className="ai-factory-hologram__fabric-title">GPU FABRIC</text>
+              <text x="410" y="210" textAnchor="middle" className="ai-factory-hologram__fabric-label">NVSwitch</text>
+              <text x="410" y="232" textAnchor="middle" className="ai-factory-hologram__fabric-label ai-factory-hologram__fabric-label--muted">NVLink inside node</text>
               {selectedNodeGrid.map((dot, index) => {
                 const side = index < 4 ? -1 : 1;
-                const targetX = 410 + side * 72;
-                const targetY = 206 + (index % 4) * 18;
+                const targetX = 410 + side * 84;
+                const targetY = 196 + (index % 4) * 21;
                 return (
                   <g key={`selected-${dot.key}`}>
-                    <circle cx={targetX} cy={targetY} r="4.6" className="ai-factory-hologram__selected-gpu-dot" />
-                    <path d={`M ${410 + side * 10} ${214 + (index % 4) * 3} C ${410 + side * 28} ${210 + (index % 4) * 4}, ${targetX - side * 14} ${targetY}, ${targetX - side * 6} ${targetY}`} className="ai-factory-hologram__selected-link" />
+                    <circle cx={targetX} cy={targetY} r="5.2" className="ai-factory-hologram__selected-gpu-dot" />
+                    <path d={`M ${410 + side * 12} ${210 + (index % 4) * 4} C ${410 + side * 34} ${204 + (index % 4) * 5}, ${targetX - side * 16} ${targetY}, ${targetX - side * 6} ${targetY}`} className="ai-factory-hologram__selected-link" />
                   </g>
                 );
               })}
@@ -278,77 +291,35 @@ export function AiFactoryHologram(props: AiFactoryHologramProps) {
         </div>
 
         <aside className="ai-factory-hologram__sidebar" aria-label="Hologram technical summary">
+          <div className="ai-factory-hologram__summary-card ai-factory-hologram__summary-card--selected">
+            <span>Data classification</span>
+            <strong>{props.dataClassification}</strong>
+          </div>
+
           <div className="ai-factory-hologram__summary-grid">
-            <div className="ai-factory-hologram__summary-card">
-              <span>Cluster</span>
-              <strong>{props.clusterName.toUpperCase()}</strong>
-            </div>
-            <div className="ai-factory-hologram__summary-card">
-              <span>Classification</span>
-              <strong>{props.classification.toUpperCase()}</strong>
-            </div>
-            <div className="ai-factory-hologram__summary-card">
-              <span>Node count</span>
-              <strong>{props.nodeCount}</strong>
-            </div>
-            <div className="ai-factory-hologram__summary-card">
-              <span>GPU count</span>
-              <strong>{props.gpuCount}</strong>
-            </div>
-            <div className="ai-factory-hologram__summary-card ai-factory-hologram__summary-card--selected">
-              <span>Selected scope</span>
-              <strong>{fallbackSelectedScope.toUpperCase()}</strong>
-            </div>
-            <div className="ai-factory-hologram__summary-card">
-              <span>Affected nodes</span>
-              <strong>{props.affectedNodes.length ? props.affectedNodes.map((node) => node.toUpperCase()).join(", ") : "NONE"}</strong>
-            </div>
+            {compactFacts.map((fact) => (
+              <div key={fact.label} className="ai-factory-hologram__summary-card">
+                <span>{fact.label}</span>
+                <strong>{fact.value}</strong>
+              </div>
+            ))}
           </div>
 
           <div className="ai-factory-hologram__status-board">
-            <div className="ai-factory-hologram__status-row">
-              <span>Validation state</span>
-              <strong className={`ai-factory-hologram__state ai-factory-hologram__state--${props.validationState}`}>{stateLabel(props.validationState)}</strong>
-            </div>
-            <div className="ai-factory-hologram__status-row">
-              <span>GPU fabric</span>
-              <strong className={`ai-factory-hologram__state ai-factory-hologram__state--${props.fabricState}`}>{stateLabel(props.fabricState)}</strong>
-            </div>
-            <div className="ai-factory-hologram__status-row">
-              <span>Node envelope</span>
-              <strong className={`ai-factory-hologram__state ai-factory-hologram__state--${selectedNodeTone}`}>{nodeSummary}</strong>
-            </div>
-            <div className="ai-factory-hologram__status-row">
-              <span>Data classification</span>
-              <strong>{props.dataClassification}</strong>
-            </div>
+            {stateRows.map((row) => (
+              <div key={row.label} className="ai-factory-hologram__status-row">
+                <span>{row.label}</span>
+                <strong className={`ai-factory-hologram__state ai-factory-hologram__state--${row.tone}`}>{row.value}</strong>
+              </div>
+            ))}
           </div>
 
           <dl className="ai-factory-hologram__legend" aria-label="Topology legend">
             <div>
-              <dt>NVLink</dt>
-              <dd>Inside selected node GPU fabric.</dd>
-            </div>
-            <div>
-              <dt>NVSwitch</dt>
-              <dd>Internal switching fabric for GPU peer traffic.</dd>
-            </div>
-            <div>
-              <dt>NIC</dt>
-              <dd>Node-level external network endpoint.</dd>
-            </div>
-            <div>
-              <dt>InfiniBand/RDMA boundary</dt>
-              <dd>External cluster fabric beyond the NIC.</dd>
+              <dt>Topology semantics</dt>
+              <dd>NVLink and NVSwitch remain inside the node fabric; NIC and InfiniBand/RDMA stay external.</dd>
             </div>
           </dl>
-
-          <div className="ai-factory-hologram__state-legend" aria-label="State overlays">
-            <span className={stateChipClass("healthy")}>healthy</span>
-            <span className={stateChipClass("warning")}>warning</span>
-            <span className={stateChipClass("critical")}>critical</span>
-            <span className={stateChipClass("unknown")}>unknown</span>
-          </div>
 
           <div className="ai-factory-hologram__actions">
             <button type="button" className="ai-factory-hologram__action ai-factory-hologram__action--primary" onClick={props.onOpenTopology}>
