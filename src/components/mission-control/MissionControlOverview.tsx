@@ -15,9 +15,9 @@ import {
   ShieldAlert,
   XCircle,
 } from "lucide-react";
-import type { CSSProperties } from "react";
 import { HudPanel, HudPanelHeader } from "../hud";
 import { AiFactoryHologram } from "./ai-factory";
+import { AiFactoryHealthInstrument } from "./health";
 import { ValidationFlowVisualization } from "./ValidationFlowVisualization";
 
 type Status = "pass" | "warning" | "fail" | "unknown" | "unavailable";
@@ -171,6 +171,33 @@ export function MissionControlOverview({
   const primaryCluster = cluster.name.toUpperCase();
   const representativeAlert = criticalConditions[0] || null;
   const selectedNodeBookmarked = bookmarkedNodes.includes(selectedNodeName);
+  const healthInstrumentState = loading
+    ? "scanning"
+    : failCount > 0
+      ? "critical"
+      : warningCount > 0
+        ? "warning"
+        : cluster.nodes.length > 0
+          ? "healthy"
+          : "unknown";
+  const healthClassification = loading
+    ? "SCANNING"
+    : cluster.classification?.toUpperCase() || (healthInstrumentState === "unknown" ? "UNKNOWN" : healthState.toUpperCase());
+  const healthEvidenceLabel = representativeAlert?.evidence?.length
+    ? `${representativeAlert.evidence.length} evidence artifact${representativeAlert.evidence.length === 1 ? "" : "s"} attached`
+    : "No evidence artifact linked to an active blocker";
+  const healthValidationLabel = loading
+    ? "Validation scan is collecting updated evidence now."
+    : platformSummary?.states.partial_data
+      ? "Fixture-backed operational review; live state is not implied."
+      : `Latest validation timestamp ${new Date(cluster.timestamp).toLocaleString()}`;
+  const healthCurrentStateText = loading
+    ? "Validation scan actively collecting evidence"
+    : failCount > 0
+      ? `${failCount} blocking finding${failCount === 1 ? "" : "s"} require remediation review`
+      : warningCount > 0
+        ? `${warningCount} warning finding${warningCount === 1 ? "" : "s"} remain under review`
+        : "Operational baseline is stable for review";
 
   const gpuAverage = categoryAverage(cluster, "gpu");
   const networkAverage = categoryAverage(cluster, "network");
@@ -179,6 +206,28 @@ export function MissionControlOverview({
   const slurmAverage = categoryAverage(cluster, "slurm");
   const kubernetesAverage = categoryAverage(cluster, "kubernetes");
   const controlPlaneAverage = Math.round((slurmAverage + kubernetesAverage) / 2);
+  const healthSummaryRows = [
+    {
+      label: "Nodes online",
+      value: `${activeNodes}/${cluster.nodes.length}`,
+      tone: activeNodes === cluster.nodes.length ? "healthy" : activeNodes > 0 ? "warning" : "critical",
+    },
+    {
+      label: "GPUs operational",
+      value: `${Math.max(totalGpus - failCount, 0)}/${totalGpus}`,
+      tone: failCount > 0 ? "critical" : warningCount > 0 ? "warning" : "healthy",
+    },
+    {
+      label: "Warnings",
+      value: `${warningCount}`,
+      tone: warningCount > 0 ? "warning" : "healthy",
+    },
+    {
+      label: "Critical",
+      value: `${failCount}`,
+      tone: failCount > 0 ? "critical" : "healthy",
+    },
+  ] as const;
 
   const prioritizedKpis = [
     {
@@ -315,42 +364,22 @@ export function MissionControlOverview({
             labelledBy="jarvis-health-title"
             status={healthTone === "success" ? "healthy" : healthTone === "warning" ? "warning" : "critical"}
           >
-            <div className="jarvis-health-panel" aria-label={`AI Factory Health ${healthState}, score ${Math.round(cluster.overall_score)} percent. ${reason}`}>
-              <div className="jarvis-health-panel__ring" style={{ "--health-score": Math.round(cluster.overall_score) } as CSSProperties} aria-hidden="true">
-                <div className="jarvis-health-panel__ring-core">
-                  <strong>{Math.round(cluster.overall_score)}%</strong>
-                  <span>Health score</span>
-                </div>
-              </div>
-
-              <div className="jarvis-health-panel__summary">
-                <p className="jarvis-health-panel__reason">{reason}</p>
-                <dl className="jarvis-health-panel__facts">
-                  <div>
-                    <dt>Affected scope</dt>
-                    <dd>{affectedNodes.length ? affectedNodes.map((node) => node.toUpperCase()).join(", ") : "None detected"}</dd>
-                  </div>
-                  <div>
-                    <dt>Evidence</dt>
-                    <dd>{criticalConditions[0]?.evidence?.length ? "Command evidence available" : "No critical evidence gap"}</dd>
-                  </div>
-                  <div>
-                    <dt>Current validation</dt>
-                    <dd>{loading ? "Validation scan in progress" : `Latest run ${new Date(cluster.timestamp).toLocaleString()}`}</dd>
-                  </div>
-                </dl>
-                <div className="jarvis-health-panel__actions">
-                  <button type="button" onClick={onTriggerScan} disabled={loading} className="jarvis-action jarvis-action--primary">
-                    <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                    {loading ? "Validation running" : "Run validation scan"}
-                  </button>
-                  <button type="button" onClick={onOpenExport} className="jarvis-action jarvis-action--secondary">
-                    <FileText className="h-4 w-4" />
-                    Evidence report
-                  </button>
-                </div>
-              </div>
-            </div>
+            <AiFactoryHealthInstrument
+              affectedScope={affectedNodes.length ? affectedNodes.map((node) => node.toUpperCase()).join(", ") : "NONE DETECTED"}
+              classification={healthClassification}
+              currentStateText={healthCurrentStateText}
+              dataLabel={dataLabel}
+              evidenceLabel={healthEvidenceLabel}
+              loading={loading}
+              nextAction={nextAction}
+              onOpenExport={onOpenExport}
+              onTriggerScan={onTriggerScan}
+              reason={reason}
+              score={Math.round(cluster.overall_score)}
+              state={healthInstrumentState}
+              summaryRows={healthSummaryRows.map((row) => ({ ...row }))}
+              validationLabel={healthValidationLabel}
+            />
           </HudPanel>
 
           <HudPanel
