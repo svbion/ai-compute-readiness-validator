@@ -7,6 +7,8 @@ const app = fs.readFileSync('src/App.tsx', 'utf8');
 const indexHtml = fs.readFileSync('index.html', 'utf8');
 const landing = fs.readFileSync('src/components/landing/PublicLanding.tsx', 'utf8');
 const missionControl = fs.readFileSync('src/components/mission-control/MissionControlOverview.tsx', 'utf8');
+const aiFactoryHealthInstrument = fs.readFileSync('src/components/mission-control/health/AiFactoryHealthInstrument.tsx', 'utf8');
+const aiFactoryHealthInstrumentStyles = fs.readFileSync('src/components/mission-control/health/AiFactoryHealthInstrument.css', 'utf8');
 const hgxTopology = fs.readFileSync('src/components/mission-control/HgxNvlinkVisualization.tsx', 'utf8');
 const validationFlow = fs.readFileSync('src/components/mission-control/ValidationFlowVisualization.tsx', 'utf8');
 const hudPanel = fs.readFileSync('src/components/hud/HudPanel.tsx', 'utf8');
@@ -174,7 +176,30 @@ const requiredMissionControlV3Markers = [
   'prefers-reduced-motion',
 ];
 for (const marker of requiredMissionControlV3Markers) {
-  assert(missionControl.includes(marker) || validationFlow.includes(marker) || styles.includes(marker) || app.includes(marker), `missing Mission Control V3 marker ${marker}`);
+  assert(missionControl.includes(marker) || aiFactoryHealthInstrument.includes(marker) || aiFactoryHealthInstrumentStyles.includes(marker) || validationFlow.includes(marker) || styles.includes(marker) || app.includes(marker), `missing Mission Control V3 marker ${marker}`);
+}
+
+const requiredAiFactoryHealthMarkers = [
+  'AiFactoryHealthInstrument',
+  'data-testid="AiFactoryHealthInstrument"',
+  'data-testid="AiFactoryHealthInstrument-score"',
+  'data-testid="AiFactoryHealthInstrument-classification"',
+  'data-testid="AiFactoryHealthInstrument-affected-scope"',
+  'data-testid="AiFactoryHealthInstrument-reason"',
+  'Health score',
+  'Reason',
+  'Affected scope',
+  'Evidence confidence',
+  'Recommended next action',
+  'Current state',
+  'healthy',
+  'warning',
+  'critical',
+  'unknown',
+  'prefers-reduced-motion',
+];
+for (const marker of requiredAiFactoryHealthMarkers) {
+  assert(aiFactoryHealthInstrument.includes(marker) || aiFactoryHealthInstrumentStyles.includes(marker) || missionControl.includes(marker), `missing AI Factory Health marker ${marker}`);
 }
 
 const requiredHudPanelMarkers = [
