@@ -55,8 +55,8 @@ function PublicNavigation({
 
   const links = [
     ...PUBLIC_PRIMARY_ROUTES,
-    { label: "Sign In", href: "/#sign-in" },
-    { label: "Get Started", href: "/platform" },
+    { label: "Sign In", href: "/login" },
+    { label: "Get Started", href: "/signup" },
   ];
 
   return (
@@ -97,8 +97,8 @@ function PublicNavigation({
         >
           {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
-        <a href="/#sign-in" className="public-site-action public-site-action--secondary">Sign In</a>
-        <a href="/platform" className="public-site-action public-site-action--primary">Get Started</a>
+        <a href="/login" className="public-site-action public-site-action--secondary">Sign In</a>
+        <a href="/signup" className="public-site-action public-site-action--primary">Get Started</a>
         <button
           type="button"
           className="public-site-menu-toggle"
@@ -168,20 +168,20 @@ function PublicSiteFooter() {
           <a href="/docs">Docs</a>
           <a href="/security">Security</a>
           <a href="/pricing">Pricing</a>
-          <a href="/#sign-in">Reviewer access</a>
+          <a href="/login">Reviewer access</a>
         </section>
 
         <section>
           <h2>Company</h2>
           <a href="/enterprise">Enterprise</a>
-          <a href="/platform">Platform overview</a>
-          <span>Deployment planning and validation reviews available on request.</span>
+          <a href="/about">About</a>
+          <a href="/contact">Contact</a>
         </section>
 
         <section>
           <h2>Legal</h2>
-          <span id="privacy">Controlled evidence handling for private infrastructure reviews.</span>
-          <span id="terms">Approval-aware workflows and auditable operational review language.</span>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
         </section>
       </div>
 

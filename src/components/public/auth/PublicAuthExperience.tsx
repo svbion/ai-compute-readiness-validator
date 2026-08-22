@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { AuthField, AuthPanel, AuthShell, AuthStatus, type AuthStatusTone } from "./index";
+import { usePageMetadata } from "../../landing/publicSite";
 import "./AuthShell.css";
 
 type PublicAuthRoute = "/login" | "/signup" | "/forgot-password" | "/reset-password" | "/verify-email";
@@ -800,8 +801,34 @@ const routeContent: Record<PublicAuthRoute, { badge: string; supportTitle: strin
   },
 };
 
+const AUTH_METADATA: Record<PublicAuthRoute, { title: string; description: string }> = {
+  "/login": {
+    title: "GPUValidator Login | Reviewer and Organization Access",
+    description: "Review the GPUValidator sign-in experience for organization access without implying a live production identity provider.",
+  },
+  "/signup": {
+    title: "GPUValidator Signup | Request Organization Access",
+    description: "Review the GPUValidator account-request experience for organization onboarding without implying live account creation.",
+  },
+  "/forgot-password": {
+    title: "GPUValidator Forgot Password | Reset Flow Preview",
+    description: "Review the GPUValidator password-reset request experience without implying live email delivery or token issuance.",
+  },
+  "/reset-password": {
+    title: "GPUValidator Reset Password | Controlled Update Preview",
+    description: "Review the GPUValidator reset-password experience with explicit preview states and no live backend password update.",
+  },
+  "/verify-email": {
+    title: "GPUValidator Verify Email | Confirmation Preview",
+    description: "Review the GPUValidator email-verification experience with truthful waiting, verified, expired, and error states.",
+  },
+};
+
 export function PublicAuthExperience({ route, isDarkMode, onToggleTheme, onOpenReviewerDemo, reviewerDemoBlocked = false }: PublicAuthExperienceProps) {
   const content = routeContent[route];
+  const metadata = AUTH_METADATA[route];
+
+  usePageMetadata(metadata.title, metadata.description);
 
   return (
     <AuthShell

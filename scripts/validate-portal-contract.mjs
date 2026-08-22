@@ -69,11 +69,22 @@ for (const marker of requiredUiContracts) {
 const requiredLandingMarkers = [
   'GPUValidator',
   'data-testid="PublicSiteShell"',
+  'data-public-page={currentPage}',
   'data-testid="PublicHero"',
   'Know if your AI infrastructure is actually ready.',
   'Get Started',
   'Explore Platform',
   'Reviewer sign in',
+  'About',
+  'Contact',
+  'Privacy',
+  'Terms',
+  'NODE NOT FOUND',
+  'Professional contact and support routing',
+  'Privacy structure for public-site production review',
+  'Terms structure for pre-production legal review',
+  'Submission integration pending',
+  'requested public route is not present in this build',
   'Logical / Reference Topology',
   'Internal node fabric boundary',
   'External cluster fabric boundary',
@@ -199,6 +210,29 @@ const requiredPublicProductMarkers = [
 ];
 for (const marker of requiredPublicProductMarkers) {
   assert(publicProductPages.includes(marker) || publicSite.includes(marker) || landing.includes(marker), `missing public product marker ${marker}`);
+}
+
+const requiredPublicRoutingMarkers = [
+  'const PUBLIC_PAGE_METADATA',
+  'function getPublicPage(pathname: string): PublicPage',
+  'case "/about":',
+  'case "/contact":',
+  'case "/privacy":',
+  'case "/terms":',
+  'case "/404":',
+  'default:',
+  'return "not-found";',
+  'applyPageMetadata',
+  'currentPage={publicPage}',
+  'currentPath={currentPath}',
+  'About GPUValidator | AI Infrastructure Readiness',
+  'Contact GPUValidator | Enterprise and Support Routing',
+  'GPUValidator Privacy | Pre-Production Review Structure',
+  'GPUValidator Terms | Pre-Production Review Structure',
+  'GPUValidator 404 | Public Route Not Found',
+];
+for (const marker of requiredPublicRoutingMarkers) {
+  assert(app.includes(marker), `missing public routing or metadata marker ${marker}`);
 }
 
 const requiredHgxTopologyMarkers = [
