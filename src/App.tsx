@@ -11,6 +11,7 @@ import { HgxNvlinkVisualization } from "./components/mission-control/HgxNvlinkVi
 import { MissionControlOverview } from "./components/mission-control/MissionControlOverview";
 import { PublicLanding } from "./components/landing/PublicLanding";
 import { PublicProductPage } from "./components/landing/PublicProductPages";
+import { PublicAuthExperience } from "./components/public/auth";
 import { HudBottomRail, HudNavigationRail, HudTopBar, type HudNavigationRailItem, type HudSystemTone, type HudTopBarTone } from "./components/hud";
 
 // Types corresponding to our Python schema
@@ -133,6 +134,26 @@ function deriveRiskState(systemStateLabel: string): { label: string; tone: HudSy
   }
 
   return { label: "UNKNOWN", tone: "unknown" };
+}
+
+const PUBLIC_AUTH_ROUTE_LIST = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+] as const;
+
+const PUBLIC_AUTH_ROUTES = new Set<string>(PUBLIC_AUTH_ROUTE_LIST);
+
+type PublicAuthRoute = (typeof PUBLIC_AUTH_ROUTE_LIST)[number];
+
+function normalizePublicPath(pathname: string) {
+  if (!pathname || pathname === "/") {
+    return "/";
+  }
+
+  return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
 }
 
 export default function App() {
@@ -499,7 +520,13 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  const [isReviewerAuthenticated, setIsReviewerAuthenticated] = useState(false);
+  const currentPath = typeof window !== "undefined" ? normalizePublicPath(window.location.pathname) : "/";
+  const reviewerDemoRequested = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("demo") === "reviewer"
+    : false;
+  const publicAuthRoute = (PUBLIC_AUTH_ROUTE_LIST as readonly string[]).includes(currentPath)
+    ? (currentPath as PublicAuthRoute)
+    : null;
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -532,10 +559,18 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!reviewerDemoRequested) {
+      return;
+    }
+
     fetchResults(selectedScenario);
-  }, [selectedScenario]);
+  }, [reviewerDemoRequested, selectedScenario]);
 
   useEffect(() => {
+    if (!reviewerDemoRequested) {
+      return;
+    }
+
     const fetchPlatformSummary = async () => {
       try {
         const res = await fetch("/api/platform/summary");
@@ -549,7 +584,7 @@ export default function App() {
       }
     };
     fetchPlatformSummary();
-  }, []);
+  }, [reviewerDemoRequested]);
 
   // Fetch historical health scores for selected node
   const fetchNodeHistory = async (nodeName: string, scenario: "healthy" | "degraded") => {
@@ -573,10 +608,10 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (selectedNodeName) {
+    if (reviewerDemoRequested && selectedNodeName) {
       fetchNodeHistory(selectedNodeName, selectedScenario);
     }
-  }, [selectedNodeName, selectedScenario]);
+  }, [reviewerDemoRequested, selectedNodeName, selectedScenario]);
 
   // Simulate diagnostic scan with interactive logs
   const triggerScan = async () => {
@@ -948,29 +983,48 @@ export default function App() {
     "/docs",
   ]);
 
-  if (!isReviewerAuthenticated) {
-    if (publicProductRoutes.has(publicPath)) {
-      return (
-        <PublicProductPage
-          route={publicPath as
-            | "/platform"
-            | "/ai-factory"
-            | "/validation"
-            | "/benchmarks"
-            | "/enterprise"
-            | "/security"
-            | "/pricing"
-            | "/docs"}
-          isDarkMode={isDarkMode}
-          onToggleTheme={() => setIsDarkMode(!isDarkMode)}
-        />
-      );
-    }
+  if (publicAuthRoute) {
+    return (
+      <PublicAuthExperience
+        route={publicAuthRoute}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+        onOpenReviewerDemo={() => {
+          if (typeof window !== "undefined") {
+            window.location.assign("/?demo=reviewer");
+          }
+        }}
+      />
+    );
+  }
 
+  if (!reviewerDemoRequested && publicProductRoutes.has(currentPath)) {
+    return (
+      <PublicProductPage
+        route={currentPath as
+          | "/platform"
+          | "/ai-factory"
+          | "/validation"
+          | "/benchmarks"
+          | "/enterprise"
+          | "/security"
+          | "/pricing"
+          | "/docs"}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+      />
+    );
+  }
+
+  if (!reviewerDemoRequested) {
     return (
       <PublicLanding
         isDarkMode={isDarkMode}
-        onSubmit={() => setIsReviewerAuthenticated(true)}
+        onSubmit={() => {
+          if (typeof window !== "undefined") {
+            window.location.assign("/?demo=reviewer");
+          }
+        }}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
       />
     );

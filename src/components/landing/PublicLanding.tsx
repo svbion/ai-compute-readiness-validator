@@ -345,7 +345,7 @@ export function PublicLanding({ isDarkMode, onSubmit, onToggleTheme }: PublicLan
           </p>
 
           <div className="public-hero__actions">
-            <a href="/platform" className="public-site-button public-site-button--primary">
+            <a href="/signup" className="public-site-button public-site-button--primary">
               Get Started
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </a>
@@ -531,7 +531,7 @@ export function PublicLanding({ isDarkMode, onSubmit, onToggleTheme }: PublicLan
             <p className="public-site-eyebrow">Reviewer sign in</p>
             <h3>Secure access to the authenticated reviewer workspace</h3>
             <p>
-              PUBLIC-001 preserves the existing reviewer entry path without introducing production authentication behavior.
+              PUBLIC-001 preserves a reviewer-local demo path without presenting it as production authentication.
             </p>
           </div>
 
@@ -585,8 +585,8 @@ export function PublicLanding({ isDarkMode, onSubmit, onToggleTheme }: PublicLan
           </form>
 
           <div className="reviewer-access-card__markers">
-            <span><ShieldCheck className="h-4 w-4" aria-hidden="true" /> Controlled evidence access</span>
-            <span><Cpu className="h-4 w-4" aria-hidden="true" /> Public/auth boundary preserved</span>
+            <span><ShieldCheck className="h-4 w-4" aria-hidden="true" /> Review the production-facing auth UX at /login</span>
+            <span><Cpu className="h-4 w-4" aria-hidden="true" /> Launch the existing reviewer demo entry only for local evaluation</span>
             <span><Activity className="h-4 w-4" aria-hidden="true" /> Authenticated Mission Control remains separate</span>
           </div>
         </aside>

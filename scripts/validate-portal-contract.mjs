@@ -8,6 +8,9 @@ const indexHtml = fs.readFileSync('index.html', 'utf8');
 const landing = fs.readFileSync('src/components/landing/PublicLanding.tsx', 'utf8');
 const publicSite = fs.readFileSync('src/components/landing/publicSite.tsx', 'utf8');
 const publicProductPages = fs.readFileSync('src/components/landing/PublicProductPages.tsx', 'utf8');
+const publicAuth = fs.readFileSync('src/components/public/auth/PublicAuthExperience.tsx', 'utf8');
+const publicAuthShell = fs.readFileSync('src/components/public/auth/AuthShell.tsx', 'utf8');
+const publicAuthStyles = fs.readFileSync('src/components/public/auth/AuthShell.css', 'utf8');
 const missionControl = fs.readFileSync('src/components/mission-control/MissionControlOverview.tsx', 'utf8');
 const aiFactoryHologram = fs.readFileSync('src/components/mission-control/ai-factory/AiFactoryHologram.tsx', 'utf8');
 const aiFactoryHealthInstrument = fs.readFileSync('src/components/mission-control/health/AiFactoryHealthInstrument.tsx', 'utf8');
@@ -95,9 +98,45 @@ const requiredLandingMarkers = [
   'Validate your AI infrastructure before production does it for you.',
   'data-testid="PublicMobileNavTrigger"',
   'prefers-reduced-motion',
+  'href="/login"',
+  'href="/signup"',
 ];
 for (const marker of requiredLandingMarkers) {
   assert(landing.includes(marker) || publicSite.includes(marker) || app.includes(marker) || styles.includes(marker), `missing landing marker ${marker}`);
+}
+
+const requiredPublicAuthMarkers = [
+  'PUBLIC_AUTH_ROUTES',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  'GPUValidator',
+  'Sign In',
+  'Create account',
+  'Forgot password',
+  'Reset password',
+  'Verify email',
+  'Reviewer demo entry',
+  'Production authentication not connected',
+  'Password requirements',
+  'MFA-ready patterns',
+  'Resend verification',
+  'Activate light theme',
+  'Activate dark theme',
+  'data-testid="PublicAuthShell"',
+];
+for (const marker of requiredPublicAuthMarkers) {
+  assert(
+    app.includes(marker) || publicAuth.includes(marker) || publicAuthShell.includes(marker) || publicAuthStyles.includes(marker),
+    `missing public auth marker ${marker}`,
+  );
+}
+
+const forbiddenPublicAuthShellMarkers = ['HudTopBar', 'HudNavigationRail', 'HudBottomRail'];
+for (const marker of forbiddenPublicAuthShellMarkers) {
+  assert(!publicAuth.includes(marker), `auth page should not render authenticated shell marker ${marker}`);
 }
 
 const forbiddenLandingMarkers = [
@@ -449,12 +488,12 @@ for (const marker of requiredHudBottomRailMarkers) {
 }
 
 assert(!landing.includes('HudPanel') && !landing.includes('HudPanelHeader'), 'public landing must not migrate to HudPanel primitives');
-assert(!landing.includes('HudTopBar') && !app.includes('<HudTopBar') || app.includes('if (!isReviewerAuthenticated)'), 'HudTopBar must not render on PublicLanding');
+assert(!landing.includes('HudTopBar') && app.includes('if (publicAuthRoute)'), 'HudTopBar must not render on public auth routes');
 assert(!landing.includes('HudNavigationRail'), 'public landing must not migrate to HudNavigationRail');
 assert(!landing.includes('HudBottomRail'), 'public landing must not migrate to HudBottomRail');
-assert(app.includes('<HudNavigationRail') && app.includes('if (!isReviewerAuthenticated)'), 'HudNavigationRail must render only after reviewer authentication');
-assert(app.includes('<HudBottomRail') && app.includes('if (!isReviewerAuthenticated)'), 'HudBottomRail must render only after reviewer authentication');
-assert(app.includes('<PublicProductPage') && app.includes('publicProductRoutes.has(publicPath)'), 'public product pages must remain separate from authenticated routes');
+assert(app.includes('<HudNavigationRail') && app.includes('if (!reviewerDemoRequested)'), 'HudNavigationRail must render only after reviewer demo entry');
+assert(app.includes('<HudBottomRail') && app.includes('if (!reviewerDemoRequested)'), 'HudBottomRail must render only after reviewer demo entry');
+assert(app.includes('<PublicProductPage') && app.includes('publicProductRoutes.has(currentPath)'), 'public product pages must remain separate from authenticated routes');
 
 const obsoleteLandingMarkers = ['Gate', 'GPU-0', 'GPU-1', 'GPU-2', 'GPU-3'];
 for (const marker of obsoleteLandingMarkers) {
