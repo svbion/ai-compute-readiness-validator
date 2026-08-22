@@ -4,22 +4,15 @@ import {
   Activity,
   ArrowRight,
   Bot,
-  BookOpen,
   Building2,
   CheckCircle2,
-  ChevronRight,
   Cpu,
   FileText,
   LineChart,
-  LockKeyhole,
-  Menu,
-  Moon,
   Network,
-  Search,
   ShieldCheck,
-  Sun,
-  X,
 } from "lucide-react";
+import { PublicSiteShell, usePageMetadata } from "./publicSite";
 
 type PublicLandingProps = {
   isDarkMode: boolean;
@@ -29,31 +22,12 @@ type PublicLandingProps = {
 
 type TopologyStage = "gpu" | "nvlink" | "nvswitch" | "nic" | "fabric" | "validated";
 
-type NavLink = {
-  label: string;
-  href: string;
-  variant?: "primary" | "secondary";
-};
-
 type FeatureCard = {
   title: string;
   body: string;
   detail: string;
   icon: LucideIcon;
 };
-
-const navLinks: NavLink[] = [
-  { label: "Platform", href: "#platform" },
-  { label: "AI Factory", href: "#ai-factory" },
-  { label: "Validation", href: "#validation-flow" },
-  { label: "Benchmarks", href: "#benchmarks" },
-  { label: "Enterprise", href: "#enterprise" },
-  { label: "Security", href: "#security" },
-  { label: "Docs", href: "#docs" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Sign In", href: "#sign-in", variant: "secondary" },
-  { label: "Get Started", href: "#get-started", variant: "primary" },
-];
 
 const trustIndicators = [
   "Evidence-grounded validation",
@@ -98,7 +72,7 @@ const capabilityModules: FeatureCard[] = [
     title: "Investigations",
     body: "Follow a regression from symptom to affected node, fabric path, evidence, likely cause, and recommendation.",
     detail: "Structured root-cause workflow",
-    icon: Search,
+    icon: Activity,
   },
   {
     title: "Copilot",
@@ -108,21 +82,7 @@ const capabilityModules: FeatureCard[] = [
   },
 ];
 
-const validationFlowSteps = [
-  "Discover",
-  "Validate",
-  "Benchmark",
-  "Investigate",
-  "Prove",
-  "Remediate",
-];
-
-const enterpriseBullets = [
-  "Private infrastructure and controlled evidence boundaries",
-  "Approval-aware remediation workflows",
-  "Role-aware access for reviewers and operators",
-  "Auditability across findings, evidence, and recommendations",
-];
+const validationFlowSteps = ["Discover", "Validate", "Benchmark", "Investigate", "Prove", "Remediate"];
 
 function usePrefersReducedMotion() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -144,86 +104,6 @@ function usePrefersReducedMotion() {
   return prefersReducedMotion;
 }
 
-function PublicNavigation({
-  isDarkMode,
-  menuOpen,
-  onToggleMenu,
-  onToggleTheme,
-}: {
-  isDarkMode: boolean;
-  menuOpen: boolean;
-  onToggleMenu: () => void;
-  onToggleTheme: () => void;
-}) {
-  return (
-    <header className="public-site-header" data-testid="PublicSiteHeader">
-      <a className="public-site-brand" href="#top" aria-label="GPUValidator public home">
-        <span className="public-site-brand__mark" aria-hidden="true">
-          <span className="public-site-brand__pulse" />
-        </span>
-        <span className="public-site-brand__text">
-          <strong>GPUValidator</strong>
-          <span>AI Infrastructure Readiness</span>
-        </span>
-      </a>
-
-      <nav className="public-site-nav" aria-label="Primary public navigation">
-        {navLinks.slice(0, 8).map((link) => (
-          <a key={link.label} href={link.href} className="public-site-nav__link">
-            {link.label}
-          </a>
-        ))}
-      </nav>
-
-      <div className="public-site-actions">
-        <button
-          type="button"
-          className="public-site-theme-toggle"
-          onClick={onToggleTheme}
-          aria-label={isDarkMode ? "Activate light theme" : "Activate dark theme"}
-          title={isDarkMode ? "Activate light theme" : "Activate dark theme"}
-        >
-          {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
-        <a href="#sign-in" className="public-site-action public-site-action--secondary">Sign In</a>
-        <a href="#get-started" className="public-site-action public-site-action--primary">Get Started</a>
-        <button
-          type="button"
-          className="public-site-menu-toggle"
-          aria-expanded={menuOpen}
-          aria-controls="public-mobile-nav"
-          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-          data-testid="PublicMobileNavTrigger"
-          onClick={onToggleMenu}
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          <span>Menu</span>
-        </button>
-      </div>
-
-      <div
-        id="public-mobile-nav"
-        className={`public-site-mobile-nav${menuOpen ? " public-site-mobile-nav--open" : ""}`}
-        data-testid="PublicMobileNav"
-      >
-        <nav aria-label="Mobile public navigation">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className={`public-site-mobile-nav__link public-site-mobile-nav__link--${link.variant ?? "default"}`}
-              onClick={onToggleMenu}
-            >
-              <span>{link.label}</span>
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </a>
-          ))}
-        </nav>
-      </div>
-    </header>
-  );
-}
-
 function HeroTopologyVisualization({ compact = false }: { compact?: boolean }) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const stages: TopologyStage[] = ["gpu", "nvlink", "nvswitch", "nic", "fabric", "validated"];
@@ -241,7 +121,7 @@ function HeroTopologyVisualization({ compact = false }: { compact?: boolean }) {
     }, 1800);
 
     return () => window.clearInterval(timer);
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, stages.length]);
 
   const stageLabel = useMemo(() => {
     switch (activeStage) {
@@ -443,420 +323,274 @@ function ValidationFlowVisualization() {
 }
 
 export function PublicLanding({ isDarkMode, onSubmit, onToggleTheme }: PublicLandingProps) {
+  usePageMetadata(
+    "GPUValidator | AI Infrastructure Readiness",
+    "GPUValidator helps teams validate AI infrastructure readiness through GPU topology awareness, benchmarking, evidence traceability, investigation workflows, and evidence-backed remediation context.",
+  );
+
   const usernameId = useId();
   const passwordId = useId();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="public-site-shell" data-testid="PublicSiteShell">
-      <a className="public-site-skip-link" href="#public-main">Skip to content</a>
+    <PublicSiteShell currentPath="/" isDarkMode={isDarkMode} onToggleTheme={onToggleTheme}>
+      <section className="public-hero" id="top" aria-labelledby="public-hero-title" data-testid="PublicHero">
+        <div className="public-hero__copy">
+          <p className="public-site-eyebrow">GPUValidator</p>
+          <h1 id="public-hero-title">Know if your AI infrastructure is actually ready.</h1>
+          <p className="public-hero__lede">
+            GPUValidator helps infrastructure teams validate GPU infrastructure, understand topology, run benchmark-backed readiness workflows, investigate regressions, and move toward evidence-backed remediation.
+          </p>
 
-      <PublicNavigation
-        isDarkMode={isDarkMode}
-        menuOpen={menuOpen}
-        onToggleMenu={() => setMenuOpen((current) => !current)}
-        onToggleTheme={onToggleTheme}
-      />
-
-      <main id="public-main" className="public-site-main">
-        <section className="public-hero" id="top" aria-labelledby="public-hero-title" data-testid="PublicHero">
-          <div className="public-hero__copy">
-            <p className="public-site-eyebrow">GPUValidator</p>
-            <h1 id="public-hero-title">Know if your AI infrastructure is actually ready.</h1>
-            <p className="public-hero__lede">
-              GPUValidator helps infrastructure teams validate GPU infrastructure, understand topology, run benchmark-backed readiness workflows, investigate regressions, and move toward evidence-backed remediation.
-            </p>
-
-            <div className="public-hero__actions">
-              <a href="#get-started" className="public-site-button public-site-button--primary">
-                Get Started
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
-              <a href="#platform" className="public-site-button public-site-button--secondary">
-                Explore Platform
-              </a>
-            </div>
-
-            <div className="public-hero__rails" aria-label="Public capability summary">
-              <article>
-                <span>Validation scope</span>
-                <strong>GPU, node, fabric, benchmark workflow</strong>
-              </article>
-              <article>
-                <span>Evidence model</span>
-                <strong>Findings linked to artifacts and affected scope</strong>
-              </article>
-              <article>
-                <span>Operational outcome</span>
-                <strong>Readiness, investigation, recommendation</strong>
-              </article>
-            </div>
+          <div className="public-hero__actions">
+            <a href="/platform" className="public-site-button public-site-button--primary">
+              Get Started
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+            <a href="/platform" className="public-site-button public-site-button--secondary">
+              Explore Platform
+            </a>
           </div>
 
-          <div className="public-hero__visual">
-            <div className="public-hero__topology-desktop">
-              <HeroTopologyVisualization />
-            </div>
-            <div className="public-hero__topology-mobile">
-              <HeroTopologyVisualization compact />
-            </div>
-            <div className="public-hero__support-grid">
-              <article className="public-support-card">
-                <span>Internal node boundary</span>
-                <strong>GPU → NVLink → NVSwitch</strong>
-                <p>Explicitly separated from cluster egress to keep the topology truthful.</p>
-              </article>
-              <article className="public-support-card">
-                <span>External fabric path</span>
-                <strong>NIC → InfiniBand / RDMA → Cluster Fabric</strong>
-                <p>Cluster communication is shown as a node egress path, not as direct GPU cabling.</p>
-              </article>
-            </div>
+          <div className="public-hero__rails" aria-label="Public capability summary">
+            <article>
+              <span>Validation scope</span>
+              <strong>GPU, node, fabric, benchmark workflow</strong>
+            </article>
+            <article>
+              <span>Evidence model</span>
+              <strong>Findings linked to artifacts and affected scope</strong>
+            </article>
+            <article>
+              <span>Operational outcome</span>
+              <strong>Readiness, investigation, recommendation</strong>
+            </article>
           </div>
-        </section>
+        </div>
 
-        <section className="public-proof-strip" aria-label="Trust indicators" data-testid="PublicTrustStrip">
-          {trustIndicators.map((item) => (
-            <div key={item} className="public-proof-strip__item">
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-              <span>{item}</span>
-            </div>
+        <div className="public-hero__visual">
+          <div className="public-hero__topology-desktop">
+            <HeroTopologyVisualization />
+          </div>
+          <div className="public-hero__topology-mobile">
+            <HeroTopologyVisualization compact />
+          </div>
+          <div className="public-hero__support-grid">
+            <article className="public-support-card">
+              <span>Internal node boundary</span>
+              <strong>GPU → NVLink → NVSwitch</strong>
+              <p>Explicitly separated from cluster egress to keep the topology truthful.</p>
+            </article>
+            <article className="public-support-card">
+              <span>External fabric path</span>
+              <strong>NIC → InfiniBand / RDMA → Cluster Fabric</strong>
+              <p>Cluster communication is shown as a node egress path, not as direct GPU cabling.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="public-proof-strip" aria-label="Trust indicators" data-testid="PublicTrustStrip">
+        {trustIndicators.map((item) => (
+          <div key={item} className="public-proof-strip__item">
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            <span>{item}</span>
+          </div>
+        ))}
+      </section>
+
+      <section className="public-section" id="platform" data-testid="PublicCapabilitiesSection">
+        <div className="public-section__intro">
+          <p className="public-site-eyebrow">Platform capabilities</p>
+          <h2>Purpose-built for production-readiness questions</h2>
+          <p>
+            GPUValidator focuses on whether AI infrastructure is truly ready, why it is not ready, what evidence supports that conclusion, and what should happen next.
+          </p>
+        </div>
+
+        <div className="public-capability-grid">
+          {capabilityModules.map(({ title, body, detail, icon: Icon }) => (
+            <article key={title} className="public-capability-card">
+              <div className="public-capability-card__header">
+                <Icon className="h-5 w-5" aria-hidden="true" />
+                <span>{detail}</span>
+              </div>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
           ))}
-        </section>
+        </div>
+      </section>
 
-        <section className="public-section" id="platform" data-testid="PublicCapabilitiesSection">
-          <div className="public-section__intro">
-            <p className="public-site-eyebrow">Platform capabilities</p>
-            <h2>Purpose-built for production-readiness questions</h2>
-            <p>
-              GPUValidator focuses on whether AI infrastructure is truly ready, why it is not ready, what evidence supports that conclusion, and what should happen next.
-            </p>
+      <section className="public-section" id="validation-flow">
+        <div className="public-section__intro">
+          <p className="public-site-eyebrow">Validation flow</p>
+          <h2>Discover → Validate → Benchmark → Investigate → Prove → Remediate</h2>
+          <p>
+            The public experience keeps the same evidence-first operational logic as Mission Control while presenting it through a simplified product introduction.
+          </p>
+        </div>
+
+        <ValidationFlowVisualization />
+      </section>
+
+      <section className="public-section public-section--split" id="ai-factory">
+        <div className="public-section__intro public-section__intro--left">
+          <p className="public-site-eyebrow">AI Factory</p>
+          <h2>A cinematic spatial model of affected scope and evidence context</h2>
+          <p>
+            The AI Factory view reduces density for the public site while preserving the product’s spatial reasoning model: cluster, node, GPU fabric, topology path, affected scope, evidence, and benchmark relation.
+          </p>
+          <ul className="public-bullet-list">
+            <li>Cluster and node context stay visible</li>
+            <li>GPU fabric and topology path remain explicit</li>
+            <li>Evidence and benchmark relationship stay adjacent to the finding</li>
+          </ul>
+        </div>
+
+        <div className="factory-visual" data-testid="PublicAiFactorySection">
+          <div className="factory-visual__frame">
+            <div className="factory-visual__cluster">Cluster / ai-factory-prod-01</div>
+            <div className="factory-visual__node">Node / dgx03</div>
+            <div className="factory-visual__fabric">GPU fabric / NVLink + NVSwitch</div>
+            <div className="factory-visual__path">Topology path / Node NIC → InfiniBand / RDMA</div>
+            <div className="factory-visual__evidence">Evidence / nccl-allreduce-run-042</div>
+            <div className="factory-visual__benchmark">Benchmark relation / bandwidth regression against validated baseline</div>
           </div>
-
-          <div className="public-capability-grid">
-            {capabilityModules.map(({ title, body, detail, icon: Icon }) => (
-              <article key={title} className="public-capability-card">
-                <div className="public-capability-card__header">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                  <span>{detail}</span>
-                </div>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </article>
-            ))}
+          <div className="factory-visual__hud">
+            <article>
+              <span>Affected scope</span>
+              <strong>1 node · 8 GPUs · 1 external path</strong>
+            </article>
+            <article>
+              <span>Finding class</span>
+              <strong>Benchmark regression under validated topology</strong>
+            </article>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="public-section" id="validation-flow">
-          <div className="public-section__intro">
-            <p className="public-site-eyebrow">Validation flow</p>
-            <h2>Discover → Validate → Benchmark → Investigate → Prove → Remediate</h2>
-            <p>
-              The public experience uses a simpler technical pipeline than Mission Control, but it keeps the same evidence-first operational logic.
-            </p>
-          </div>
+      <section className="public-section public-section--split" id="benchmarks">
+        <div className="public-section__intro public-section__intro--left">
+          <p className="public-site-eyebrow">Benchmark and evidence</p>
+          <h2>Benchmark workflows that stay tied to provenance</h2>
+          <p>
+            GPUValidator communicates NCCL, HPL, and MLPerf readiness workflows as evidence packages with traceability, not unsupported claims of live external integrations.
+          </p>
+        </div>
 
-          <ValidationFlowVisualization />
-        </section>
-
-        <section className="public-section public-section--split" id="ai-factory">
-          <div className="public-section__intro public-section__intro--left">
-            <p className="public-site-eyebrow">AI Factory</p>
-            <h2>A cinematic spatial model of affected scope and evidence context</h2>
-            <p>
-              The AI Factory view reduces density for the public site while preserving the product’s spatial reasoning model: cluster, node, GPU fabric, topology path, affected scope, evidence, and benchmark relation.
-            </p>
-            <ul className="public-bullet-list">
-              <li>Cluster and node context stay visible</li>
-              <li>GPU fabric and topology path remain explicit</li>
-              <li>Evidence and benchmark relationship stay adjacent to the finding</li>
+        <div className="benchmark-grid" data-testid="PublicBenchmarkEvidenceSection">
+          <article className="benchmark-card">
+            <div className="benchmark-card__header">
+              <LineChart className="h-5 w-5" aria-hidden="true" />
+              <span>Benchmark suites</span>
+            </div>
+            <h3>NCCL · HPL · MLPerf readiness workflow</h3>
+            <ul className="public-bullet-list public-bullet-list--compact">
+              <li>NCCL collective path and bandwidth validation</li>
+              <li>HPL system-level compute and fabric readiness context</li>
+              <li>MLPerf readiness workflow framing where applicable</li>
             </ul>
-          </div>
+          </article>
 
-          <div className="factory-visual" data-testid="PublicAiFactorySection">
-            <div className="factory-visual__frame">
-              <div className="factory-visual__cluster">Cluster / ai-factory-prod-01</div>
-              <div className="factory-visual__node">Node / dgx03</div>
-              <div className="factory-visual__fabric">GPU fabric / NVLink + NVSwitch</div>
-              <div className="factory-visual__path">Topology path / Node NIC → InfiniBand / RDMA</div>
-              <div className="factory-visual__evidence">Evidence / nccl-allreduce-run-042</div>
-              <div className="factory-visual__benchmark">Benchmark relation / bandwidth regression against validated baseline</div>
+          <article className="benchmark-card">
+            <div className="benchmark-card__header">
+              <FileText className="h-5 w-5" aria-hidden="true" />
+              <span>Evidence package</span>
             </div>
-            <div className="factory-visual__hud">
-              <article>
-                <span>Affected scope</span>
-                <strong>1 node · 8 GPUs · 1 external path</strong>
-              </article>
-              <article>
-                <span>Finding class</span>
-                <strong>Benchmark regression under validated topology</strong>
-              </article>
-            </div>
-          </div>
-        </section>
+            <h3>Repeatable validation with traceability</h3>
+            <ol className="public-sequence-list">
+              <li>Benchmark package</li>
+              <li>Topology context</li>
+              <li>Run metadata</li>
+              <li>Evidence summary</li>
+              <li>Readiness conclusion</li>
+            </ol>
+          </article>
+        </div>
+      </section>
 
-        <section className="public-section public-section--split" id="benchmarks">
-          <div className="public-section__intro public-section__intro--left">
-            <p className="public-site-eyebrow">Benchmark and evidence</p>
-            <h2>Benchmark workflows that stay tied to provenance</h2>
+      <section className="public-final-cta" id="get-started" data-testid="PublicFinalCta">
+        <div className="public-final-cta__copy">
+          <p className="public-site-eyebrow">Get started</p>
+          <h2>Validate your AI infrastructure before production does it for you.</h2>
+          <p>
+            Start with the public product pages today, then move into the reviewer workspace for deeper validation, benchmark, and investigation workflows.
+          </p>
+
+          <div className="public-hero__actions public-hero__actions--footer">
+            <a href="/platform" className="public-site-button public-site-button--primary">Explore Platform</a>
+            <a href="/pricing" className="public-site-button public-site-button--secondary">View Pricing</a>
+          </div>
+        </div>
+
+        <aside className="reviewer-access-card" id="sign-in">
+          <div className="reviewer-access-card__header">
+            <p className="public-site-eyebrow">Reviewer sign in</p>
+            <h3>Secure access to the authenticated reviewer workspace</h3>
             <p>
-              GPUValidator communicates NCCL, HPL, and MLPerf readiness workflows as evidence packages with traceability, not unsupported claims of live external integrations.
+              PUBLIC-001 preserves the existing reviewer entry path without introducing production authentication behavior.
             </p>
           </div>
 
-          <div className="benchmark-grid" data-testid="PublicBenchmarkEvidenceSection">
-            <article className="benchmark-card">
-              <div className="benchmark-card__header">
-                <LineChart className="h-5 w-5" aria-hidden="true" />
-                <span>Benchmark suites</span>
-              </div>
-              <h3>NCCL · HPL · MLPerf readiness workflow</h3>
-              <ul className="public-bullet-list public-bullet-list--compact">
-                <li>NCCL collective path and bandwidth validation</li>
-                <li>HPL system-level compute and fabric readiness context</li>
-                <li>MLPerf readiness workflow framing where applicable</li>
-              </ul>
-            </article>
+          <form
+            className="reviewer-access-card__form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSubmit();
+            }}
+          >
+            <label className="reviewer-access-card__field" htmlFor={usernameId}>
+              <span>Username</span>
+              <input
+                id={usernameId}
+                type="text"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                autoComplete="username"
+                placeholder="reviewer"
+                required
+              />
+            </label>
 
-            <article className="benchmark-card">
-              <div className="benchmark-card__header">
-                <FileText className="h-5 w-5" aria-hidden="true" />
-                <span>Evidence package</span>
-              </div>
-              <h3>Repeatable validation with traceability</h3>
-              <ol className="public-sequence-list">
-                <li>Benchmark package</li>
-                <li>Topology context</li>
-                <li>Run metadata</li>
-                <li>Evidence summary</li>
-                <li>Readiness conclusion</li>
-              </ol>
-            </article>
-          </div>
-        </section>
-
-        <section className="public-section public-section--split" id="investigation">
-          <div className="public-section__intro public-section__intro--left">
-            <p className="public-site-eyebrow">Investigation</p>
-            <h2>From performance question to likely cause and recommendation</h2>
-            <p>
-              This is a product visualization, not a live Copilot session. It shows how GPUValidator would visually structure an investigation path.
-            </p>
-          </div>
-
-          <div className="investigation-panel" data-testid="PublicInvestigationSection">
-            <article className="investigation-panel__question">
-              <span>Example question</span>
-              <h3>Why did NCCL all-reduce bandwidth fall?</h3>
-            </article>
-
-            <div className="investigation-chain" aria-label="Investigation flow">
-              {[
-                "Finding",
-                "Affected node",
-                "Fabric path",
-                "Evidence",
-                "Likely cause",
-                "Recommendation",
-              ].map((item) => (
-                <div key={item} className="investigation-chain__item">{item}</div>
-              ))}
-            </div>
-
-            <div className="investigation-panel__detail-grid">
-              <article>
-                <span>Finding</span>
-                <strong>NCCL all-reduce bandwidth regression</strong>
-              </article>
-              <article>
-                <span>Affected node</span>
-                <strong>dgx03 / NIC 2</strong>
-              </article>
-              <article>
-                <span>Fabric path</span>
-                <strong>Node NIC → InfiniBand / RDMA → Cluster Fabric</strong>
-              </article>
-              <article>
-                <span>Likely cause</span>
-                <strong>Negotiated link speed below expected operating band</strong>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        <section className="public-section public-section--split" id="enterprise">
-          <div className="public-section__intro public-section__intro--left">
-            <p className="public-site-eyebrow">Enterprise and security</p>
-            <h2 id="security">Built for controlled enterprise environments</h2>
-            <p>
-              GPUValidator is designed for teams operating private AI infrastructure with controlled evidence handling, role-aware access, approval-aware remediation, and auditable operational workflows.
-            </p>
-          </div>
-
-          <div className="enterprise-grid" data-testid="PublicEnterpriseSection">
-            <article className="enterprise-card">
-              <div className="enterprise-card__header">
-                <LockKeyhole className="h-5 w-5" aria-hidden="true" />
-                <span>Security posture</span>
-              </div>
-              <ul className="public-bullet-list public-bullet-list--compact">
-                {enterpriseBullets.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </article>
-
-            <article className="enterprise-card">
-              <div className="enterprise-card__header">
-                <BookOpen className="h-5 w-5" aria-hidden="true" />
-                <span>Grounded workflow</span>
-              </div>
-              <div className="enterprise-card__stack">
-                <div>
-                  <span>Private infrastructure</span>
-                  <strong>Evidence can stay bounded to the operating environment.</strong>
-                </div>
-                <div>
-                  <span>Approval-aware remediation</span>
-                  <strong>Recommendations stay distinct from infrastructure-changing action.</strong>
-                </div>
-                <div>
-                  <span>Auditability</span>
-                  <strong>Findings, evidence, and next steps remain reviewable.</strong>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section className="public-final-cta" id="get-started" data-testid="PublicFinalCta">
-          <div className="public-final-cta__copy">
-            <p className="public-site-eyebrow">Get started</p>
-            <h2>Validate your AI infrastructure before production does it for you.</h2>
-            <p>
-              Start with a reviewer-guided public entry experience today, then expand into deeper validation, benchmark, and investigation workflows in follow-on public site phases.
-            </p>
-
-            <div className="public-hero__actions public-hero__actions--footer">
-              <a href="#sign-in" className="public-site-button public-site-button--primary">Get Started</a>
-              <a href="#contact" className="public-site-button public-site-button--secondary">Contact Sales</a>
-            </div>
-
-            <div className="public-pricing-note" id="pricing">
-              <span>Pricing</span>
-              <strong>Enterprise rollout and benchmarking scope are reviewed with deployment context.</strong>
-            </div>
-          </div>
-
-          <aside className="reviewer-access-card" id="sign-in">
-            <div className="reviewer-access-card__header">
-              <p className="public-site-eyebrow">Reviewer sign in</p>
-              <h3>Secure access to the authenticated reviewer workspace</h3>
-              <p>
-                PUBLIC-001 preserves the existing reviewer entry path without introducing production authentication behavior.
-              </p>
-            </div>
-
-            <form
-              className="reviewer-access-card__form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                onSubmit();
-              }}
-            >
-              <label className="reviewer-access-card__field" htmlFor={usernameId}>
-                <span>Username</span>
+            <label className="reviewer-access-card__field" htmlFor={passwordId}>
+              <span>Password</span>
+              <div className="reviewer-access-card__password-row">
                 <input
-                  id={usernameId}
-                  type="text"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  autoComplete="username"
-                  placeholder="reviewer"
+                  id={passwordId}
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  placeholder="Enter password"
                   required
                 />
-              </label>
+                <button
+                  type="button"
+                  className="reviewer-access-card__password-toggle"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((current) => !current)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+            </label>
 
-              <label className="reviewer-access-card__field" htmlFor={passwordId}>
-                <span>Password</span>
-                <div className="reviewer-access-card__password-row">
-                  <input
-                    id={passwordId}
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    autoComplete="current-password"
-                    placeholder="Enter password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="reviewer-access-card__password-toggle"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    aria-pressed={showPassword}
-                    onClick={() => setShowPassword((current) => !current)}
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-              </label>
+            <button type="submit" className="public-site-button public-site-button--primary public-site-button--submit">
+              Enter reviewer workspace
+            </button>
+          </form>
 
-              <button type="submit" className="public-site-button public-site-button--primary public-site-button--submit">
-                Enter reviewer workspace
-              </button>
-            </form>
-
-            <div className="reviewer-access-card__markers">
-              <span><ShieldCheck className="h-4 w-4" aria-hidden="true" /> Controlled evidence access</span>
-              <span><Cpu className="h-4 w-4" aria-hidden="true" /> Public/auth boundary preserved</span>
-              <span><Activity className="h-4 w-4" aria-hidden="true" /> Authenticated Mission Control remains separate</span>
-            </div>
-          </aside>
-        </section>
-      </main>
-
-      <footer className="public-site-footer">
-        <div className="public-site-footer__grid">
-          <section>
-            <h2>Product</h2>
-            <a href="#platform">Platform</a>
-            <a href="#ai-factory">AI Factory</a>
-            <a href="#validation-flow">Validation</a>
-            <a href="#benchmarks">Benchmarks</a>
-          </section>
-
-          <section id="docs">
-            <h2>Resources</h2>
-            <a href="#docs">Docs</a>
-            <a href="#investigation">Investigations</a>
-            <a href="#benchmarks">Evidence and benchmarking</a>
-            <a href="#sign-in">Reviewer access</a>
-          </section>
-
-          <section>
-            <h2>Company</h2>
-            <a href="#enterprise">Enterprise</a>
-            <a href="#contact" id="contact">Contact</a>
-            <span>Deployment planning and rollout review available on request.</span>
-          </section>
-
-          <section>
-            <h2>Legal</h2>
-            <a href="#privacy">Privacy</a>
-            <a href="#terms">Terms</a>
-            <span id="privacy">Controlled evidence handling for private infrastructure reviews.</span>
-            <span id="terms">Approval-aware workflows and auditable operational review language.</span>
-          </section>
-        </div>
-
-        <div className="public-site-footer__bottom">
-          <span>© 2026 GPUValidator</span>
-          <span>Built for secure enterprise deployment review and infrastructure trust workflows.</span>
-        </div>
-      </footer>
-    </div>
+          <div className="reviewer-access-card__markers">
+            <span><ShieldCheck className="h-4 w-4" aria-hidden="true" /> Controlled evidence access</span>
+            <span><Cpu className="h-4 w-4" aria-hidden="true" /> Public/auth boundary preserved</span>
+            <span><Activity className="h-4 w-4" aria-hidden="true" /> Authenticated Mission Control remains separate</span>
+          </div>
+        </aside>
+      </section>
+    </PublicSiteShell>
   );
 }
