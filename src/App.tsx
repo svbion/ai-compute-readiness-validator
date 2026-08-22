@@ -12,6 +12,84 @@ import { MissionControlOverview } from "./components/mission-control/MissionCont
 import { PublicLanding } from "./components/landing/PublicLanding";
 import { HudBottomRail, HudNavigationRail, HudTopBar, type HudNavigationRailItem, type HudSystemTone, type HudTopBarTone } from "./components/hud";
 
+type PublicPage = "home" | "about" | "contact" | "privacy" | "terms" | "not-found";
+
+const PUBLIC_PAGE_METADATA: Record<PublicPage, { title: string; description: string }> = {
+  home: {
+    title: "GPUValidator | AI Infrastructure Readiness",
+    description:
+      "GPUValidator helps teams validate AI infrastructure readiness through GPU topology awareness, benchmarking, evidence traceability, investigation workflows, and evidence-backed remediation context.",
+  },
+  about: {
+    title: "About GPUValidator | AI Infrastructure Readiness",
+    description:
+      "Learn what GPUValidator is, why it exists, and how it helps AI and HPC teams understand infrastructure readiness with evidence and operational clarity.",
+  },
+  contact: {
+    title: "Contact GPUValidator | Enterprise and Support Routing",
+    description:
+      "Route GPUValidator general, enterprise, technical, and security inquiries through a professional public contact workflow without implying backend delivery that does not exist.",
+  },
+  privacy: {
+    title: "GPUValidator Privacy | Pre-Production Review Structure",
+    description:
+      "Review the conservative pre-production privacy structure for the GPUValidator public site, including data categories, storage, security, and launch-review placeholders.",
+  },
+  terms: {
+    title: "GPUValidator Terms | Pre-Production Review Structure",
+    description:
+      "Review the pre-production terms structure for the GPUValidator public site, including use, accounts, beta status, disclaimers, and legal-review placeholders.",
+  },
+  "not-found": {
+    title: "GPUValidator 404 | Public Route Not Found",
+    description:
+      "The requested GPUValidator public route is not present in this build. Return home, sign in, or explore the public platform overview.",
+  },
+};
+
+function getPublicPage(pathname: string): PublicPage {
+  switch (pathname) {
+    case "/":
+      return "home";
+    case "/about":
+      return "about";
+    case "/contact":
+      return "contact";
+    case "/privacy":
+      return "privacy";
+    case "/terms":
+      return "terms";
+    case "/404":
+      return "not-found";
+    default:
+      return "not-found";
+  }
+}
+
+function applyPageMetadata(title: string, description: string, themeColor: string) {
+  document.title = title;
+
+  const descriptionMeta = document.querySelector('meta[name="description"]');
+  if (descriptionMeta) {
+    descriptionMeta.setAttribute("content", description);
+  }
+
+  const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+  if (ogTitleMeta) {
+    ogTitleMeta.setAttribute("content", title);
+  }
+
+  const ogDescriptionMeta = document.querySelector('meta[property="og:description"]');
+  if (ogDescriptionMeta) {
+    ogDescriptionMeta.setAttribute("content", description);
+  }
+
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeColorMeta) {
+    themeColorMeta.setAttribute("content", themeColor);
+  }
+}
+
 // Types corresponding to our Python schema
 interface CommandEvidence {
   command: string[];
@@ -135,6 +213,13 @@ function deriveRiskState(systemStateLabel: string): { label: string; tone: HudSy
 }
 
 export default function App() {
+  const [publicPathname, setPublicPathname] = useState<string>(() => {
+    if (typeof window === "undefined") {
+      return "/";
+    }
+
+    return window.location.pathname;
+  });
   const [activeTab, setActiveTab] = useState<"diagnostics" | "benchmarks">("diagnostics");
   const selectedScenario: "healthy" | "degraded" = "degraded";
   const [cluster, setCluster] = useState<Cluster | null>(null);
@@ -495,7 +580,19 @@ export default function App() {
     }
   }, [isDarkMode]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handlePopState = () => setPublicPathname(window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const [isReviewerAuthenticated, setIsReviewerAuthenticated] = useState(false);
+  const publicPage = getPublicPage(publicPathname);
 
   // Fetch results based on selected scenario
   const fetchResults = async (scenario: "healthy" | "degraded") => {
@@ -921,9 +1018,27 @@ export default function App() {
     { id: "settings", label: "Settings", shortLabel: "SET", availability: "planned" },
   ];
 
+  useEffect(() => {
+    const themeColor = isDarkMode ? "#05090F" : "#eef7ff";
+
+    if (!isReviewerAuthenticated) {
+      const metadata = PUBLIC_PAGE_METADATA[publicPage];
+      applyPageMetadata(metadata.title, metadata.description, themeColor);
+      return;
+    }
+
+    applyPageMetadata(
+      "GPUValidator | AI Infrastructure Mission Control",
+      "Authenticated GPUValidator reviewer workspace for AI infrastructure validation, evidence, benchmarking, and investigation review.",
+      themeColor,
+    );
+  }, [isDarkMode, isReviewerAuthenticated, publicPage]);
+
   if (!isReviewerAuthenticated) {
     return (
       <PublicLanding
+        currentPage={publicPage}
+        currentPath={publicPathname}
         isDarkMode={isDarkMode}
         onSubmit={() => setIsReviewerAuthenticated(true)}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}

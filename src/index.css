@@ -1703,6 +1703,12 @@ input:focus-visible,
   color: var(--text-primary);
 }
 
+.public-site-nav__link--active {
+  background: color-mix(in srgb, var(--accent-cyan-400) 10%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--hud-border-active) 40%, transparent);
+  color: var(--text-primary);
+}
+
 .public-site-actions {
   align-items: center;
   display: inline-flex;
@@ -1840,6 +1846,15 @@ input:focus-visible,
   margin: 0 auto;
   max-width: 96rem;
   padding: 1.5rem;
+}
+
+.public-site-main--document {
+  gap: 1.25rem;
+}
+
+.public-site-shell :focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-cyan-400) 82%, white 18%);
+  outline-offset: 3px;
 }
 
 .public-site-eyebrow,
@@ -2400,6 +2415,343 @@ input:focus-visible,
   grid-template-columns: minmax(0, 1fr) minmax(22rem, 0.9fr);
 }
 
+.public-route-hero,
+.public-document-layout,
+.public-not-found {
+  background: color-mix(in srgb, var(--surface-secondary) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hud-border) 30%, transparent);
+  border-radius: 1.75rem;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.20), inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
+  position: relative;
+}
+
+.public-route-hero::before,
+.public-document-layout::before,
+.public-not-found::before {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-cyan-400) 72%, transparent), transparent 68%);
+  content: "";
+  height: 1px;
+  left: 1.25rem;
+  position: absolute;
+  right: 1.25rem;
+  top: 1rem;
+}
+
+.public-route-hero,
+.public-document-layout,
+.public-not-found,
+.public-contact-form-card,
+.public-contact-card,
+.public-about-card,
+.public-about-problem article {
+  overflow: hidden;
+}
+
+.public-route-hero {
+  padding: 1.6rem;
+}
+
+.public-route-hero__frame {
+  max-width: 72rem;
+}
+
+.public-route-hero__frame h1,
+.public-not-found__copy h1 {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-top: 0.75rem;
+}
+
+.public-route-hero__frame p:last-child,
+.public-not-found__copy p {
+  color: var(--text-secondary);
+  line-height: 1.75;
+  margin-top: 1rem;
+  max-width: 72ch;
+}
+
+.public-section--stacked {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.public-bullet-list--document,
+.public-bullet-list--principles {
+  margin-top: 0;
+}
+
+.public-contact-grid,
+.public-about-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.public-contact-card,
+.public-about-card,
+.public-contact-form-card,
+.public-about-problem article {
+  background: color-mix(in srgb, var(--surface-elevated) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hud-border) 24%, transparent);
+  border-radius: 1.25rem;
+  padding: 1.15rem;
+}
+
+.public-contact-card__header,
+.public-about-card span,
+.public-about-problem span,
+.public-review-banner span,
+.public-document-toc h2 {
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.public-contact-card__header {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+}
+
+.public-contact-card__header svg {
+  color: var(--accent-cyan-400);
+}
+
+.public-contact-card h3,
+.public-about-problem strong,
+.public-about-card strong,
+.public-document__section h2,
+.public-contact-form__result strong,
+.public-document-toc h2 {
+  color: var(--text-primary);
+}
+
+.public-contact-card h3,
+.public-about-card strong,
+.public-about-problem strong,
+.public-document__section h2 {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 0.8rem;
+}
+
+.public-contact-card p,
+.public-about-problem p,
+.public-review-banner p,
+.public-document__section p,
+.public-document__section li,
+.public-contact-form__result p {
+  color: var(--text-secondary);
+  line-height: 1.78;
+}
+
+.public-about-grid,
+.public-contact-grid,
+.public-about-problem,
+.public-document-layout {
+  min-width: 0;
+}
+
+.public-about-problem {
+  display: grid;
+  gap: 1rem;
+}
+
+.public-review-banner {
+  background: color-mix(in srgb, var(--accent-cyan-400) 10%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--hud-border-active) 34%, transparent);
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+}
+
+.public-contact-form-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.public-contact-form {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.public-contact-form__field {
+  color: var(--text-primary);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.public-contact-form__field > span {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.public-contact-form__field input,
+.public-contact-form__field select,
+.public-contact-form__field textarea {
+  background: color-mix(in srgb, var(--surface-elevated) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hud-border) 28%, transparent);
+  border-radius: 1rem;
+  color: var(--text-primary);
+  min-height: 3rem;
+  padding: 0.85rem 1rem;
+  width: 100%;
+}
+
+.public-contact-form__field textarea {
+  min-height: 11rem;
+  resize: vertical;
+}
+
+.public-contact-form__field small {
+  color: var(--critical);
+  font-size: 0.8rem;
+}
+
+.public-contact-form__field input[aria-invalid="true"],
+.public-contact-form__field textarea[aria-invalid="true"] {
+  border-color: color-mix(in srgb, var(--hud-border-critical) 65%, transparent);
+}
+
+.public-contact-form__result {
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+}
+
+.public-contact-form__result--pending {
+  background: color-mix(in srgb, var(--accent-cyan-400) 10%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--hud-border-active) 32%, transparent);
+}
+
+.public-contact-form__result--error {
+  background: color-mix(in srgb, var(--critical) 10%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--hud-border-critical) 32%, transparent);
+}
+
+.public-contact-form__draft {
+  background: color-mix(in srgb, var(--surface-elevated) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hud-border) 20%, transparent);
+  border-radius: 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  padding: 1rem;
+  white-space: pre-wrap;
+}
+
+.public-document-layout {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  padding: 1.6rem;
+}
+
+.public-document-toc {
+  align-self: start;
+  background: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hud-border) 22%, transparent);
+  border-radius: 1.25rem;
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.1rem;
+  position: sticky;
+  top: 6.25rem;
+}
+
+.public-document-toc nav {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.public-document-toc a {
+  color: var(--text-secondary);
+  line-height: 1.55;
+  text-decoration: none;
+}
+
+.public-document-toc a:hover,
+.public-document-toc a:focus-visible {
+  color: var(--text-primary);
+}
+
+.public-document {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.public-document__section {
+  background: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hud-border) 22%, transparent);
+  border-radius: 1.25rem;
+  padding: 1.2rem;
+}
+
+.public-document__section p + p,
+.public-document__section ul,
+.public-document__section .public-review-banner {
+  margin-top: 0.9rem;
+}
+
+.public-not-found {
+  align-items: center;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  padding: 1.6rem;
+}
+
+.public-not-found__signal {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(19, 216, 255, 0.18), transparent 58%),
+    color-mix(in srgb, var(--surface-elevated) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hud-border-active) 34%, transparent);
+  border-radius: 1.5rem;
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  min-height: 20rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.public-not-found__signal span,
+.public-not-found__signal strong {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.public-not-found__signal span {
+  font-size: clamp(3rem, 9vw, 5rem);
+  font-weight: 800;
+}
+
+.public-not-found__signal strong {
+  color: var(--accent-cyan-400);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
 .public-pricing-note {
   background: color-mix(in srgb, var(--surface-elevated) 82%, transparent);
   border: 1px solid color-mix(in srgb, var(--hud-border) 24%, transparent);
@@ -2775,8 +3127,19 @@ input:focus-visible,
   .factory-visual__hud,
   .investigation-panel__detail-grid,
   .public-site-footer__grid,
-  .public-hero__support-grid {
+  .public-hero__support-grid,
+  .public-about-grid,
+  .public-contact-grid,
+  .public-not-found {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .public-document-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .public-document-toc {
+    position: static;
   }
 }
 
@@ -2797,7 +3160,10 @@ input:focus-visible,
   .public-hero,
   .public-section,
   .public-final-cta,
-  .public-site-footer {
+  .public-site-footer,
+  .public-route-hero,
+  .public-document-layout,
+  .public-not-found {
     border-radius: 1.35rem;
     padding: 1.15rem;
   }
@@ -2810,7 +3176,10 @@ input:focus-visible,
   .investigation-panel__detail-grid,
   .public-site-footer__grid,
   .public-hero__support-grid,
-  .public-hero__rails {
+  .public-hero__rails,
+  .public-about-grid,
+  .public-contact-grid,
+  .public-not-found {
     grid-template-columns: 1fr;
   }
 
@@ -2889,7 +3258,13 @@ input:focus-visible,
   .enterprise-card,
   .reviewer-access-card,
   .factory-visual,
-  .investigation-panel {
+  .investigation-panel,
+  .public-contact-card,
+  .public-about-card,
+  .public-contact-form-card,
+  .public-document__section,
+  .public-document-toc,
+  .public-not-found__signal {
     border-radius: 1.05rem;
   }
 
