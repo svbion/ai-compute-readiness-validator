@@ -6,6 +6,8 @@ const server = fs.readFileSync('server.ts', 'utf8');
 const app = fs.readFileSync('src/App.tsx', 'utf8');
 const indexHtml = fs.readFileSync('index.html', 'utf8');
 const landing = fs.readFileSync('src/components/landing/PublicLanding.tsx', 'utf8');
+const publicSite = fs.readFileSync('src/components/landing/publicSite.tsx', 'utf8');
+const publicProductPages = fs.readFileSync('src/components/landing/PublicProductPages.tsx', 'utf8');
 const missionControl = fs.readFileSync('src/components/mission-control/MissionControlOverview.tsx', 'utf8');
 const aiFactoryHologram = fs.readFileSync('src/components/mission-control/ai-factory/AiFactoryHologram.tsx', 'utf8');
 const aiFactoryHealthInstrument = fs.readFileSync('src/components/mission-control/health/AiFactoryHealthInstrument.tsx', 'utf8');
@@ -95,7 +97,7 @@ const requiredLandingMarkers = [
   'prefers-reduced-motion',
 ];
 for (const marker of requiredLandingMarkers) {
-  assert(landing.includes(marker) || app.includes(marker) || styles.includes(marker), `missing landing marker ${marker}`);
+  assert(landing.includes(marker) || publicSite.includes(marker) || app.includes(marker) || styles.includes(marker), `missing landing marker ${marker}`);
 }
 
 const forbiddenLandingMarkers = [
@@ -109,6 +111,56 @@ for (const marker of forbiddenLandingMarkers) {
 }
 
 assert(indexHtml.includes('GPUValidator | AI Infrastructure Readiness'), 'landing metadata title was not updated');
+
+const requiredPublicProductRoutes = [
+  '/platform',
+  '/ai-factory',
+  '/validation',
+  '/benchmarks',
+  '/enterprise',
+  '/security',
+  '/pricing',
+  '/docs',
+];
+for (const route of requiredPublicProductRoutes) {
+  assert(app.includes(route) || publicSite.includes(route), `missing public product route ${route}`);
+}
+
+const requiredPublicProductHeadings = [
+  'The operating system for AI infrastructure decisions',
+  'Spatial AI Factory investigation surface',
+  'Evidence-first infrastructure readiness validation',
+  'Benchmark intelligence with regression context',
+  'Enterprise workflows for private AI infrastructure',
+  'Security principles for evidence-grounded operations',
+  'Packaging for evaluation, operators, and enterprise teams',
+  'Public documentation entry for GPUValidator',
+];
+for (const heading of requiredPublicProductHeadings) {
+  assert(publicProductPages.includes(heading), `missing public product heading ${heading}`);
+}
+
+const requiredPublicProductMarkers = [
+  'Infrastructure → evidence → decision',
+  'Logical / reference operational graph',
+  'Logical / reference spatial view',
+  'Does not imply exact physical placement',
+  'No fabricated benchmark numbers',
+  'Illustrative normalized comparison',
+  'Security roadmap',
+  'Available now',
+  'Architecture-ready',
+  'Planned',
+  'Commercial pricing is not finalized',
+  'Entry page, not the full docs system',
+  'Get Started',
+  'Explore Platform',
+  'Contact sales',
+  'Request access',
+];
+for (const marker of requiredPublicProductMarkers) {
+  assert(publicProductPages.includes(marker) || publicSite.includes(marker) || landing.includes(marker), `missing public product marker ${marker}`);
+}
 
 const requiredHgxTopologyMarkers = [
   'Logical HGX-style topology',
@@ -402,6 +454,7 @@ assert(!landing.includes('HudNavigationRail'), 'public landing must not migrate 
 assert(!landing.includes('HudBottomRail'), 'public landing must not migrate to HudBottomRail');
 assert(app.includes('<HudNavigationRail') && app.includes('if (!isReviewerAuthenticated)'), 'HudNavigationRail must render only after reviewer authentication');
 assert(app.includes('<HudBottomRail') && app.includes('if (!isReviewerAuthenticated)'), 'HudBottomRail must render only after reviewer authentication');
+assert(app.includes('<PublicProductPage') && app.includes('publicProductRoutes.has(publicPath)'), 'public product pages must remain separate from authenticated routes');
 
 const obsoleteLandingMarkers = ['Gate', 'GPU-0', 'GPU-1', 'GPU-2', 'GPU-3'];
 for (const marker of obsoleteLandingMarkers) {

@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { HgxNvlinkVisualization } from "./components/mission-control/HgxNvlinkVisualization";
 import { MissionControlOverview } from "./components/mission-control/MissionControlOverview";
 import { PublicLanding } from "./components/landing/PublicLanding";
+import { PublicProductPage } from "./components/landing/PublicProductPages";
 import { HudBottomRail, HudNavigationRail, HudTopBar, type HudNavigationRailItem, type HudSystemTone, type HudTopBarTone } from "./components/hud";
 
 // Types corresponding to our Python schema
@@ -135,6 +136,9 @@ function deriveRiskState(systemStateLabel: string): { label: string; tone: HudSy
 }
 
 export default function App() {
+  const [publicPath, setPublicPath] = useState(() =>
+    typeof window === "undefined" ? "/" : window.location.pathname,
+  );
   const [activeTab, setActiveTab] = useState<"diagnostics" | "benchmarks">("diagnostics");
   const selectedScenario: "healthy" | "degraded" = "degraded";
   const [cluster, setCluster] = useState<Cluster | null>(null);
@@ -496,6 +500,18 @@ export default function App() {
   }, [isDarkMode]);
 
   const [isReviewerAuthenticated, setIsReviewerAuthenticated] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncPublicPath = () => setPublicPath(window.location.pathname);
+    syncPublicPath();
+    window.addEventListener("popstate", syncPublicPath);
+
+    return () => window.removeEventListener("popstate", syncPublicPath);
+  }, []);
 
   // Fetch results based on selected scenario
   const fetchResults = async (scenario: "healthy" | "degraded") => {
@@ -921,7 +937,36 @@ export default function App() {
     { id: "settings", label: "Settings", shortLabel: "SET", availability: "planned" },
   ];
 
+  const publicProductRoutes = new Set([
+    "/platform",
+    "/ai-factory",
+    "/validation",
+    "/benchmarks",
+    "/enterprise",
+    "/security",
+    "/pricing",
+    "/docs",
+  ]);
+
   if (!isReviewerAuthenticated) {
+    if (publicProductRoutes.has(publicPath)) {
+      return (
+        <PublicProductPage
+          route={publicPath as
+            | "/platform"
+            | "/ai-factory"
+            | "/validation"
+            | "/benchmarks"
+            | "/enterprise"
+            | "/security"
+            | "/pricing"
+            | "/docs"}
+          isDarkMode={isDarkMode}
+          onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+        />
+      );
+    }
+
     return (
       <PublicLanding
         isDarkMode={isDarkMode}
