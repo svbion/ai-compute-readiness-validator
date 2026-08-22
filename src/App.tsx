@@ -1067,9 +1067,13 @@ export default function App() {
   useEffect(() => {
     const themeColor = isDarkMode ? "#05090F" : "#eef7ff";
 
-    if (!reviewerDemoRequested) {
+    if (!reviewerDemoRequested && !publicAuthRoute && !publicProductRoutes.has(currentPath)) {
       const metadata = PUBLIC_PAGE_METADATA[publicPage];
       applyPageMetadata(metadata.title, metadata.description, themeColor);
+      return;
+    }
+
+    if (!reviewerDemoRequested) {
       return;
     }
 
@@ -1078,7 +1082,7 @@ export default function App() {
       "Authenticated GPUValidator reviewer workspace for AI infrastructure validation, evidence, benchmarking, and investigation review.",
       themeColor,
     );
-  }, [isDarkMode, publicPage, reviewerDemoRequested]);
+  }, [currentPath, isDarkMode, publicAuthRoute, publicPage, publicProductRoutes, reviewerDemoRequested]);
 
   if (publicAuthRoute) {
     return (
