@@ -51,8 +51,8 @@ const navLinks: NavLink[] = [
   { label: "Security", href: "#security" },
   { label: "Docs", href: "#docs" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Sign In", href: "#sign-in", variant: "secondary" },
-  { label: "Get Started", href: "#get-started", variant: "primary" },
+  { label: "Sign In", href: "/login", variant: "secondary" },
+  { label: "Get Started", href: "/signup", variant: "primary" },
 ];
 
 const trustIndicators = [
@@ -185,8 +185,8 @@ function PublicNavigation({
         >
           {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
-        <a href="#sign-in" className="public-site-action public-site-action--secondary">Sign In</a>
-        <a href="#get-started" className="public-site-action public-site-action--primary">Get Started</a>
+        <a href="/login" className="public-site-action public-site-action--secondary">Sign In</a>
+        <a href="/signup" className="public-site-action public-site-action--primary">Get Started</a>
         <button
           type="button"
           className="public-site-menu-toggle"
@@ -471,7 +471,7 @@ export function PublicLanding({ isDarkMode, onSubmit, onToggleTheme }: PublicLan
             </p>
 
             <div className="public-hero__actions">
-              <a href="#get-started" className="public-site-button public-site-button--primary">
+              <a href="/signup" className="public-site-button public-site-button--primary">
                 Get Started
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
@@ -741,7 +741,7 @@ export function PublicLanding({ isDarkMode, onSubmit, onToggleTheme }: PublicLan
             </p>
 
             <div className="public-hero__actions public-hero__actions--footer">
-              <a href="#sign-in" className="public-site-button public-site-button--primary">Get Started</a>
+              <a href="/signup" className="public-site-button public-site-button--primary">Get Started</a>
               <a href="#contact" className="public-site-button public-site-button--secondary">Contact Sales</a>
             </div>
 
@@ -756,8 +756,14 @@ export function PublicLanding({ isDarkMode, onSubmit, onToggleTheme }: PublicLan
               <p className="public-site-eyebrow">Reviewer sign in</p>
               <h3>Secure access to the authenticated reviewer workspace</h3>
               <p>
-                PUBLIC-001 preserves the existing reviewer entry path without introducing production authentication behavior.
+                PUBLIC-001 preserves a reviewer-local demo path without presenting it as production authentication.
               </p>
+            </div>
+
+            <div className="reviewer-access-card__markers">
+              <span><ShieldCheck className="h-4 w-4" aria-hidden="true" /> Review the production-facing auth UX at /login</span>
+              <span><Cpu className="h-4 w-4" aria-hidden="true" /> Launch the existing reviewer demo entry only for local evaluation</span>
+              <span><Activity className="h-4 w-4" aria-hidden="true" /> Authenticated Mission Control remains separate</span>
             </div>
 
             <form
@@ -808,12 +814,6 @@ export function PublicLanding({ isDarkMode, onSubmit, onToggleTheme }: PublicLan
                 Enter reviewer workspace
               </button>
             </form>
-
-            <div className="reviewer-access-card__markers">
-              <span><ShieldCheck className="h-4 w-4" aria-hidden="true" /> Controlled evidence access</span>
-              <span><Cpu className="h-4 w-4" aria-hidden="true" /> Public/auth boundary preserved</span>
-              <span><Activity className="h-4 w-4" aria-hidden="true" /> Authenticated Mission Control remains separate</span>
-            </div>
           </aside>
         </section>
       </main>
